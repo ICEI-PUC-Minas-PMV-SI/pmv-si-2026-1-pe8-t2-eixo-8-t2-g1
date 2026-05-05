@@ -1,3 +1,27 @@
+# Título do Projeto
+
+`CURSO: Sistemas de Informação`
+
+`DISCIPLINA: Projeto - Trabalho de Conclusão de Curso`
+
+`SEMESTRE: 8º`
+
+Descrever resumidamente, em um ou dois parágrafos, o projeto que está sendo desenvolvido.
+
+## Integrantes
+
+* Nome completo do aluno 1
+* Nome completo do aluno 2
+* Nome completo do aluno 3
+* Nome completo do aluno 4
+* Nome completo do aluno 5
+* Nome completo do aluno 6
+
+
+## Orientador
+
+* Nome completo do professor 1
+
 # AutoPro
 
 Sistema web para gerenciamento de oficina automotiva.
@@ -81,6 +105,95 @@ Para parar e apagar o volume do banco:
 
 ```powershell
 docker compose down -v
+```
+
+## Como rodar sem Docker
+
+Para rodar sem Docker, voce precisa ter instalado no computador:
+
+- Node.js
+- npm
+- pnpm
+- PostgreSQL
+
+### Banco local
+
+Crie um banco PostgreSQL com as mesmas credenciais usadas pelo projeto:
+
+```text
+Database: PCC_AUTO
+Usuario: postgres
+Senha: 1234
+Porta: 5432
+```
+
+Se o seu PostgreSQL local estiver usando outra porta, ajuste o `DB_PORT` no arquivo `backend/.env`.
+
+### Backend sem Docker
+
+Na pasta `backend`, instale as dependencias:
+
+```powershell
+cd backend
+npm install
+```
+
+Crie ou ajuste o arquivo `backend/.env`:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=PCC_AUTO
+DB_USER=postgres
+DB_PASSWORD=1234
+JWT_SECRET=troque-este-segredo-em-producao
+JWT_EXPIRES_IN_SECONDS=86400
+```
+
+Inicie o backend em modo desenvolvimento:
+
+```powershell
+npm run dev
+```
+
+Ou rode em modo normal:
+
+```powershell
+npm start
+```
+
+Depois acesse:
+
+```text
+Backend: http://localhost:3001
+Swagger: http://localhost:3001/api-docs
+```
+
+### Frontend sem Docker
+
+Em outro terminal, na pasta `frontend`, instale as dependencias:
+
+```powershell
+cd frontend
+pnpm install
+```
+
+Se o backend estiver em `http://localhost:3001`, nenhuma variavel extra e obrigatoria. Caso queira configurar explicitamente, crie ou ajuste o arquivo `frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+Inicie o frontend:
+
+```powershell
+pnpm dev
+```
+
+Depois acesse:
+
+```text
+Frontend: http://localhost:5173
 ```
 
 ## Banco de dados
