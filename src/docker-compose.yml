@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16
-    container_name: pcc_db
     environment:
       POSTGRES_DB: PCC_AUTO
       POSTGRES_USER: postgres
@@ -18,7 +17,6 @@ services:
 
   backend:
     build: ./backend
-    container_name: pcc_backend
     ports:
       - "3001:3001"
     env_file:
@@ -36,7 +34,6 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: pcc_frontend
     ports:
       - "5173:5173"
     environment:
@@ -48,7 +45,7 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-    command: sh -c "pnpm install && pnpm dev"
+    command: pnpm dev
 
 volumes:
   postgres_data:
