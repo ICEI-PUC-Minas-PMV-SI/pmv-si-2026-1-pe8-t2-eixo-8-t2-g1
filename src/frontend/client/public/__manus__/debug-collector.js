@@ -46,6 +46,21 @@
     scrollThrottleMs: 500,
   };
 
+  var STREAMING_CONTENT_TYPES = [
+    "text/event-stream",
+    "application/stream",
+    "application/x-ndjson",
+  ];
+
+  var BINARY_CONTENT_TYPES = [
+    "image/",
+    "video/",
+    "audio/",
+    "application/octet-stream",
+    "application/pdf",
+    "application/zip",
+  ];
+
   // ==========================================================================
   // Storage
   // ==========================================================================
@@ -61,38 +76,52 @@
   // Utility Functions
   // ==========================================================================
 
+  function truncateString(value, maxLen, suffix) {
+    return value.length > maxLen ? value.slice(0, maxLen) + suffix : value;
+  }
+
+  function isElement(value) {
+    return !!value && value instanceof Element;
+  }
+
+  function isSensitiveKey(key) {
+    var normalizedKey = key.toLowerCase();
+    return CONFIG.sensitiveFields.some(function (f) {
+      return normalizedKey.indexOf(f) !== -1;
+    });
+  }
+
+  function sanitizeArray(value, depth) {
+    return value.slice(0, 100).map(function (v) {
+      return sanitizeValue(v, depth + 1);
+    });
+  }
+
+  function sanitizeObject(value, depth) {
+    var sanitized = {};
+    for (var k in value) {
+      if (!Object.prototype.hasOwnProperty.call(value, k)) continue;
+      sanitized[k] = isSensitiveKey(k)
+        ? "[REDACTED]"
+        : sanitizeValue(value[k], depth + 1);
+    }
+    return sanitized;
+  }
+
   function sanitizeValue(value, depth) {
     if (depth === void 0) depth = 0;
     if (depth > 5) return "[Max Depth]";
-    if (value === null) return null;
-    if (value === undefined) return undefined;
+    if (value === null || value === undefined) return value;
 
     if (typeof value === "string") {
-      return value.length > 1000 ? value.slice(0, 1000) + "...[truncated]" : value;
+      return truncateString(value, 1000, "...[truncated]");
     }
 
     if (typeof value !== "object") return value;
 
-    if (Array.isArray(value)) {
-      return value.slice(0, 100).map(function (v) {
-        return sanitizeValue(v, depth + 1);
-      });
-    }
+    if (Array.isArray(value)) return sanitizeArray(value, depth);
 
-    var sanitized = {};
-    for (var k in value) {
-      if (Object.prototype.hasOwnProperty.call(value, k)) {
-        var isSensitive = CONFIG.sensitiveFields.some(function (f) {
-          return k.toLowerCase().indexOf(f) !== -1;
-        });
-        if (isSensitive) {
-          sanitized[k] = "[REDACTED]";
-        } else {
-          sanitized[k] = sanitizeValue(value[k], depth + 1);
-        }
-      }
-    }
-    return sanitized;
+    return sanitizeObject(value, depth);
   }
 
   function formatArg(arg) {
@@ -132,7 +161,7 @@
 
   function shouldIgnoreTarget(target) {
     try {
-      if (!target || !(target instanceof Element)) return false;
+      if (!isElement(target)) return false;
       return !!target.closest(".manus-no-record");
     } catch (e) {
       return false;
@@ -158,54 +187,66 @@
     }
   }
 
+  function attrOrNull(el, name) {
+    return el.getAttribute(name) || null;
+  }
+
+  function elementTag(el) {
+    return el.tagName ? el.tagName.toLowerCase() : null;
+  }
+
+  function elementTestId(el) {
+    return (
+      attrOrNull(el, "data-testid") ||
+      attrOrNull(el, "data-test-id") ||
+      attrOrNull(el, "data-test")
+    );
+  }
+
+  function elementType(tag, el) {
+    return tag === "input" ? attrOrNull(el, "type") || "text" : null;
+  }
+
+  function elementHref(tag, el) {
+    return tag === "a" ? attrOrNull(el, "href") : null;
+  }
+
+  function selectorHintForElement(tag, id, dataLoc, testId) {
+    if (testId) return '[data-testid="' + testId + '"]';
+    if (dataLoc) return '[data-loc="' + dataLoc + '"]';
+    if (id) return "#" + id;
+    return tag || "unknown";
+  }
+
   function describeElement(el) {
-    if (!el || !(el instanceof Element)) return null;
+    if (!isElement(el)) return null;
 
-    var getAttr = function (name) {
-      return el.getAttribute(name);
-    };
-
-    var tag = el.tagName ? el.tagName.toLowerCase() : null;
+    var tag = elementTag(el);
     var id = el.id || null;
-    var name = getAttr("name") || null;
-    var role = getAttr("role") || null;
-    var ariaLabel = getAttr("aria-label") || null;
-
-    var dataLoc = getAttr("data-loc") || null;
-    var testId =
-      getAttr("data-testid") ||
-      getAttr("data-test-id") ||
-      getAttr("data-test") ||
-      null;
-
-    var type = tag === "input" ? (getAttr("type") || "text") : null;
-    var href = tag === "a" ? getAttr("href") || null : null;
-
-    // a small, stable hint for agents (avoid building full CSS paths)
-    var selectorHint = null;
-    if (testId) selectorHint = '[data-testid="' + testId + '"]';
-    else if (dataLoc) selectorHint = '[data-loc="' + dataLoc + '"]';
-    else if (id) selectorHint = "#" + id;
-    else selectorHint = tag || "unknown";
+    var name = attrOrNull(el, "name");
+    var role = attrOrNull(el, "role");
+    var ariaLabel = attrOrNull(el, "aria-label");
+    var dataLoc = attrOrNull(el, "data-loc");
+    var testId = elementTestId(el);
 
     return {
       tag: tag,
       id: id,
       name: name,
-      type: type,
+      type: elementType(tag, el),
       role: role,
       ariaLabel: ariaLabel,
       testId: testId,
       dataLoc: dataLoc,
-      href: href,
+      href: elementHref(tag, el),
       text: elText(el),
-      selectorHint: selectorHint,
+      selectorHint: selectorHintForElement(tag, id, dataLoc, testId),
     };
   }
 
   function isSensitiveField(el) {
-    if (!el || !(el instanceof Element)) return false;
-    var tag = el.tagName ? el.tagName.toLowerCase() : "";
+    if (!isElement(el)) return false;
+    var tag = elementTag(el) || "";
     if (tag !== "input" && tag !== "textarea") return false;
 
     var type = (el.getAttribute("type") || "").toLowerCase();
@@ -219,17 +260,24 @@
     });
   }
 
-  function getInputValueSafe(el) {
-    if (!el || !(el instanceof Element)) return null;
-    var tag = el.tagName ? el.tagName.toLowerCase() : "";
-    if (tag !== "input" && tag !== "textarea" && tag !== "select") return null;
+  function isValueElementTag(tag) {
+    return tag === "input" || tag === "textarea" || tag === "select";
+  }
 
-    var v = "";
+  function readElementValue(el) {
     try {
-      v = el.value != null ? String(el.value) : "";
+      return el.value != null ? String(el.value) : "";
     } catch (e) {
-      v = "";
+      return "";
     }
+  }
+
+  function getInputValueSafe(el) {
+    if (!isElement(el)) return null;
+    var tag = elementTag(el) || "";
+    if (!isValueElementTag(tag)) return null;
+
+    var v = readElementValue(el);
 
     if (isSensitiveField(el)) return { masked: true, length: v.length };
 
@@ -450,142 +498,173 @@
   // Fetch Interception
   // ==========================================================================
 
-  var originalFetch = window.fetch.bind(window);
-
-  window.fetch = function (input, init) {
-    init = init || {};
-    var startTime = Date.now();
-    // Handle string, Request object, or URL object
-    var url = typeof input === "string"
-      ? input
-      : (input && (input.url || input.href || String(input))) || "";
-    var method = init.method || (input && input.method) || "GET";
-
-    // Don't intercept internal requests
-    if (url.indexOf("/__manus__/") === 0) {
-      return originalFetch(input, init);
+  function contentTypeMatches(contentType, markers) {
+    for (var i = 0; i < markers.length; i++) {
+      if (contentType.indexOf(markers[i]) !== -1) return true;
     }
+    return false;
+  }
 
-    // Safely parse headers (avoid breaking if headers format is invalid)
-    var requestHeaders = {};
+  function isStreamingContent(contentType) {
+    return contentTypeMatches(contentType, STREAMING_CONTENT_TYPES);
+  }
+
+  function isBinaryContent(contentType) {
+    return contentTypeMatches(contentType, BINARY_CONTENT_TYPES);
+  }
+
+  function pushNetworkEntry(entry) {
+    store.networkRequests.push(entry);
+    pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
+  }
+
+  function getFetchUrl(input) {
+    if (typeof input === "string") return input;
+    return (input && (input.url || input.href || String(input))) || "";
+  }
+
+  function getFetchMethod(input, init) {
+    return init.method || (input && input.method) || "GET";
+  }
+
+  function parseRequestHeaders(headers) {
+    if (!headers) return {};
     try {
-      if (init.headers) {
-        requestHeaders = Object.fromEntries(new Headers(init.headers).entries());
-      }
+      return Object.fromEntries(new Headers(headers).entries());
     } catch (e) {
-      requestHeaders = { _parseError: true };
+      return { _parseError: true };
     }
+  }
 
-    var entry = {
+  function sanitizedRequestBody(body) {
+    return body ? sanitizeValue(tryParseJson(body)) : null;
+  }
+
+  function createFetchEntry(input, init, startTime) {
+    var url = getFetchUrl(input);
+    var method = getFetchMethod(input, init);
+
+    return {
       timestamp: startTime,
       type: "fetch",
       method: method.toUpperCase(),
       url: url,
       request: {
-        headers: requestHeaders,
-        body: init.body ? sanitizeValue(tryParseJson(init.body)) : null,
+        headers: parseRequestHeaders(init.headers),
+        body: sanitizedRequestBody(init.body),
       },
       response: null,
       duration: null,
       error: null,
     };
+  }
+
+  function createFetchResponse(response) {
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: null,
+    };
+  }
+
+  function logFetchStatusError(entry, response) {
+    if (response.status < 400) return;
+    logUiEvent("network_error", {
+      kind: "fetch",
+      method: entry.method,
+      url: entry.url,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+
+  function fetchBodySkipReason(contentType, contentLength) {
+    if (isStreamingContent(contentType)) {
+      return "[Streaming response - not captured]";
+    }
+    if (contentLength && parseInt(contentLength, 10) > CONFIG.maxBodyLength) {
+      return "[Response too large: " + contentLength + " bytes]";
+    }
+    if (isBinaryContent(contentType)) {
+      return "[Binary content: " + contentType + "]";
+    }
+    return null;
+  }
+
+  function normalizeResponseTextBody(text) {
+    if (text.length <= CONFIG.maxBodyLength) {
+      return sanitizeValue(tryParseJson(text));
+    }
+    return text.slice(0, CONFIG.maxBodyLength) + "...[truncated]";
+  }
+
+  function readFetchBodyInBackground(response, entry) {
+    response
+      .clone()
+      .text()
+      .then(function (text) {
+        entry.response.body = normalizeResponseTextBody(text);
+      })
+      .catch(function () {
+        entry.response.body = "[Unable to read body]";
+      })
+      .finally(function () {
+        pushNetworkEntry(entry);
+      });
+  }
+
+  function handleFetchResponse(response, entry, startTime) {
+    var contentType = (response.headers.get("content-type") || "").toLowerCase();
+    var contentLength = response.headers.get("content-length");
+    var skipReason = fetchBodySkipReason(contentType, contentLength);
+
+    entry.duration = Date.now() - startTime;
+    entry.response = createFetchResponse(response);
+    logFetchStatusError(entry, response);
+
+    if (skipReason) {
+      entry.response.body = skipReason;
+      pushNetworkEntry(entry);
+      return response;
+    }
+
+    readFetchBodyInBackground(response, entry);
+    return response;
+  }
+
+  function handleFetchError(error, entry, startTime) {
+    entry.duration = Date.now() - startTime;
+    entry.error = { message: error.message, stack: error.stack };
+
+    pushNetworkEntry(entry);
+
+    logUiEvent("network_error", {
+      kind: "fetch",
+      method: entry.method,
+      url: entry.url,
+      message: error.message,
+    });
+  }
+
+  var originalFetch = window.fetch.bind(window);
+
+  window.fetch = function (input, init) {
+    init = init || {};
+    var startTime = Date.now();
+    var entry = createFetchEntry(input, init, startTime);
+
+    // Don't intercept internal requests
+    if (entry.url.indexOf("/__manus__/") === 0) {
+      return originalFetch(input, init);
+    }
 
     return originalFetch(input, init)
       .then(function (response) {
-        entry.duration = Date.now() - startTime;
-
-        var contentType = (response.headers.get("content-type") || "").toLowerCase();
-        var contentLength = response.headers.get("content-length");
-
-        entry.response = {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: null,
-        };
-
-        // Semantic network hint for agents on failures (sync, no need to wait for body)
-        if (response.status >= 400) {
-          logUiEvent("network_error", {
-            kind: "fetch",
-            method: entry.method,
-            url: entry.url,
-            status: response.status,
-            statusText: response.statusText,
-          });
-        }
-
-        // Skip body capture for streaming responses (SSE, etc.) to avoid memory leaks
-        var isStreaming = contentType.indexOf("text/event-stream") !== -1 ||
-                          contentType.indexOf("application/stream") !== -1 ||
-                          contentType.indexOf("application/x-ndjson") !== -1;
-        if (isStreaming) {
-          entry.response.body = "[Streaming response - not captured]";
-          store.networkRequests.push(entry);
-          pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-          return response;
-        }
-
-        // Skip body capture for large responses to avoid memory issues
-        if (contentLength && parseInt(contentLength, 10) > CONFIG.maxBodyLength) {
-          entry.response.body = "[Response too large: " + contentLength + " bytes]";
-          store.networkRequests.push(entry);
-          pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-          return response;
-        }
-
-        // Skip body capture for binary content types
-        var isBinary = contentType.indexOf("image/") !== -1 ||
-                       contentType.indexOf("video/") !== -1 ||
-                       contentType.indexOf("audio/") !== -1 ||
-                       contentType.indexOf("application/octet-stream") !== -1 ||
-                       contentType.indexOf("application/pdf") !== -1 ||
-                       contentType.indexOf("application/zip") !== -1;
-        if (isBinary) {
-          entry.response.body = "[Binary content: " + contentType + "]";
-          store.networkRequests.push(entry);
-          pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-          return response;
-        }
-
-        // For text responses, clone and read body in background
-        var clonedResponse = response.clone();
-
-        // Async: read body in background, don't block the response
-        clonedResponse
-          .text()
-          .then(function (text) {
-            if (text.length <= CONFIG.maxBodyLength) {
-              entry.response.body = sanitizeValue(tryParseJson(text));
-            } else {
-              entry.response.body = text.slice(0, CONFIG.maxBodyLength) + "...[truncated]";
-            }
-          })
-          .catch(function () {
-            entry.response.body = "[Unable to read body]";
-          })
-          .finally(function () {
-            store.networkRequests.push(entry);
-            pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-          });
-
-        // Return response immediately, don't wait for body reading
-        return response;
+        return handleFetchResponse(response, entry, startTime);
       })
       .catch(function (error) {
-        entry.duration = Date.now() - startTime;
-        entry.error = { message: error.message, stack: error.stack };
-
-        store.networkRequests.push(entry);
-        pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-
-        logUiEvent("network_error", {
-          kind: "fetch",
-          method: entry.method,
-          url: entry.url,
-          message: error.message,
-        });
-
+        handleFetchError(error, entry, startTime);
         throw error;
       });
   };
@@ -593,6 +672,96 @@
   // ==========================================================================
   // XHR Interception
   // ==========================================================================
+
+  function shouldCaptureXhr(xhr) {
+    if (!xhr._manusData) return false;
+    if (!xhr._manusData.url) return false;
+    return xhr._manusData.url.indexOf("/__manus__/") !== 0;
+  }
+
+  function xhrBodySkipReason(contentType) {
+    if (isStreamingContent(contentType)) {
+      return "[Streaming response - not captured]";
+    }
+    if (isBinaryContent(contentType)) {
+      return "[Binary content: " + contentType + "]";
+    }
+    return null;
+  }
+
+  function readXhrTextBody(xhr) {
+    try {
+      return normalizeResponseTextBody(xhr.responseText || "");
+    } catch (e) {
+      // responseText may throw for non-text responses
+      return "[Unable to read response: " + e.message + "]";
+    }
+  }
+
+  function readXhrResponseBody(xhr) {
+    var contentType = (xhr.getResponseHeader("content-type") || "").toLowerCase();
+    var skipReason = xhrBodySkipReason(contentType);
+    return skipReason || readXhrTextBody(xhr);
+  }
+
+  function createXhrLoadEntry(xhr) {
+    return {
+      timestamp: xhr._manusData.startTime,
+      type: "xhr",
+      method: xhr._manusData.method,
+      url: xhr._manusData.url,
+      request: { body: xhr._manusData.requestBody },
+      response: {
+        status: xhr.status,
+        statusText: xhr.statusText,
+        body: readXhrResponseBody(xhr),
+      },
+      duration: Date.now() - xhr._manusData.startTime,
+      error: null,
+    };
+  }
+
+  function createXhrErrorEntry(xhr) {
+    return {
+      timestamp: xhr._manusData.startTime,
+      type: "xhr",
+      method: xhr._manusData.method,
+      url: xhr._manusData.url,
+      request: { body: xhr._manusData.requestBody },
+      response: null,
+      duration: Date.now() - xhr._manusData.startTime,
+      error: { message: "Network error" },
+    };
+  }
+
+  function logXhrStatusError(entry) {
+    if (entry.response.status < 400) return;
+    logUiEvent("network_error", {
+      kind: "xhr",
+      method: entry.method,
+      url: entry.url,
+      status: entry.response.status,
+      statusText: entry.response.statusText,
+    });
+  }
+
+  function handleXhrLoad(xhr) {
+    var entry = createXhrLoadEntry(xhr);
+    pushNetworkEntry(entry);
+    logXhrStatusError(entry);
+  }
+
+  function handleXhrError(xhr) {
+    var entry = createXhrErrorEntry(xhr);
+    pushNetworkEntry(entry);
+
+    logUiEvent("network_error", {
+      kind: "xhr",
+      method: entry.method,
+      url: entry.url,
+      message: "Network error",
+    });
+  }
 
   var originalXHROpen = XMLHttpRequest.prototype.open;
   var originalXHRSend = XMLHttpRequest.prototype.send;
@@ -609,100 +778,16 @@
   XMLHttpRequest.prototype.send = function (body) {
     var xhr = this;
 
-    if (
-      xhr._manusData &&
-      xhr._manusData.url &&
-      xhr._manusData.url.indexOf("/__manus__/") !== 0
-    ) {
+    if (shouldCaptureXhr(xhr)) {
       xhr._manusData.startTime = Date.now();
-      xhr._manusData.requestBody = body ? sanitizeValue(tryParseJson(body)) : null;
+      xhr._manusData.requestBody = sanitizedRequestBody(body);
 
       xhr.addEventListener("load", function () {
-        var contentType = (xhr.getResponseHeader("content-type") || "").toLowerCase();
-        var responseBody = null;
-
-        // Skip body capture for streaming responses
-        var isStreaming = contentType.indexOf("text/event-stream") !== -1 ||
-                          contentType.indexOf("application/stream") !== -1 ||
-                          contentType.indexOf("application/x-ndjson") !== -1;
-
-        // Skip body capture for binary content types
-        var isBinary = contentType.indexOf("image/") !== -1 ||
-                       contentType.indexOf("video/") !== -1 ||
-                       contentType.indexOf("audio/") !== -1 ||
-                       contentType.indexOf("application/octet-stream") !== -1 ||
-                       contentType.indexOf("application/pdf") !== -1 ||
-                       contentType.indexOf("application/zip") !== -1;
-
-        if (isStreaming) {
-          responseBody = "[Streaming response - not captured]";
-        } else if (isBinary) {
-          responseBody = "[Binary content: " + contentType + "]";
-        } else {
-          // Safe to read responseText for text responses
-          try {
-            var text = xhr.responseText || "";
-            if (text.length > CONFIG.maxBodyLength) {
-              responseBody = text.slice(0, CONFIG.maxBodyLength) + "...[truncated]";
-            } else {
-              responseBody = sanitizeValue(tryParseJson(text));
-            }
-          } catch (e) {
-            // responseText may throw for non-text responses
-            responseBody = "[Unable to read response: " + e.message + "]";
-          }
-        }
-
-        var entry = {
-          timestamp: xhr._manusData.startTime,
-          type: "xhr",
-          method: xhr._manusData.method,
-          url: xhr._manusData.url,
-          request: { body: xhr._manusData.requestBody },
-          response: {
-            status: xhr.status,
-            statusText: xhr.statusText,
-            body: responseBody,
-          },
-          duration: Date.now() - xhr._manusData.startTime,
-          error: null,
-        };
-
-        store.networkRequests.push(entry);
-        pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-
-        if (entry.response && entry.response.status >= 400) {
-          logUiEvent("network_error", {
-            kind: "xhr",
-            method: entry.method,
-            url: entry.url,
-            status: entry.response.status,
-            statusText: entry.response.statusText,
-          });
-        }
+        handleXhrLoad(xhr);
       });
 
       xhr.addEventListener("error", function () {
-        var entry = {
-          timestamp: xhr._manusData.startTime,
-          type: "xhr",
-          method: xhr._manusData.method,
-          url: xhr._manusData.url,
-          request: { body: xhr._manusData.requestBody },
-          response: null,
-          duration: Date.now() - xhr._manusData.startTime,
-          error: { message: "Network error" },
-        };
-
-        store.networkRequests.push(entry);
-        pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-
-        logUiEvent("network_error", {
-          kind: "xhr",
-          method: entry.method,
-          url: entry.url,
-          message: "Network error",
-        });
+        handleXhrError(xhr);
       });
     }
 

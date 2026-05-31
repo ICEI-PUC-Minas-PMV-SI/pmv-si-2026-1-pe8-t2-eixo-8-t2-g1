@@ -43,14 +43,16 @@ interface UsuariosProps {
   onUserUpdate?: (usuario: UsuarioApi) => void;
 }
 
+type AlertAction = {
+  type: 'disable' | 'reset' | 'delete'
+  usuario: UsuarioApi
+}
+
 export default function Usuarios({ onUserUpdate }: UsuariosProps) {
   const [usuarios, setUsuarios] = useState<UsuarioApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<UsuarioApi | null>(null);
-  const [alertAction, setAlertAction] = useState<{
-    type: 'disable' | 'reset' | 'delete';
-    usuario: UsuarioApi;
-  } | null>(null);
+  const [alertAction, setAlertAction] = useState<AlertAction | null>(null);
   const [loading, setLoading] = useState(true);
 
   const usuarioLogado = getUsuarioLogado();
@@ -146,35 +148,73 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
     setAlertAction({ type: 'delete', usuario });
   };
 
+  const atualizarUsuarioNaLista = (usuarioAtualizado: UsuarioApi) => {
+    setUsuarios((usuariosAtuais) =>
+      usuariosAtuais.map((usuario) =>
+        usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario,
+      ),
+    );
+  };
+
+  const removerUsuarioDaLista = (usuarioId: string) => {
+    setUsuarios((usuariosAtuais) =>
+      usuariosAtuais.filter((usuario) => usuario.id !== usuarioId),
+    );
+  };
+
+  const alternarStatusUsuario = async (usuario: UsuarioApi) => {
+    const novoStatus = usuario.status === 'Ativo' ? 'Inativo' : 'Ativo';
+
+    const usuarioAtualizado = await usuariosApi.update(usuario.id, {
+      status: novoStatus,
+    });
+
+    atualizarUsuarioNaLista(usuarioAtualizado);
+
+    toast.success(
+      `Usuário ${novoStatus === 'Ativo' ? 'habilitado' : 'desabilitado'} com sucesso!`,
+    );
+  };
+
+  const resetarSenhaUsuario = async (usuario: UsuarioApi) => {
+    await usuariosApi.update(usuario.id, {
+      senha: '123456',
+    });
+
+    toast.success('Senha resetada para 123456');
+  };
+
+  const excluirUsuario = async (usuario: UsuarioApi) => {
+    await usuariosApi.remove(usuario.id);
+
+    removerUsuarioDaLista(usuario.id);
+
+    toast.success('Usuário excluído com sucesso!');
+  };
+
+  const executarAlertAction = async (alertAction: AlertAction) => {
+    const { type, usuario } = alertAction;
+
+    switch (type) {
+      case 'disable':
+        return alternarStatusUsuario(usuario);
+
+      case 'reset':
+        return resetarSenhaUsuario(usuario);
+
+      case 'delete':
+        return excluirUsuario(usuario);
+
+      default:
+        throw new Error('Ação inválida');
+    }
+};
+
   const confirmAction = async () => {
     if (!alertAction || !requireAdmin()) return;
 
     try {
-      if (alertAction.type === 'disable') {
-        const novoStatus = alertAction.usuario.status === 'Ativo' ? 'Inativo' : 'Ativo';
-        const usuarioAtualizado = await usuariosApi.update(alertAction.usuario.id, {
-          status: novoStatus,
-        });
-
-        setUsuarios((usuariosAtuais) =>
-          usuariosAtuais.map((usuario) =>
-            usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario,
-          ),
-        );
-        toast.success(`Usuário ${novoStatus === 'Ativo' ? 'habilitado' : 'desabilitado'} com sucesso!`);
-      } else if (alertAction.type === 'reset') {
-        await usuariosApi.update(alertAction.usuario.id, {
-          senha: '123456',
-        });
-        toast.success('Senha resetada para 123456');
-      } else {
-        await usuariosApi.remove(alertAction.usuario.id);
-        setUsuarios((usuariosAtuais) =>
-          usuariosAtuais.filter((usuario) => usuario.id !== alertAction.usuario.id)
-        );
-
-        toast.success('Usuário excluído com sucesso!');
-      }
+      await executarAlertAction(alertAction);
     } catch (error: any) {
       const message = error.response?.data?.message || 'Erro ao executar ação';
       toast.error(message);
