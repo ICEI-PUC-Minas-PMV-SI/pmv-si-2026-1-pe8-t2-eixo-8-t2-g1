@@ -85,7 +85,7 @@ router.post("/login", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
-      order: [["dataCriacao", "DESC"]],
+      order: [["data_criacao", "DESC"]],
     });
 
     return res.json(usuarios);

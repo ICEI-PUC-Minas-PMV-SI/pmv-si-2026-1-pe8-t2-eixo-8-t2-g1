@@ -30,8 +30,8 @@ interface FormDataState {
   preco: number;
   estoqueAtual: number;
   tipoItem: 'Produto' | 'Serviço';
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 export default function ProdutoForm({
@@ -56,8 +56,8 @@ export default function ProdutoForm({
       preco: 0,
       estoqueAtual: 0,
       tipoItem: 'Produto',
-      dataCriacao: new Date().toISOString().split('T')[0],
-      dataAtualizacao: new Date().toISOString().split('T')[0],
+      data_criacao: new Date().toISOString().split('T')[0],
+      data_atualizacao: new Date().toISOString().split('T')[0],
     };
   };
 
@@ -76,8 +76,8 @@ export default function ProdutoForm({
       preco: formData.preco,
       estoqueAtual: formData.estoqueAtual,
       tipoItem: formData.tipoItem,
-      dataCriacao: formData.dataCriacao,
-      dataAtualizacao: new Date().toISOString().split('T')[0],
+      data_criacao: formData.data_criacao,
+      data_atualizacao: new Date().toISOString().split('T')[0],
     };
     onSubmit(produto);
   };

@@ -27,8 +27,8 @@ export default function Tabelas() {
         {
           id: generateId(),
           nome: novaMarca,
-          dataCriacao: new Date().toISOString().split('T')[0],
-          dataAtualizacao: new Date().toISOString().split('T')[0],
+          data_criacao: new Date().toISOString().split('T')[0],
+          data_atualizacao: new Date().toISOString().split('T')[0],
         },
       ]);
       setNovaMarca('');
@@ -42,8 +42,8 @@ export default function Tabelas() {
         {
           id: generateId(),
           nome: novaCategoria,
-          dataCriacao: new Date().toISOString().split('T')[0],
-          dataAtualizacao: new Date().toISOString().split('T')[0],
+          data_criacao: new Date().toISOString().split('T')[0],
+          data_atualizacao: new Date().toISOString().split('T')[0],
         },
       ]);
       setNovaCategoria('');
@@ -58,8 +58,8 @@ export default function Tabelas() {
           id: generateId(),
           nome: novoTipo.nome,
           observacao: novoTipo.observacao,
-          dataCriacao: new Date().toISOString().split('T')[0],
-          dataAtualizacao: new Date().toISOString().split('T')[0],
+          data_criacao: new Date().toISOString().split('T')[0],
+          data_atualizacao: new Date().toISOString().split('T')[0],
         },
       ]);
       setNovoTipo({ nome: '', observacao: '' });

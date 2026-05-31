@@ -27,7 +27,7 @@ export default function Fornecedores() {
       render: (value: any) => value.cidade,
     },
     {
-      key: 'dataCriacao' as const,
+      key: 'data_criacao' as const,
       label: 'Data de Cadastro',
       render: (value: string) => formatDate(value),
     },

@@ -1126,12 +1126,12 @@
                 "type": "integer",
                 "example": 1
               },
-              "dataCriacao": {
+              "data_criacao": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2026-05-03T21:03:42.226Z"
               },
-              "dataAtualizacao": {
+              "data_atualizacao": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2026-05-03T21:03:42.226Z"
@@ -1463,12 +1463,12 @@
             ],
             "example": "Ativo"
           },
-          "dataCriacao": {
+          "data_criacao": {
             "type": "string",
             "format": "date-time",
             "example": "2026-05-03T14:23:20.266Z"
           },
-          "dataAtualizacao": {
+          "data_atualizacao": {
             "type": "string",
             "format": "date-time",
             "example": "2026-05-03T14:23:20.266Z"

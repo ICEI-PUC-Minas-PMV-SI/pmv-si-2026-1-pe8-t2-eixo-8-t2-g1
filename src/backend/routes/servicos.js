@@ -1,18 +1,43 @@
 const express = require("express");
-const { Servico, Veiculo, ItemServico } = require("../models");
+const { Servico, Veiculo, Cliente, ItemServico, Produto } = require("../models");
 const { isIntegerGreaterThanZero } = require("../utils/utils");
 
 const router = express.Router();
 
+const servicoInclude = [
+  {
+    model: Veiculo,
+    as: "veiculo",
+    include: [
+      {
+        model: Cliente,
+        as: "cliente"
+      }
+    ]
+  },
+  {
+    model: ItemServico,
+    as: "itens",
+    include: [
+      {
+        model: Produto,
+        as: "produto"
+      }
+    ]
+  }
+];
+
+async function buscarServicoCompleto(id) {
+  return Servico.findByPk(id, {
+    include: servicoInclude
+  });
+}
+
 router.get("/", async (req, res) => {
   try {
     const servicos = await Servico.findAll({
-      include: [
-        {
-          model: Veiculo,
-          as: "veiculo"
-        }
-      ]
+      include: servicoInclude,
+      order: [["id", "DESC"]]
     });
 
     return res.json(servicos);
@@ -35,18 +60,7 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const servico = await Servico.findByPk(id, {
-      include: [
-        {
-          model: Veiculo,
-          as: "veiculo"
-        },
-        {
-          model: ItemServico,
-          as: "itens"
-        }
-      ]
-    });
+    const servico = await buscarServicoCompleto(id);
 
     if (!servico) {
       return res.status(404).json({
@@ -74,11 +88,11 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     const idVeiculo = Number(id_veiculo);
-    const valorTotal = Number(valor_total);
+    const valorTotal = valor_total === undefined ? 0 : Number(valor_total);
 
-    if (!descricao || !status || !data_inicio || valor_total === undefined || !id_veiculo) {
+    if (!descricao || !status || !data_inicio || !id_veiculo) {
       return res.status(400).json({
-        message: "descricao, status, data_inicio, valor_total e id_veiculo são obrigatórios"
+        message: "descricao, status, data_inicio e id_veiculo são obrigatórios"
       });
     }
 
@@ -111,7 +125,9 @@ router.post("/", async (req, res) => {
       id_veiculo: idVeiculo
     });
 
-    return res.status(201).json(servico);
+    const servicoCompleto = await buscarServicoCompleto(servico.id);
+
+    return res.status(201).json(servicoCompleto);
   } catch (error) {
     if (error.name === "SequelizeValidationError") {
       return res.status(400).json({
@@ -204,7 +220,9 @@ router.put("/:id", async (req, res) => {
       id_veiculo: idVeiculo
     });
 
-    return res.json(servicoAtualizado);
+    const servicoCompleto = await buscarServicoCompleto(servicoAtualizado.id);
+
+    return res.json(servicoCompleto);
   } catch (error) {
     if (error.name === "SequelizeValidationError") {
       return res.status(400).json({

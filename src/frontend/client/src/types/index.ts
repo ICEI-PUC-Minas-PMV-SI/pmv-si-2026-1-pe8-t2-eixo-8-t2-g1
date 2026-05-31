@@ -21,8 +21,8 @@ export interface Pessoa {
   email: string;
   isFornecedor: boolean;
   observacao?: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 // Tipos para Veículos
@@ -38,8 +38,8 @@ export interface Veiculo {
   numeroChasse?: string;
   tipoCombustivel?: string;
   dataUltimaRevisao?: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 // Tipos para Produtos
@@ -54,8 +54,8 @@ export interface Produto {
   preco: number;
   estoqueAtual: number;
   tipoItem: 'Produto' | 'Serviço';
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 // Tipos para OS (Ordem de Serviço)
@@ -98,31 +98,31 @@ export interface OrdemServico {
   // Auditoria
   dataAbertura: string;
   dataConclusao?: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 // Tipos para Tabelas Auxiliares
 export interface Marca {
   id: string;
   nome: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 export interface Categoria {
   id: string;
   nome: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 export interface TipoVeiculo {
   id: string;
   nome: string;
   observacao?: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 // Tipos para Configurações
@@ -170,6 +170,6 @@ export interface Usuario {
   email: string;
   perfil: 'Administrador' | 'Supervisor' | 'Padrão';
   status: 'Ativo' | 'Inativo';
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }

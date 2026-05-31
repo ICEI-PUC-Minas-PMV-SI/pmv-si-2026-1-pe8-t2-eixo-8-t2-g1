@@ -40,8 +40,8 @@ interface FormDataState {
   email: string;
   isFornecedor: boolean;
   observacao: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 export default function PessoaForm({
@@ -86,8 +86,8 @@ export default function PessoaForm({
         pais: 'Brasil',
         cep: '',
       },
-      dataCriacao: new Date().toISOString().split('T')[0],
-      dataAtualizacao: new Date().toISOString().split('T')[0],
+      data_criacao: new Date().toISOString().split('T')[0],
+      data_atualizacao: new Date().toISOString().split('T')[0],
     };
   };
 
@@ -106,8 +106,8 @@ export default function PessoaForm({
       email: formData.email,
       isFornecedor: formData.isFornecedor,
       observacao: formData.observacao,
-      dataCriacao: formData.dataCriacao,
-      dataAtualizacao: new Date().toISOString().split('T')[0],
+      data_criacao: formData.data_criacao,
+      data_atualizacao: new Date().toISOString().split('T')[0],
     };
     onSubmit(pessoa);
   };

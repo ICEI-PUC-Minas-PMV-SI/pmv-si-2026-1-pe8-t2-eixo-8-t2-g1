@@ -4,9 +4,18 @@ const { isIntegerGreaterThanZero } = require("../utils/utils");
 
 const router = express.Router();
 
+const veiculoInclude = [
+  {
+    model: Cliente,
+    as: "cliente"
+  }
+];
+
 router.get("/", async (req, res) => {
   try {
-    const veiculos = await Veiculo.findAll();
+    const veiculos = await Veiculo.findAll({
+      include: veiculoInclude
+    });
 
     return res.json(veiculos);
   } catch (error) {
@@ -28,7 +37,9 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const veiculo = await Veiculo.findByPk(id);
+    const veiculo = await Veiculo.findByPk(id, {
+      include: veiculoInclude
+    });
 
     if (!veiculo) {
       return res.status(404).json({

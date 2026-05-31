@@ -31,8 +31,8 @@ interface FormDataState {
   numeroChasse: string;
   tipoCombustivel: string;
   dataUltimaRevisao: string;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  data_criacao: string;
+  data_atualizacao: string;
 }
 
 export default function VeiculoForm({
@@ -56,8 +56,8 @@ export default function VeiculoForm({
         numeroChasse: initialData.numeroChasse || '',
         tipoCombustivel: initialData.tipoCombustivel || '',
         dataUltimaRevisao: initialData.dataUltimaRevisao || '',
-        dataCriacao: new Date().toISOString().split('T')[0],
-        dataAtualizacao: new Date().toISOString().split('T')[0],
+        data_criacao: new Date().toISOString().split('T')[0],
+        data_atualizacao: new Date().toISOString().split('T')[0],
       };
     }
     return {
@@ -72,8 +72,8 @@ export default function VeiculoForm({
       numeroChasse: '',
       tipoCombustivel: 'Gasolina',
       dataUltimaRevisao: '',
-      dataCriacao: new Date().toISOString().split('T')[0],
-      dataAtualizacao: new Date().toISOString().split('T')[0],
+      data_criacao: new Date().toISOString().split('T')[0],
+      data_atualizacao: new Date().toISOString().split('T')[0],
     };
   };
 

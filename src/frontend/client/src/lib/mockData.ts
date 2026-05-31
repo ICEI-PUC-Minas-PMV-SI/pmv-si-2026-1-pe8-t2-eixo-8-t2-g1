@@ -38,8 +38,8 @@ export const mockPessoas: Pessoa[] = [
     email: 'maria@example.com',
     isFornecedor: true,
     observacao: 'Cliente desde 2020',
-    dataCriacao: '2020-01-15',
-    dataAtualizacao: '2024-01-15',
+    data_criacao: '2020-01-15',
+    data_atualizacao: '2024-01-15',
   },
   {
     id: '2',
@@ -59,8 +59,8 @@ export const mockPessoas: Pessoa[] = [
     telefone: '(11) 99876-5432',
     email: 'carlos@example.com',
     isFornecedor: false,
-    dataCriacao: '2021-03-20',
-    dataAtualizacao: '2024-02-10',
+    data_criacao: '2021-03-20',
+    data_atualizacao: '2024-02-10',
   },
 ];
 
@@ -77,8 +77,8 @@ export const mockVeiculos: Veiculo[] = [
     numeroChasse: 'JTDKN3AU5L0123456',
     tipoCombustivel: 'Gasolina',
     dataUltimaRevisao: '2024-01-10',
-    dataCriacao: '2022-06-15',
-    dataAtualizacao: '2024-01-10',
+    data_criacao: '2022-06-15',
+    data_atualizacao: '2024-01-10',
   },
   {
     id: '2',
@@ -92,8 +92,8 @@ export const mockVeiculos: Veiculo[] = [
     numeroChasse: 'JHGCV5F32LM234567',
     tipoCombustivel: 'Gasolina',
     dataUltimaRevisao: '2023-12-20',
-    dataCriacao: '2021-09-20',
-    dataAtualizacao: '2023-12-20',
+    data_criacao: '2021-09-20',
+    data_atualizacao: '2023-12-20',
   },
 ];
 
@@ -109,8 +109,8 @@ export const mockProdutos: Produto[] = [
     preco: 45.90,
     estoqueAtual: 150,
     tipoItem: 'Produto',
-    dataCriacao: '2023-01-10',
-    dataAtualizacao: '2024-01-15',
+    data_criacao: '2023-01-10',
+    data_atualizacao: '2024-01-15',
   },
   {
     id: '2',
@@ -123,8 +123,8 @@ export const mockProdutos: Produto[] = [
     preco: 120.50,
     estoqueAtual: 80,
     tipoItem: 'Produto',
-    dataCriacao: '2023-02-15',
-    dataAtualizacao: '2024-01-20',
+    data_criacao: '2023-02-15',
+    data_atualizacao: '2024-01-20',
   },
 ];
 
@@ -158,8 +158,8 @@ export const mockOrdensSevico: OrdemServico[] = [
     valorTotal: 45.90,
     dataAbertura: '2024-01-10',
     dataConclusao: '2024-01-12',
-    dataCriacao: '2024-01-10',
-    dataAtualizacao: '2024-01-12',
+    data_criacao: '2024-01-10',
+    data_atualizacao: '2024-01-12',
   },
   {
     id: 'OS-002',
@@ -189,8 +189,8 @@ export const mockOrdensSevico: OrdemServico[] = [
     ],
     valorTotal: 120.50,
     dataAbertura: '2024-01-20',
-    dataCriacao: '2024-01-20',
-    dataAtualizacao: '2024-01-20',
+    data_criacao: '2024-01-20',
+    data_atualizacao: '2024-01-20',
   },
 ];
 
@@ -198,20 +198,20 @@ export const mockMarcas: Marca[] = [
   {
     id: '1',
     nome: 'Bosch',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
   {
     id: '2',
     nome: 'Fras-le',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
   {
     id: '3',
     nome: 'Cofap',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
 ];
 
@@ -219,20 +219,20 @@ export const mockCategorias: Categoria[] = [
   {
     id: '1',
     nome: 'Filtros',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
   {
     id: '2',
     nome: 'Freios',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
   {
     id: '3',
     nome: 'Suspensão',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
 ];
 
@@ -241,22 +241,22 @@ export const mockTiposVeiculo: TipoVeiculo[] = [
     id: '1',
     nome: 'Sedan',
     observacao: 'Carro de passeio com 4 portas',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
   {
     id: '2',
     nome: 'SUV',
     observacao: 'Veículo utilitário esportivo',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
   {
     id: '3',
     nome: 'Hatchback',
     observacao: 'Carro compacto com porta traseira',
-    dataCriacao: '2023-01-01',
-    dataAtualizacao: '2023-01-01',
+    data_criacao: '2023-01-01',
+    data_atualizacao: '2023-01-01',
   },
 ];
 
@@ -268,8 +268,8 @@ export const mockUsuarios: Usuario[] = [
     email: 'joao.silva@example.com',
     perfil: 'Administrador',
     status: 'Ativo',
-    dataCriacao: '2023-01-15',
-    dataAtualizacao: '2024-01-15',
+    data_criacao: '2023-01-15',
+    data_atualizacao: '2024-01-15',
   },
   {
     id: '2',
@@ -277,8 +277,8 @@ export const mockUsuarios: Usuario[] = [
     email: 'maria.santos@example.com',
     perfil: 'Supervisor',
     status: 'Ativo',
-    dataCriacao: '2023-02-20',
-    dataAtualizacao: '2024-01-10',
+    data_criacao: '2023-02-20',
+    data_atualizacao: '2024-01-10',
   },
   {
     id: '3',
@@ -286,8 +286,8 @@ export const mockUsuarios: Usuario[] = [
     email: 'carlos.oliveira@example.com',
     perfil: 'Padrão',
     status: 'Ativo',
-    dataCriacao: '2023-03-10',
-    dataAtualizacao: '2024-01-05',
+    data_criacao: '2023-03-10',
+    data_atualizacao: '2024-01-05',
   },
   {
     id: '4',
@@ -295,8 +295,8 @@ export const mockUsuarios: Usuario[] = [
     email: 'ana.costa@example.com',
     perfil: 'Supervisor',
     status: 'Inativo',
-    dataCriacao: '2023-04-05',
-    dataAtualizacao: '2023-12-20',
+    data_criacao: '2023-04-05',
+    data_atualizacao: '2023-12-20',
   },
   {
     id: '5',
@@ -304,7 +304,7 @@ export const mockUsuarios: Usuario[] = [
     email: 'pedro.ferreira@example.com',
     perfil: 'Padrão',
     status: 'Ativo',
-    dataCriacao: '2023-05-12',
-    dataAtualizacao: '2024-01-08',
+    data_criacao: '2023-05-12',
+    data_atualizacao: '2024-01-08',
   },
 ];

@@ -29,8 +29,8 @@ import EditarOS from '@/pages/EditarOS';
 import EditarPessoaPage from '@/pages/pessoas/EditarPessoaPage';
 import EditarProduto from '@/pages/EditarProduto';
 import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
-import { mockOrdensSevico, mockPessoas, mockProdutos } from '@/lib/mockData';
-import type { User, OrdemServico, Pessoa, Produto } from '@/types';
+import { mockProdutos } from '@/lib/mockData';
+import type { User, Produto } from '@/types';
 import type { UsuarioApi } from '@/api';
 
 function usuarioToUser(usuario: UsuarioApi): User {
@@ -93,19 +93,15 @@ function LoginRoute({ user, onLogin }: { user: User | null; onLogin: (token: str
 function EditarOSRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const os = mockOrdensSevico.find((item) => item.id === id);
 
-  if (!os) {
+  if (!id) {
     return <Navigate to="/os" replace />;
   }
 
   return (
     <EditarOS
-      os={os}
-      onSave={(osAtualizada: OrdemServico) => {
-        navigate('/os');
-      }}
-      onCancel={() => navigate('/os')}
+      id={id}
+      onNavigate={navigate}
     />
   );
 }

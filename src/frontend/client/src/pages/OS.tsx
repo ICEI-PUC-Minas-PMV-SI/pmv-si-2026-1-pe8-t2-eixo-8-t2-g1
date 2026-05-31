@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -14,27 +15,93 @@ import {
 } from '@/components/ui/dialog';
 import DataTable from '@/components/DataTable';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { mockOrdensSevico } from '@/lib/mockData';
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils';
-import { toast } from 'sonner';
-import type { OrdemServico } from '@/types';
 import OSForm from '@/components/forms/OSForm';
+import {
+  servicosApi,
+  veiculosApi,
+  type ServicoApi,
+  type ServicoPayload,
+  type VeiculoApi,
+} from '@/api';
+
+interface OrdemServicoRow extends ServicoApi {
+  clienteNome: string;
+  veiculoDescricao: string;
+  valorTotal: number;
+}
+
+function getClienteNome(servico: ServicoApi) {
+  return servico.veiculo?.cliente?.nomeCompleto || 'Cliente não informado';
+}
+
+function getVeiculoDescricao(servico: ServicoApi) {
+  if (!servico.veiculo) {
+    return 'Veículo não informado';
+  }
+
+  return `${servico.veiculo.placa} - ${servico.veiculo.modelo}`;
+}
+
+function getItemSubtotal(item: NonNullable<ServicoApi['itens']>[number]) {
+  return Number(item.quantidade_utilizada) * Number(item.produto?.preco_unitario || 0);
+}
 
 export default function OS() {
   const navigate = useNavigate();
-  const [ordens, setOrdens] = useState<OrdemServico[]>(mockOrdensSevico);
-  const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
+  const [ordens, setOrdens] = useState<ServicoApi[]>([]);
+  const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
+  const [selectedOS, setSelectedOS] = useState<OrdemServicoRow | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddOS = (novaOS: OrdemServico) => {
-    setOrdens([...ordens, novaOS]);
-    setIsFormOpen(false);
-    toast.success('Ordem de Serviço cadastrada com sucesso!');
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [servicosResponse, veiculosResponse] = await Promise.all([
+          servicosApi.getAll(),
+          veiculosApi.getAll(),
+        ]);
+
+        setOrdens(servicosResponse);
+        setVeiculos(veiculosResponse);
+      } catch (error: any) {
+        const message = error.response?.data?.message || 'Erro ao carregar ordens de serviço';
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const ordensRows = useMemo<OrdemServicoRow[]>(
+    () =>
+      ordens.map((ordem) => ({
+        ...ordem,
+        clienteNome: getClienteNome(ordem),
+        veiculoDescricao: getVeiculoDescricao(ordem),
+        valorTotal: Number(ordem.valor_total || 0),
+      })),
+    [ordens],
+  );
+
+  const handleAddOS = async (novaOS: ServicoPayload) => {
+    try {
+      const osCriada = await servicosApi.create(novaOS);
+      setOrdens((ordensAtuais) => [osCriada, ...ordensAtuais]);
+      setIsFormOpen(false);
+      toast.success('Ordem de Serviço cadastrada com sucesso!');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Erro ao cadastrar ordem de serviço';
+      toast.error(message);
+    }
   };
 
-  const handleEditOS = (os: OrdemServico) => {
-    // Navegar para página de edição
+  const handleEditOS = (os: ServicoApi) => {
     navigate(`/os/${os.id}/editar`);
   };
 
@@ -55,12 +122,16 @@ export default function OS() {
       label: 'Cliente',
     },
     {
-      key: 'dataEntrada' as const,
+      key: 'veiculoDescricao' as const,
+      label: 'Veículo',
+    },
+    {
+      key: 'data_inicio' as const,
       label: 'Data de Entrada',
       render: (value: string) => formatDate(value),
     },
     {
-      key: 'solicitacaoCliente' as const,
+      key: 'descricao' as const,
       label: 'Solicitação',
       render: (value: string) => value.substring(0, 30) + (value.length > 30 ? '...' : ''),
     },
@@ -71,38 +142,27 @@ export default function OS() {
     },
   ];
 
-  const handleRowClick = (row: OrdemServico) => {
+  const handleRowClick = (row: OrdemServicoRow) => {
     setSelectedOS(row);
     setIsDialogOpen(true);
   };
 
-  const handleSaveEditedOS = (osAtualizada: OrdemServico) => {
-    setOrdens(
-      ordens.map((o) => (o.id === osAtualizada.id ? osAtualizada : o))
-    );
-    toast.success('Ordem de Serviço atualizada com sucesso!');
-    // Voltar para lista de OS
-    navigate('/os');
-  };
+  if (loading) {
+    return <div>Carregando ordens de serviço...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
       <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Ordens de Serviço' }]} />
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1>Ordens de Serviço</h1>
           <p className="text-muted-foreground mt-1">Gerenciamento de ordens de serviço</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={(open) => {
-          if (!open) {
-            setIsFormOpen(false);
-          }
-        }}>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2" onClick={() => setIsFormOpen(true)}>
+            <Button className="gap-2">
               <Plus className="w-4 h-4" />
               Nova OS
             </Button>
@@ -114,34 +174,35 @@ export default function OS() {
                 Preencha os dados abaixo para cadastrar uma nova ordem de serviço
               </DialogDescription>
             </DialogHeader>
-            <OSForm onSubmit={handleAddOS} onCancel={() => setIsFormOpen(false)} />
+            <OSForm
+              veiculos={veiculos}
+              onSubmit={handleAddOS}
+              onCancel={() => setIsFormOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Table */}
       <Card className="p-6">
-        <DataTable<OrdemServico>
-          data={ordens}
+        <DataTable<OrdemServicoRow>
+          data={ordensRows}
           columns={columns}
-          searchFields={['id', 'clienteNome', 'solicitacaoCliente']}
+          searchFields={['id', 'clienteNome', 'veiculoDescricao', 'descricao']}
           pageSize={10}
           onRowClick={handleRowClick}
         />
       </Card>
 
-      {/* Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes da Ordem de Serviço</DialogTitle>
             <DialogDescription>
-              {selectedOS?.id}
+              {selectedOS ? `OS #${selectedOS.id}` : ''}
             </DialogDescription>
           </DialogHeader>
           {selectedOS && (
             <div className="space-y-6">
-              {/* Informações Gerais */}
               <div>
                 <h3 className="font-semibold mb-3">Informações Gerais</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -161,11 +222,17 @@ export default function OS() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Veículo</p>
-                    <p className="font-medium">{selectedOS.veiculoPlaca}</p>
+                    <p className="font-medium">{selectedOS.veiculoDescricao}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Data de Abertura</p>
-                    <p className="font-medium">{formatDate(selectedOS.dataAbertura)}</p>
+                    <p className="text-muted-foreground">Data de Entrada</p>
+                    <p className="font-medium">{formatDate(selectedOS.data_inicio)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Data de Conclusão</p>
+                    <p className="font-medium">
+                      {selectedOS.data_fim ? formatDate(selectedOS.data_fim) : '-'}
+                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Valor Total</p>
@@ -174,19 +241,11 @@ export default function OS() {
                 </div>
               </div>
 
-              {/* Solicitação do Cliente */}
               <div>
-                <h3 className="font-semibold mb-3">Solicitação do Cliente</h3>
-                <p className="text-sm text-foreground">{selectedOS.solicitacaoCliente}</p>
-              </div>
-              
-              {/* Diagnóstico */}
-              <div>
-                <h3 className="font-semibold mb-3">Diagnóstico</h3>
-                <p className="text-sm text-foreground">{selectedOS.diagnostico}</p>
+                <h3 className="font-semibold mb-3">Solicitação e Diagnóstico</h3>
+                <p className="text-sm text-foreground">{selectedOS.descricao}</p>
               </div>
 
-              {/* Itens */}
               <div>
                 <h3 className="font-semibold mb-3">Itens</h3>
                 <div className="border border-border rounded-lg overflow-hidden">
@@ -200,25 +259,36 @@ export default function OS() {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOS.itens.map((item, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                          <td className="px-4 py-2">{item.produtoId}</td>
-                          <td className="px-4 py-2">{item.quantidade}</td>
-                          <td className="px-4 py-2">{formatCurrency(item.preco)}</td>
-                          <td className="px-4 py-2 font-medium">{formatCurrency(item.subtotal)}</td>
+                      {selectedOS.itens && selectedOS.itens.length > 0 ? (
+                        selectedOS.itens.map((item, index) => (
+                          <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
+                            <td className="px-4 py-2">{item.produto?.nome || item.id_produto}</td>
+                            <td className="px-4 py-2">{Number(item.quantidade_utilizada)}</td>
+                            <td className="px-4 py-2">
+                              {formatCurrency(Number(item.produto?.preco_unitario || 0))}
+                            </td>
+                            <td className="px-4 py-2 font-medium">
+                              {formatCurrency(getItemSubtotal(item))}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                            Nenhum item vinculado
+                          </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Buttons */}
               <div className="flex gap-3 justify-end pt-4 border-t border-border">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Fechar
                 </Button>
-                <Button onClick={() => selectedOS && handleEditOS(selectedOS)}>
+                <Button onClick={() => handleEditOS(selectedOS)}>
                   Editar OS
                 </Button>
               </div>
@@ -226,7 +296,6 @@ export default function OS() {
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

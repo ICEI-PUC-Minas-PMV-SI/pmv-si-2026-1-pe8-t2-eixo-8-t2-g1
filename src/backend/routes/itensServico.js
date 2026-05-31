@@ -4,6 +4,42 @@ const { isIntegerGreaterThanZero } = require("../utils/utils");
 
 const router = express.Router();
 
+async function recalcularValorServico(idServico, transaction) {
+  const itens = await ItemServico.findAll({
+    where: {
+      id_servico: idServico
+    },
+    include: [
+      {
+        model: Produto,
+        as: "produto"
+      }
+    ],
+    transaction
+  });
+
+  const valorTotal = itens.reduce((total, item) => {
+    const quantidade = Number(item.quantidade_utilizada);
+    const precoUnitario = Number(item.produto?.preco_unitario || 0);
+
+    return total + quantidade * precoUnitario;
+  }, 0);
+
+  await Servico.update(
+    {
+      valor_total: valorTotal
+    },
+    {
+      where: {
+        id: idServico
+      },
+      transaction
+    }
+  );
+
+  return valorTotal;
+}
+
 router.get("/", async (req, res) => {
   try {
     const itensServico = await ItemServico.findAll({
@@ -140,6 +176,7 @@ router.post("/", async (req, res) => {
     produto.quantidade -= quantidadeUtilizada;
 
     await produto.save({ transaction });
+    await recalcularValorServico(idServico, transaction);
 
     await transaction.commit();
 
@@ -195,6 +232,7 @@ router.put("/:id", async (req, res) => {
     }
 
     const { id_servico, id_produto, quantidade_utilizada } = req.body;
+    const idServicoAntigo = itemServico.id_servico;
 
     const idServico = id_servico !== undefined
       ? Number(id_servico)
@@ -206,9 +244,7 @@ router.put("/:id", async (req, res) => {
 
     const quantidadeUtilizada = quantidade_utilizada !== undefined
       ? Number(quantidade_utilizada)
-      : itemServico.quantidade_utilizada;
-
-    console.log(idProduto, idServico, quantidadeUtilizada);
+      : Number(itemServico.quantidade_utilizada);
 
     if (!isIntegerGreaterThanZero(idServico)) {
       await transaction.rollback();
@@ -248,6 +284,11 @@ router.put("/:id", async (req, res) => {
       transaction
     });
 
+    if (produtoAntigo) {
+      produtoAntigo.quantidade = Number(produtoAntigo.quantidade) + Number(itemServico.quantidade_utilizada);
+      await produtoAntigo.save({ transaction });
+    }
+
     const produtoNovo = await Produto.findByPk(idProduto, {
       transaction
     });
@@ -260,12 +301,7 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    if (produtoAntigo) {
-      produtoAntigo.quantidade = Number(produtoAntigo.quantidade) + Number(itemServico.quantidade_utilizada);
-      await produtoAntigo.save({ transaction });
-    }
-
-    if (produtoNovo.quantidade < quantidadeUtilizada) {
+    if (Number(produtoNovo.quantidade) < quantidadeUtilizada) {
       await transaction.rollback();
 
       return res.status(409).json({
@@ -277,7 +313,7 @@ router.put("/:id", async (req, res) => {
 
     await produtoNovo.save({ transaction });
 
-    const itemServicoAtualizado = await ItemServico.update(
+    const itemServicoAtualizado = await itemServico.update(
       {
         id_servico: idServico,
         id_produto: idProduto,
@@ -285,6 +321,12 @@ router.put("/:id", async (req, res) => {
       },
       { transaction }
     );
+
+    await recalcularValorServico(idServico, transaction);
+
+    if (idServicoAntigo !== idServico) {
+      await recalcularValorServico(idServicoAntigo, transaction);
+    }
 
     await transaction.commit();
 
@@ -345,11 +387,14 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (produto) {
-      produto.quantidade += itemServico.quantidade_utilizada;
+      produto.quantidade = Number(produto.quantidade) + Number(itemServico.quantidade_utilizada);
       await produto.save({ transaction });
     }
 
+    const idServico = itemServico.id_servico;
+
     await itemServico.destroy({ transaction });
+    await recalcularValorServico(idServico, transaction);
 
     await transaction.commit();
 

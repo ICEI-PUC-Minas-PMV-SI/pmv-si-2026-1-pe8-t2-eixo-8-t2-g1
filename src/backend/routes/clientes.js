@@ -104,7 +104,7 @@ function validarCliente(cliente, obrigatorio = true) {
 router.get("/", async (req, res) => {
   try {
     const clientes = await Cliente.findAll({
-      order: [["dataCriacao", "DESC"]],
+      order: [["data_criacao", "DESC"]],
     });
 
     return res.json(clientes);

@@ -44,6 +44,7 @@ export function getStatusColor(status: string): string {
   const statusMap: Record<string, string> = {
     'Aberta': 'bg-blue-100 text-blue-800',
     'Em Andamento': 'bg-yellow-100 text-yellow-800',
+    'Aguardando Peças': 'bg-orange-100 text-orange-800',
     'Concluída': 'bg-green-100 text-green-800',
     'Cancelada': 'bg-red-100 text-red-800',
     'Ativo': 'bg-green-100 text-green-800',

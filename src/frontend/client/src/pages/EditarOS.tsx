@@ -1,5 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import {
+  itensServicoApi,
+  produtosApi,
+  servicosApi,
+  veiculosApi,
+  type ItemServicoApi,
+  type ProdutoApi,
+  type ServicoApi,
+  type ServicoPayload,
+  type VeiculoApi,
+} from '@/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,310 +37,346 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import { mockProdutos } from '@/lib/mockData';
-import { formatCurrency, generateId } from '@/lib/utils';
-import { toast } from 'sonner';
-import type { OrdemServico, ItemOS, Produto } from '@/types';
+import { formatCurrency, getStatusColor } from '@/lib/utils';
 
 interface EditarOSProps {
-  os: OrdemServico;
-  onSave: (os: OrdemServico) => void;
-  onCancel: () => void;
+  id: string;
+  onNavigate: (path: string) => void;
 }
 
-export default function EditarOS({ os, onSave, onCancel }: EditarOSProps) {
-  const [formData, setFormData] = useState<OrdemServico>(os);
-  const [selectedProduto, setSelectedProduto] = useState<string>('');
-  const [quantidade, setQuantidade] = useState<number>(1);
-  const [preco, setPreco] = useState<number>(0);
+interface FormDataState {
+  descricao: string;
+  status: string;
+  data_inicio: string;
+  data_fim: string;
+  valor_total: number;
+  id_veiculo: number;
+}
 
-  const handleAddProduto = () => {
+const statusOptions = [
+  'Aberta',
+  'Em Andamento',
+  'Aguardando Peças',
+  'Concluída',
+  'Cancelada',
+];
+
+function toFormData(servico: ServicoApi): FormDataState {
+  return {
+    descricao: servico.descricao,
+    status: servico.status,
+    data_inicio: servico.data_inicio,
+    data_fim: servico.data_fim || '',
+    valor_total: Number(servico.valor_total || 0),
+    id_veiculo: servico.id_veiculo,
+  };
+}
+
+function getVeiculoLabel(veiculo: VeiculoApi) {
+  const cliente = veiculo.cliente?.nomeCompleto;
+  const veiculoLabel = `${veiculo.placa} - ${veiculo.modelo}`;
+
+  return cliente ? `${veiculoLabel} (${cliente})` : veiculoLabel;
+}
+
+function getProdutoLabel(produto: ProdutoApi) {
+  return `${produto.nome} - ${formatCurrency(Number(produto.preco_unitario || 0))}`;
+}
+
+function getItemSubtotal(item: ItemServicoApi) {
+  return Number(item.quantidade_utilizada) * Number(item.produto?.preco_unitario || 0);
+}
+
+export default function EditarOS({ id, onNavigate }: EditarOSProps) {
+  const [servico, setServico] = useState<ServicoApi | null>(null);
+  const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
+  const [produtos, setProdutos] = useState<ProdutoApi[]>([]);
+  const [formData, setFormData] = useState<FormDataState | null>(null);
+  const [selectedProduto, setSelectedProduto] = useState('');
+  const [quantidade, setQuantidade] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [servicoResponse, veiculosResponse, produtosResponse] = await Promise.all([
+          servicosApi.getById(id),
+          veiculosApi.getAll(),
+          produtosApi.getAll(),
+        ]);
+
+        setServico(servicoResponse);
+        setFormData(toFormData(servicoResponse));
+        setVeiculos(veiculosResponse);
+        setProdutos(produtosResponse);
+      } catch (error: any) {
+        const message = error.response?.data?.message || 'Erro ao carregar ordem de serviço';
+        toast.error(message);
+        onNavigate('/os');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id, onNavigate]);
+
+  const refreshServico = async () => {
+    const servicoResponse = await servicosApi.getById(id);
+
+    setServico(servicoResponse);
+    setFormData((dadosAtuais) =>
+      dadosAtuais
+        ? {
+            ...dadosAtuais,
+            valor_total: Number(servicoResponse.valor_total || 0),
+          }
+        : toFormData(servicoResponse),
+    );
+  };
+
+  const handleInputChange = (field: keyof FormDataState, value: any) => {
+    setFormData((prev) => (
+      prev
+        ? {
+            ...prev,
+            [field]: value,
+          }
+        : prev
+    ));
+  };
+
+  const getPayload = (): ServicoPayload | null => {
+    if (!formData) {
+      return null;
+    }
+
+    return {
+      descricao: formData.descricao,
+      status: formData.status,
+      data_inicio: formData.data_inicio,
+      data_fim: formData.data_fim || null,
+      valor_total: Number(formData.valor_total) || 0,
+      id_veiculo: formData.id_veiculo,
+    };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const payload = getPayload();
+
+    if (!payload) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await servicosApi.update(id, payload);
+      toast.success('Ordem de Serviço atualizada com sucesso!');
+      onNavigate('/os');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Erro ao atualizar ordem de serviço';
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddProduto = async () => {
     if (!selectedProduto || quantidade <= 0) {
       toast.error('Selecione um produto e informe uma quantidade válida');
       return;
     }
 
-    const produto = mockProdutos.find((p) => p.id === selectedProduto);
-    if (!produto) return;
+    try {
+      setSaving(true);
+      await itensServicoApi.create({
+        id_servico: Number(id),
+        id_produto: Number(selectedProduto),
+        quantidade_utilizada: quantidade,
+      });
 
-    const novoItem: ItemOS = {
-      id: generateId(),
-      produtoId: selectedProduto,
-      quantidade,
-      preco: preco || produto.preco,
-      subtotal: (preco || produto.preco) * quantidade,
-    };
-
-    const novosItens = [...formData.itens, novoItem];
-    const novoValorTotal = novosItens.reduce((sum, item) => sum + item.subtotal, 0);
-
-    setFormData({
-      ...formData,
-      itens: novosItens,
-      valorTotal: novoValorTotal,
-    });
-
-    setSelectedProduto('');
-    setQuantidade(1);
-    setPreco(0);
-    toast.success('Produto adicionado com sucesso!');
+      setSelectedProduto('');
+      setQuantidade(1);
+      await refreshServico();
+      toast.success('Produto adicionado com sucesso!');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Erro ao adicionar produto';
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleRemoveProduto = (itemId: string) => {
-    const novosItens = formData.itens.filter((item) => item.id !== itemId);
-    const novoValorTotal = novosItens.reduce((sum, item) => sum + item.subtotal, 0);
-
-    setFormData({
-      ...formData,
-      itens: novosItens,
-      valorTotal: novoValorTotal,
-    });
-    toast.success('Produto removido com sucesso!');
+  const handleRemoveProduto = async (itemId: number) => {
+    try {
+      setSaving(true);
+      await itensServicoApi.remove(itemId);
+      await refreshServico();
+      toast.success('Produto removido com sucesso!');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Erro ao remover produto';
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
+  const handleDelete = async () => {
+    try {
+      setSaving(true);
+      await servicosApi.remove(id);
+      toast.success('Ordem de Serviço deletada com sucesso!');
+      onNavigate('/os');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Erro ao deletar ordem de serviço';
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-    toast.success('Ordem de Serviço atualizada com sucesso!');
-  };
+  if (loading) {
+    return <div>Carregando ordem de serviço...</div>;
+  }
 
-  const getProdutoNome = (produtoId: string) => {
-    return mockProdutos.find((p) => p.id === produtoId)?.titulo || 'Produto desconhecido';
-  };
+  if (!servico || !formData) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
       <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'OS' }, { label: 'Editar' }]} />
 
-      {/* Header */}
       <div>
         <h1>Editar Ordem de Serviço</h1>
-        <p className="text-muted-foreground mt-1">ID: {formData.id}</p>
+        <p className="text-muted-foreground mt-1">ID: {servico.id}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Informações do Cliente */}
         <Card className="p-6">
-          <h3 className="font-semibold mb-4">Informações do Cliente</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Label htmlFor="clienteNome">Nome do Cliente</Label>
-              <Input
-                id="clienteNome"
-                value={formData.clienteNome}
-                onChange={(e) => handleInputChange('clienteNome', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="clienteCpfCnpj">CPF/CNPJ</Label>
-              <Input
-                id="clienteCpfCnpj"
-                value={formData.clienteCpfCnpj}
-                onChange={(e) => handleInputChange('clienteCpfCnpj', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="clienteTelefone">Telefone</Label>
-              <Input
-                id="clienteTelefone"
-                value={formData.clienteTelefone}
-                onChange={(e) => handleInputChange('clienteTelefone', e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="clienteEmail">E-mail</Label>
-              <Input
-                id="clienteEmail"
-                type="email"
-                value={formData.clienteEmail}
-                onChange={(e) => handleInputChange('clienteEmail', e.target.value)}
-              />
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Informações da Ordem de Serviço</h3>
+            <Badge className={getStatusColor(formData.status)}>{formData.status}</Badge>
           </div>
-        </Card>
-
-        {/* Informações do Veículo */}
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Informações do Veículo</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="veiculoMarca">Marca</Label>
-              <Input
-                id="veiculoMarca"
-                value={formData.veiculoMarca}
-                onChange={(e) => handleInputChange('veiculoMarca', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="veiculoModelo">Modelo</Label>
-              <Input
-                id="veiculoModelo"
-                value={formData.veiculoModelo}
-                onChange={(e) => handleInputChange('veiculoModelo', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="veiculoAno">Ano</Label>
-              <Input
-                id="veiculoAno"
-                type="number"
-                value={formData.veiculoAno}
-                onChange={(e) => handleInputChange('veiculoAno', parseInt(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="veiculoPlaca">Placa</Label>
-              <Input
-                id="veiculoPlaca"
-                value={formData.veiculoPlaca}
-                onChange={(e) => handleInputChange('veiculoPlaca', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="veiculoCor">Cor</Label>
-              <Input
-                id="veiculoCor"
-                value={formData.veiculoCor}
-                onChange={(e) => handleInputChange('veiculoCor', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="veiculoQuilometragem">Quilometragem Atual</Label>
-              <Input
-                id="veiculoQuilometragem"
-                type="number"
-                value={formData.veiculoQuilometragem}
-                onChange={(e) => handleInputChange('veiculoQuilometragem', parseInt(e.target.value))}
-              />
-            </div>
             <div className="md:col-span-2">
-              <Label htmlFor="nivelCombustivel">Nível de Combustível</Label>
+              <Label htmlFor="id_veiculo">Veículo</Label>
               <Select
-                value={formData.nivelCombustivel}
-                onValueChange={(value: any) => handleInputChange('nivelCombustivel', value)}
+                value={formData.id_veiculo ? String(formData.id_veiculo) : ''}
+                onValueChange={(value) => handleInputChange('id_veiculo', Number(value))}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um veículo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Vazio">Vazio</SelectItem>
-                  <SelectItem value="1/4">1/4</SelectItem>
-                  <SelectItem value="1/2">1/2</SelectItem>
-                  <SelectItem value="3/4">3/4</SelectItem>
-                  <SelectItem value="Cheio">Cheio</SelectItem>
+                  {veiculos.map((veiculo) => (
+                    <SelectItem key={veiculo.id} value={String(veiculo.id)}>
+                      {getVeiculoLabel(veiculo)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-        </Card>
-
-        {/* Informações da OS */}
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Informações da Ordem de Serviço</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dataEntrada">Data de Entrada</Label>
-              <Input
-                id="dataEntrada"
-                type="date"
-                value={formData.dataEntrada}
-                onChange={(e) => handleInputChange('dataEntrada', e.target.value)}
-              />
             </div>
             <div>
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value: any) => handleInputChange('status', value)}
+                onValueChange={(value) => handleInputChange('status', value)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Aberta">Aberta</SelectItem>
-                  <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                  <SelectItem value="Aguardando Peças">Aguardando Peças</SelectItem>
-                  <SelectItem value="Concluída">Concluída</SelectItem>
-                  <SelectItem value="Cancelada">Cancelada</SelectItem>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="solicitacaoCliente">Solicitação/Reclamação do Cliente</Label>
-              <Textarea
-                id="solicitacaoCliente"
-                value={formData.solicitacaoCliente}
-                onChange={(e) => handleInputChange('solicitacaoCliente', e.target.value)}
-                rows={3}
+            <div>
+              <Label htmlFor="data_inicio">Data de Entrada</Label>
+              <Input
+                id="data_inicio"
+                type="date"
+                value={formData.data_inicio}
+                onChange={(e) => handleInputChange('data_inicio', e.target.value)}
+                required
               />
             </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="diagnostico">Diagnóstico</Label>
-              <Textarea
-                id="diagnostico"
-                value={formData.diagnostico}
-                onChange={(e) => handleInputChange('diagnostico', e.target.value)}
-                rows={3}
+            <div>
+              <Label htmlFor="data_fim">Data de Conclusão</Label>
+              <Input
+                id="data_fim"
+                type="date"
+                value={formData.data_fim}
+                onChange={(e) => handleInputChange('data_fim', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="valor_total">Valor Total (R$)</Label>
+              <Input
+                id="valor_total"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.valor_total}
+                onChange={(e) => handleInputChange('valor_total', Number(e.target.value))}
               />
             </div>
           </div>
         </Card>
 
-        {/* Produtos/Serviços */}
+        <Card className="p-6">
+          <h3 className="font-semibold mb-4">Solicitação e Diagnóstico</h3>
+          <Label htmlFor="descricao">Descrição</Label>
+          <Textarea
+            id="descricao"
+            value={formData.descricao}
+            onChange={(e) => handleInputChange('descricao', e.target.value)}
+            rows={4}
+            required
+          />
+        </Card>
+
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Produtos e Serviços</h3>
-          
-          {/* Adicionar Produto */}
+
           <div className="mb-6 p-4 bg-secondary/20 rounded-lg">
             <h4 className="font-medium mb-4">Adicionar Produto/Serviço</h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
+              <div className="md:col-span-2">
                 <Label htmlFor="selectProduto">Produto/Serviço</Label>
                 <Select value={selectedProduto} onValueChange={setSelectedProduto}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockProdutos.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.titulo}
+                    {produtos.map((produto) => (
+                      <SelectItem key={produto.id} value={String(produto.id)}>
+                        {getProdutoLabel(produto)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="qtd">Quantidade</Label>
+                <Label htmlFor="quantidade">Quantidade</Label>
                 <Input
-                  id="qtd"
+                  id="quantidade"
                   type="number"
                   min="1"
                   value={quantidade}
-                  onChange={(e) => setQuantidade(parseInt(e.target.value))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="preco">Preço (R$)</Label>
-                <Input
-                  id="preco"
-                  type="number"
-                  step="0.01"
-                  value={preco}
-                  onChange={(e) => setPreco(parseFloat(e.target.value))}
-                  placeholder="Automático"
+                  onChange={(e) => setQuantidade(Number(e.target.value))}
                 />
               </div>
               <div className="flex items-end">
-                <Button type="button" onClick={handleAddProduto} className="w-full gap-2">
+                <Button type="button" onClick={handleAddProduto} className="w-full gap-2" disabled={saving}>
                   <Plus className="w-4 h-4" />
                   Adicionar
                 </Button>
@@ -323,8 +384,7 @@ export default function EditarOS({ os, onSave, onCancel }: EditarOSProps) {
             </div>
           </div>
 
-          {/* Lista de Produtos */}
-          {formData.itens.length > 0 ? (
+          {servico.itens && servico.itens.length > 0 ? (
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead>
@@ -337,18 +397,24 @@ export default function EditarOS({ os, onSave, onCancel }: EditarOSProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {formData.itens.map((item, index) => (
+                  {servico.itens.map((item, index) => (
                     <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                      <td className="px-4 py-3">{getProdutoNome(item.produtoId)}</td>
-                      <td className="px-4 py-3 text-center">{item.quantidade}</td>
-                      <td className="px-4 py-3 text-right">{formatCurrency(item.preco)}</td>
-                      <td className="px-4 py-3 text-right font-medium">{formatCurrency(item.subtotal)}</td>
+                      <td className="px-4 py-3">{item.produto?.nome || item.id_produto}</td>
+                      <td className="px-4 py-3 text-center">{Number(item.quantidade_utilizada)}</td>
+                      <td className="px-4 py-3 text-right">
+                        {formatCurrency(Number(item.produto?.preco_unitario || 0))}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {formatCurrency(getItemSubtotal(item))}
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveProduto(item.id)}
+                          disabled={saving}
+                          title="Remover produto"
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -358,11 +424,10 @@ export default function EditarOS({ os, onSave, onCancel }: EditarOSProps) {
                 </tbody>
               </table>
 
-              {/* Total */}
               <div className="bg-secondary/50 px-4 py-3 border-t border-border flex justify-end">
                 <div className="text-right">
                   <p className="text-muted-foreground text-sm">Valor Total</p>
-                  <p className="text-2xl font-bold">{formatCurrency(formData.valorTotal)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(Number(servico.valor_total || 0))}</p>
                 </div>
               </div>
             </div>
@@ -373,12 +438,39 @@ export default function EditarOS({ os, onSave, onCancel }: EditarOSProps) {
           )}
         </Card>
 
-        {/* Buttons */}
         <div className="flex gap-3 justify-end pt-4 border-t border-border">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={() => onNavigate('/os')} disabled={saving}>
             Cancelar
           </Button>
-          <Button type="submit">Salvar Alterações</Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="destructive" disabled={saving}>
+                Excluir OS
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir ordem de serviço?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Essa ação não pode ser desfeita. A OS #{servico.id} será removida permanentemente
+                  do sistema.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={saving}
+                >
+                  Confirmar exclusão
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button type="submit" disabled={saving}>
+            Salvar Alterações
+          </Button>
         </div>
       </form>
     </div>
