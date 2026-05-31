@@ -8,7 +8,13 @@ router.get("/", async (req, res) => {
   try {
     const produtos = await Produto.findAll();
 
-    return res.json(produtos);
+  return res.json(
+    produtos.map((produto) => ({
+      ...produto.toJSON(),
+      quantidade: Number(produto.quantidade),
+      preco_unitario: Number(produto.preco_unitario),
+    }))
+  );
   } catch (error) {
     return res.status(500).json({
       message: "Erro interno ao buscar produtos"

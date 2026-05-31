@@ -35,6 +35,10 @@
     {
       "name": "Usuarios",
       "description": "Operacoes relacionadas aos usuarios e autenticacao"
+    },
+    {
+      "name": "Fornecedores",
+      "description": "Operacoes relacionadas aos fornecedores"
     }
   ],
   "paths": {
@@ -1029,7 +1033,153 @@
           }
         }
       }
+    },
+    "/fornecedores": {
+    "get": {
+      "summary": "Lista todos os fornecedores",
+      "tags": ["Fornecedores"],
+      "responses": {
+        "200": {
+          "description": "Lista de fornecedores",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Fornecedor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Cria um fornecedor",
+      "tags": ["Fornecedores"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FornecedorInput"
+            },
+            "example": {
+              "nome": "Fornecedor XPTO",
+              "cnpj": "12.345.678/0001-99",
+              "telefone": "(31) 99999-9999",
+              "email": "contato@xpto.com",
+              "observacao": "Fornecedor de peças"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Fornecedor criado",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Fornecedor"
+              }
+            }
+          }
+        },
+        "400": {
+          "$ref": "#/components/responses/BadRequest"
+        },
+        "409": {
+          "$ref": "#/components/responses/Conflict"
+        }
+      }
     }
+  },
+  "/fornecedores/{id}": {
+  "get": {
+    "summary": "Busca um fornecedor por ID",
+    "tags": ["Fornecedores"],
+    "parameters": [
+      {
+        "$ref": "#/components/parameters/Uuid"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Fornecedor encontrado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Fornecedor"
+            }
+          }
+        }
+      },
+      "404": {
+        "$ref": "#/components/responses/NotFound"
+      }
+    }
+  },
+
+  "put": {
+    "summary": "Atualiza um fornecedor",
+    "tags": ["Fornecedores"],
+    "parameters": [
+      {
+        "$ref": "#/components/parameters/Uuid"
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/FornecedorInput"
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Fornecedor atualizado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Fornecedor"
+            }
+          }
+        }
+      },
+      "404": {
+        "$ref": "#/components/responses/NotFound"
+      }
+    }
+  },
+
+  "delete": {
+    "summary": "Remove um fornecedor",
+    "tags": ["Fornecedores"],
+    "parameters": [
+      {
+        "$ref": "#/components/parameters/Uuid"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Fornecedor removido",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiMessage"
+            }
+          }
+        }
+      },
+      "404": {
+        "$ref": "#/components/responses/NotFound"
+      }
+    }
+  }
+}
   },
   "components": {
     "parameters": {
@@ -1426,6 +1576,80 @@
             "type": "number",
             "format": "float",
             "example": 65.5
+          }
+        }
+      },
+      "Fornecedor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "81f72d36-c7f1-4504-9323-81fdd59be329"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Fornecedor XPTO"
+          },
+          "cnpj": {
+            "type": "string",
+            "example": "12.345.678/0001-99"
+          },
+          "telefone": {
+            "type": "string",
+            "example": "(31) 99999-9999"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "contato@xpto.com"
+          },
+          "observacao": {
+            "type": "string",
+            "nullable": true,
+            "example": "Fornecedor de peças"
+          },
+          "dataCriacao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dataAtualizacao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+
+      "FornecedorInput": {
+        "type": "object",
+        "required": [
+          "nome",
+          "cnpj",
+          "telefone",
+          "email"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Fornecedor XPTO"
+          },
+          "cnpj": {
+            "type": "string",
+            "example": "12.345.678/0001-99"
+          },
+          "telefone": {
+            "type": "string",
+            "example": "(31) 99999-9999"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "contato@xpto.com"
+          },
+          "observacao": {
+            "type": "string",
+            "nullable": true,
+            "example": "Fornecedor de peças"
           }
         }
       },

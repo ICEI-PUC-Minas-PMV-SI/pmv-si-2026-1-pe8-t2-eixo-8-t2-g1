@@ -6,6 +6,7 @@ export { produtosApi } from "./produtos";
 export { servicosApi } from "./servicos";
 export { usuariosApi } from "./usuarios";
 export { veiculosApi } from "./veiculos";
+export { fornecedoresApi } from "./fornecedores";
 export type {
   ClienteApi,
   ClientePayload,
@@ -21,4 +22,6 @@ export type {
   VeiculoPayload,
   UsuarioApi,
   UsuarioPayload,
+  FornecedorApi,
+  FornecedorPayload
 } from "./types";

@@ -99,6 +99,23 @@ export type UsuarioPayload = Omit<UsuarioApi, "id" | "data_criacao" | "data_atua
   senha?: string;
 };
 
+export interface FornecedorApi {
+  id: number;
+  nomeCompleto: string;
+  telefone: string;
+  email: string;
+  observacao?: string;
+  isFornecedor: boolean;
+}
+
+export interface FornecedorPayload {
+  nome: string;
+  cnpj: string;
+  telefone: string;
+  email: string;
+  observacao?: string | null;
+}
+
 export interface LoginPayload {
   email: string;
   senha: string;

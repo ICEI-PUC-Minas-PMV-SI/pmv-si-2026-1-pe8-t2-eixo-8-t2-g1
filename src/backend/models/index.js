@@ -4,6 +4,7 @@ const Produto = require("./Produto");
 const Servico = require("./Servico");
 const Usuario = require("./Usuario");
 const Veiculo = require("./Veiculo");
+const Fornecedor = require("./Fornecedor");
 const sequelize = require("../database/connection");
 
 Cliente.hasMany(Veiculo, {
@@ -54,4 +55,5 @@ module.exports = {
   ItemServico,
   Produto,
   Usuario,
+  Fornecedor
 };

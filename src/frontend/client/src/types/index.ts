@@ -25,6 +25,18 @@ export interface Pessoa {
   data_atualizacao: string;
 }
 
+export interface Fornecedor {
+  id: string;
+  nome: string;
+  cnpj: string;
+  endereco: Endereco;
+  telefone: string;
+  email: string;
+  observacao?: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
+}
+
 // Tipos para Veículos
 export interface Veiculo {
   id: string;

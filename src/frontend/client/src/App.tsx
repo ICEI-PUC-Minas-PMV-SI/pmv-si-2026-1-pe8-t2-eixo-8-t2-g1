@@ -18,19 +18,18 @@ import Dashboard from '@/pages/Dashboard';
 import Pessoas from '@/pages/pessoas/PessoasPage';
 import Veiculos from '@/pages/veiculos/VeiculosPage';
 import OS from '@/pages/OS';
-import Produtos from '@/pages/Produtos';
+import Produtos from '@/pages/produtos/produtosPage';
 import Tabelas from '@/pages/Tabelas';
-import Fornecedores from '@/pages/Fornecedores';
+import Fornecedores from '@/pages/fornecedores/FornecedoresPage';
 import Configuracoes from '@/pages/Configuracoes';
 import Relatorios from '@/pages/Relatorios';
 import Usuarios from '@/pages/usuarios/UsuariosPage';
 import Login from '@/pages/Login';
 import EditarOS from '@/pages/EditarOS';
 import EditarPessoaPage from '@/pages/pessoas/EditarPessoaPage';
-import EditarProduto from '@/pages/EditarProduto';
+import EditarProduto from '@/pages/produtos/editarProdutoPage';
 import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
-import { mockProdutos } from '@/lib/mockData';
-import type { User, Produto } from '@/types';
+import type { User, OrdemServico, Pessoa } from '@/types';
 import type { UsuarioApi } from '@/api';
 
 function usuarioToUser(usuario: UsuarioApi): User {
@@ -122,19 +121,15 @@ function EditarPessoaRoute() {
 function EditarProdutoRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const produto = mockProdutos.find((item) => item.id === id);
 
-  if (!produto) {
+  if (!id) {
     return <Navigate to="/produtos" replace />;
   }
 
   return (
     <EditarProduto
-      produto={produto}
-      onSave={(produtoAtualizado: Produto) => {
-        navigate('/produtos');
-      }}
-      onCancel={() => navigate('/produtos')}
+      id={id}
+      onNavigate={navigate}
     />
   );
 }

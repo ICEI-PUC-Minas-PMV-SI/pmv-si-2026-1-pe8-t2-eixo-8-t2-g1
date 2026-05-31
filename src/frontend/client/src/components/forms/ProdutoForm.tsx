@@ -2,87 +2,43 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { generateId } from '@/lib/utils';
-import type { Produto } from '@/types';
+import type { ProdutoPayload } from '@/api';
 
 interface ProdutoFormProps {
-  onSubmit: (produto: Produto) => void;
+  onSubmit: (produto: ProdutoPayload) => void;
   onCancel: () => void;
-  initialData?: Produto;
 }
 
 interface FormDataState {
-  id: string;
-  titulo: string;
-  descricao: string;
-  codigoSku: string;
-  marca: string;
-  categoria: string;
-  fornecedor: string;
-  preco: number;
-  estoqueAtual: number;
-  tipoItem: 'Produto' | 'Serviço';
-  data_criacao: string;
-  data_atualizacao: string;
+  nome: string;
+  quantidade: number;
+  preco_unitario: number;
 }
 
 export default function ProdutoForm({
   onSubmit,
   onCancel,
-  initialData,
 }: ProdutoFormProps) {
-  const getInitialData = (): FormDataState => {
-    if (initialData) {
-      return {
-        ...initialData,
-      };
-    }
-    return {
-      id: generateId(),
-      titulo: '',
-      descricao: '',
-      codigoSku: '',
-      marca: '',
-      categoria: '',
-      fornecedor: '',
-      preco: 0,
-      estoqueAtual: 0,
-      tipoItem: 'Produto',
-      data_criacao: new Date().toISOString().split('T')[0],
-      data_atualizacao: new Date().toISOString().split('T')[0],
-    };
-  };
-
-  const [formData, setFormData] = useState<FormDataState>(getInitialData());
+  const [formData, setFormData] = useState<FormDataState>({
+    nome: '',
+    quantidade: 0,
+    preco_unitario: 0,
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const produto: Produto = {
-      id: formData.id,
-      titulo: formData.titulo,
-      descricao: formData.descricao,
-      codigoSku: formData.codigoSku,
-      marca: formData.marca,
-      categoria: formData.categoria,
-      fornecedor: formData.fornecedor,
-      preco: formData.preco,
-      estoqueAtual: formData.estoqueAtual,
-      tipoItem: formData.tipoItem,
-      data_criacao: formData.data_criacao,
-      data_atualizacao: new Date().toISOString().split('T')[0],
-    };
-    onSubmit(produto);
+
+    onSubmit({
+      nome: formData.nome,
+      quantidade: formData.quantidade,
+      preco_unitario: formData.preco_unitario,
+    });
   };
 
-  const handleInputChange = (field: keyof FormDataState, value: any) => {
+  const handleInputChange = (
+    field: keyof FormDataState,
+    value: string | number,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -91,116 +47,76 @@ export default function ProdutoForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Informações Básicas */}
       <div>
-        <h3 className="font-semibold mb-4">Informações Básicas</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <Label htmlFor="titulo">Título *</Label>
-            <Input
-              id="titulo"
-              value={formData.titulo}
-              onChange={(e) => handleInputChange('titulo', e.target.value)}
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="descricao">Descrição</Label>
-            <Textarea
-              id="descricao"
-              value={formData.descricao}
-              onChange={(e) => handleInputChange('descricao', e.target.value)}
-              rows={3}
-            />
-          </div>
-          <div>
-            <Label htmlFor="codigoSku">Código/SKU *</Label>
-            <Input
-              id="codigoSku"
-              value={formData.codigoSku}
-              onChange={(e) => handleInputChange('codigoSku', e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="marca">Marca *</Label>
-            <Input
-              id="marca"
-              value={formData.marca}
-              onChange={(e) => handleInputChange('marca', e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="categoria">Categoria *</Label>
-            <Input
-              id="categoria"
-              value={formData.categoria}
-              onChange={(e) => handleInputChange('categoria', e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="fornecedor">Fornecedor *</Label>
-            <Input
-              id="fornecedor"
-              value={formData.fornecedor}
-              onChange={(e) => handleInputChange('fornecedor', e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="tipoItem">Tipo de Item *</Label>
-            <Select
-              value={formData.tipoItem}
-              onValueChange={(value: any) => handleInputChange('tipoItem', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Produto">Produto</SelectItem>
-                <SelectItem value="Serviço">Serviço</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
+        <h3 className="font-semibold mb-4">
+          Informações do Produto
+        </h3>
 
-      {/* Preço e Estoque */}
-      <div>
-        <h3 className="font-semibold mb-4">Preço e Estoque</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
-            <Label htmlFor="preco">Preço (R$) *</Label>
+            <Label htmlFor="nome">Nome *</Label>
             <Input
-              id="preco"
+              id="nome"
+              value={formData.nome}
+              onChange={(e) =>
+                handleInputChange('nome', e.target.value)
+              }
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="quantidade">
+              Quantidade *
+            </Label>
+            <Input
+              id="quantidade"
               type="number"
               step="0.01"
-              value={formData.preco}
-              onChange={(e) => handleInputChange('preco', parseFloat(e.target.value))}
+              value={formData.quantidade}
+              onChange={(e) =>
+                handleInputChange(
+                  'quantidade',
+                  Number(e.target.value),
+                )
+              }
               required
             />
           </div>
+
           <div>
-            <Label htmlFor="estoqueAtual">Estoque Atual *</Label>
+            <Label htmlFor="preco_unitario">
+              Preço Unitário *
+            </Label>
             <Input
-              id="estoqueAtual"
+              id="preco_unitario"
               type="number"
-              value={formData.estoqueAtual}
-              onChange={(e) => handleInputChange('estoqueAtual', parseInt(e.target.value))}
+              step="0.01"
+              value={formData.preco_unitario}
+              onChange={(e) =>
+                handleInputChange(
+                  'preco_unitario',
+                  Number(e.target.value),
+                )
+              }
               required
             />
           </div>
         </div>
       </div>
 
-      {/* Buttons */}
       <div className="flex gap-3 justify-end pt-4 border-t border-border">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+        >
           Cancelar
         </Button>
-        <Button type="submit">Salvar Produto</Button>
+
+        <Button type="submit">
+          Salvar Produto
+        </Button>
       </div>
     </form>
   );
