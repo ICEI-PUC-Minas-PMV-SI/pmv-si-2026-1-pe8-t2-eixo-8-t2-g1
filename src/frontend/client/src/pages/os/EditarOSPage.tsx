@@ -352,8 +352,8 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
                 <Label htmlFor="selectProduto">Produto/Serviço</Label>
-                <Select value={selectedProduto} onValueChange={setSelectedProduto}>
-                  <SelectTrigger>
+                <Select className="w-300" value={selectedProduto} onValueChange={setSelectedProduto}>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
