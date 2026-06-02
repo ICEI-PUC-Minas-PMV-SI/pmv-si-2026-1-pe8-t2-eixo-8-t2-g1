@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --legacy-watch --watch . --ext js,json index.js",
+    "seed:relatorios": "node scripts/seedRelatorios.js",
+    "seed:servicos": "node scripts/seedServicos.js",
     "start": "node index.js"
   },
   "keywords": [],

@@ -107,10 +107,6 @@ export default function OS() {
 
   const columns = [
     {
-      key: 'id' as const,
-      label: 'ID',
-    },
-    {
       key: 'status' as const,
       label: 'Status',
       render: (value: string) => (

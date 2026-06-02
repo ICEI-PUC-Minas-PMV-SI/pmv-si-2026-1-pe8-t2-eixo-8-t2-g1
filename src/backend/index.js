@@ -10,6 +10,7 @@ const app = express();
 const clientesRoutes = require("./routes/clientes");
 const itensServicoRoutes = require("./routes/itensServico");
 const produtosRoutes = require("./routes/produtos");
+const relatoriosRoutes = require("./routes/relatorios");
 const servicosRoutes = require("./routes/servicos");
 const usuariosRoutes = require("./routes/usuarios");
 const veiculosRoutes = require("./routes/veiculos");
@@ -32,6 +33,7 @@ app.use("/veiculos", veiculosRoutes);
 app.use("/servicos", servicosRoutes);
 app.use("/itens-servico", itensServicoRoutes);
 app.use("/produtos", produtosRoutes);
+app.use("/relatorios", relatoriosRoutes);
 app.use("/usuarios", usuariosRoutes);
 app.use("/fornecedores", fornecedoresRoutes);
 

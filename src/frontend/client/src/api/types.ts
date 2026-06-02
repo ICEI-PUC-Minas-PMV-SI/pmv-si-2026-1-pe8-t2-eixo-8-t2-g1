@@ -74,6 +74,47 @@ export interface ProdutoApi {
 
 export type ProdutoPayload = Omit<ProdutoApi, "id">;
 
+export interface RelatorioOsStatusApi {
+  status: string;
+  quantidade: number;
+  valor: number;
+}
+
+export interface RelatorioTopClienteApi {
+  nome: string;
+  totalGasto: number;
+}
+
+export interface RelatorioProdutoEstoqueApi {
+  produto: string;
+  estoque: number;
+  minimo: number;
+  precoUnitario: number;
+}
+
+export interface RelatorioFaturamentoApi {
+  mes: string;
+  valor: number;
+}
+
+export interface RelatorioResumoApi {
+  totalClientes: number;
+  clientesEsteMes: number;
+  osConcluidas: number;
+  valorConcluidas: number;
+  faturamentoMesAtual: number;
+  mesAtual: string;
+  ticketMedio: number;
+}
+
+export interface RelatoriosApi {
+  osStatus: RelatorioOsStatusApi[];
+  topClientes: RelatorioTopClienteApi[];
+  produtosEstoque: RelatorioProdutoEstoqueApi[];
+  faturamento: RelatorioFaturamentoApi[];
+  resumo: RelatorioResumoApi;
+}
+
 export interface ItemServicoApi {
   id: number;
   id_servico: number;

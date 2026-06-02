@@ -3,6 +3,7 @@ export { authApi } from "./auth";
 export { clientesApi } from "./clientes";
 export { itensServicoApi } from "./itensServico";
 export { produtosApi } from "./produtos";
+export { relatoriosApi } from "./relatorios";
 export { servicosApi } from "./servicos";
 export { usuariosApi } from "./usuarios";
 export { veiculosApi } from "./veiculos";
@@ -16,6 +17,12 @@ export type {
   LoginResponse,
   ProdutoApi,
   ProdutoPayload,
+  RelatorioFaturamentoApi,
+  RelatorioOsStatusApi,
+  RelatorioProdutoEstoqueApi,
+  RelatorioResumoApi,
+  RelatorioTopClienteApi,
+  RelatoriosApi,
   ServicoApi,
   ServicoPayload,
   VeiculoApi,

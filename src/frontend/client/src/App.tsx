@@ -22,7 +22,7 @@ import Produtos from '@/pages/produtos/ProdutosPage';
 import Tabelas from '@/pages/Tabelas';
 import Fornecedores from '@/pages/fornecedores/FornecedoresPage';
 import Configuracoes from '@/pages/Configuracoes';
-import Relatorios from '@/pages/Relatorios';
+import Relatorios from '@/pages/relatorios/RelatoriosPage';
 import Usuarios from '@/pages/usuarios/UsuariosPage';
 import Login from '@/pages/Login';
 import EditarOS from '@/pages/os/EditarOSPage';
