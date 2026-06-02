@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -31,6 +31,49 @@ import EditarProduto from '@/pages/produtos/EditarProdutoPage';
 import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
 import type { User, OrdemServico, Pessoa } from '@/types';
 import type { UsuarioApi } from '@/api';
+
+const TEMPO_INATIVIDADE = 1 * 60 * 1000;
+
+function useAutoLogout(onLogout: () => void) {
+  const timerRef = useRef<number | null>(null);
+
+  function resetarTimer() {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+    }
+
+    timerRef.current = window.setTimeout(() => {
+      onLogout();
+    }, TEMPO_INATIVIDADE);
+  }
+
+  useEffect(() => {
+    const eventos = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
+    eventos.forEach((evento) => {
+      window.addEventListener(evento, resetarTimer);
+    });
+
+    resetarTimer();
+
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+
+      eventos.forEach((evento) => {
+        window.removeEventListener(evento, resetarTimer);
+      });
+    };
+  }, [onLogout]);
+}
 
 function usuarioToUser(usuario: UsuarioApi): User {
   return {
@@ -77,6 +120,8 @@ function ProtectedLayout({ user, onLogout }: { user: User | null; onLogout: () =
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  useAutoLogout(onLogout);
 
   return <AppLayout user={user} onLogout={onLogout} />;
 }
