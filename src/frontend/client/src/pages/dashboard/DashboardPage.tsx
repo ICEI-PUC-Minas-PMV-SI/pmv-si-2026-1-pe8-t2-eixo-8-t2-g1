@@ -1,41 +1,79 @@
+import { useEffect, useState } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Card } from '@/components/ui/card';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { toast } from 'sonner';
+import { relatoriosApi, type RelatoriosApi } from '@/api';
 import { formatCurrency } from '@/lib/utils';
 
-const dashboardData = {
-  stats: [
-    { label: 'Total de Pessoas', value: 24, color: 'bg-blue-100 text-blue-800' },
-    { label: 'Total de Veículos', value: 18, color: 'bg-green-100 text-green-800' },
-    { label: 'Ordens de Serviço', value: 42, color: 'bg-yellow-100 text-yellow-800' },
-    { label: 'Produtos em Estoque', value: 156, color: 'bg-purple-100 text-purple-800' },
-  ],
-  osStatus: [
-    { name: 'Aberta', value: 12 },
-    { name: 'Em Andamento', value: 18 },
-    { name: 'Concluída', value: 10 },
-    { name: 'Cancelada', value: 2 },
-  ],
-  monthlyRevenue: [
-    { month: 'Jan', valor: 4000 },
-    { month: 'Fev', valor: 3000 },
-    { month: 'Mar', valor: 2000 },
-    { month: 'Abr', valor: 2780 },
-    { month: 'Mai', valor: 1890 },
-    { month: 'Jun', valor: 2390 },
-  ],
-  topProducts: [
-    { name: 'Filtro de Óleo', vendas: 120 },
-    { name: 'Pastilha de Freio', vendas: 98 },
-    { name: 'Correia de Distribuição', vendas: 87 },
-    { name: 'Vela de Ignição', vendas: 76 },
-    { name: 'Bateria', vendas: 65 },
-  ],
+
+const COLORS = ['#3B82F6', '#F59E0B', '#7e7e7e', '#10B981', '#EF4444'];
+
+const relatorioVazio: RelatoriosApi = {
+  osStatus: [],
+  topClientes: [],
+  produtosEstoque: [],
+  faturamento: [],
+  top5Produtos: [],
+  resumo: {
+    totalClientes: 0,
+    clientesEsteMes: 0,
+    osConcluidas: 0,
+    valorConcluidas: 0,
+    faturamentoMesAtual: 0,
+    mesAtual: '',
+    ticketMedio: 0,
+  },
 };
 
-const COLORS = ['#3B82F6', '#F59E0B', '#10B981', '#EF4444'];
-
 export default function Dashboard() {
+    const [relatorioData, setRelatorioData] = useState<RelatoriosApi>(relatorioVazio);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    const dashboardData = {
+      stats: [
+        { label: 'Total de Pessoas', value: relatorioData.resumo.totalClientes, color: 'bg-blue-100 text-blue-800' },
+        { label: 'Total de Veículos', value: relatorioData.resumo.totalVeiculos, color: 'bg-green-100 text-green-800' },
+        { label: 'Ordens de Serviço', value: relatorioData.resumo.osTotais, color: 'bg-yellow-100 text-yellow-800' },
+        { label: 'Produtos em Estoque', value: relatorioData.resumo.produtosEmEstoque, color: 'bg-purple-100 text-purple-800' },
+      ],
+      osStatus:
+        relatorioData.osStatus.map((s: any) => (
+          { name: s.status, value: s.quantidade }
+         )),
+      monthlyRevenue: 
+        relatorioData.faturamento.map((f: any) => (
+          { month: f.mes,   valor: f.valor }
+        )),
+      topProducts: 
+        relatorioData.top5Produtos.map((p: any) => (
+          { name: p.produto, vendas: p.quantidadeUtilizada }
+        )),
+    };
+
+   useEffect(() => {
+    const loadRelatorios = async () => {
+      try {
+        setLoading(true);
+        setLoadError(null);
+
+        const data = await relatoriosApi.getResumo();
+
+        setRelatorioData(data);
+      } catch (error: any) {
+        const message = error.response?.data?.message || 'Erro ao carregar relatórios';
+
+        setLoadError(message);
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRelatorios();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Breadcrumbs */}

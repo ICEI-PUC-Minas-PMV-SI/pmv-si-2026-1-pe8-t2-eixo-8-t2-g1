@@ -18,6 +18,10 @@ const fornecedoresRoutes = require("./routes/fornecedores");
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/", (req, res) => {

@@ -1,5 +1,6 @@
 const express = require("express");
-const { Cliente, Produto, Servico, Veiculo } = require("../models");
+const { Cliente, Produto, Servico, Veiculo, ItemServico } = require("../models");
+const { fn, col, literal } = require("sequelize");
 
 const router = express.Router();
 
@@ -12,8 +13,7 @@ const STATUS_ORDER = [
 ];
 
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", {
-  month: "short",
-  year: "2-digit",
+  month: "long",
   timeZone: "UTC",
 });
 
@@ -63,6 +63,10 @@ function isConcluido(status) {
   return normalizeText(status).startsWith("conclu");
 }
 
+function isCancelada(status) {
+  return normalizeText(status).includes("cancel");
+}
+
 function parseDateOnly(value) {
   if (!value) {
     return null;
@@ -94,7 +98,7 @@ function getMonthKey(value) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function buildMonthBuckets(totalMonths = 12) {
+function buildMonthBuckets(totalMonths = 6) {
   const now = new Date();
   const firstMonth = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - totalMonths + 1, 1),
@@ -142,7 +146,7 @@ function getEstoqueMinimo(produtoNome) {
 
 router.get("/", async (req, res) => {
   try {
-    const [clientes, servicos, produtos] = await Promise.all([
+    const [clientes, servicos, produtos, veiculos, itemServico] = await Promise.all([
       Cliente.findAll({
         attributes: ["id", "nomeCompleto", "data_criacao"],
       }),
@@ -168,6 +172,30 @@ router.get("/", async (req, res) => {
           ["nome", "ASC"],
         ],
       }),
+      Veiculo.findAll({
+        attributes: ["id", "id_cliente"],
+      }),
+      ItemServico.findAll({
+        attributes: [
+          "id_produto",
+          [fn("SUM", col("quantidade_utilizada")), "totalQuantidadeUtilizada"],
+        ],
+        include: [
+          {
+            model: Produto,
+            as: "produto",
+            attributes: ["id", "nome", "preco_unitario"],
+          },
+        ],
+        group: [
+          "ItemServico.id_produto",
+          "produto.id",
+          "produto.nome",
+          "produto.preco_unitario",
+        ],
+        order: [[literal('"totalQuantidadeUtilizada"'), "DESC"]],
+        limit: 5,
+      })
     ]);
 
     const osStatus = new Map(
@@ -256,10 +284,17 @@ router.get("/", async (req, res) => {
         ...item,
         valor: toMoney(item.valor),
       })),
+      top5Produtos: itemServico.map((item) => ({
+        produto: item.produto.nome,
+        quantidadeUtilizada: toNumber(item.get("totalQuantidadeUtilizada")),
+      })),
       resumo: {
         totalClientes: clientes.length,
+        totalVeiculos: veiculos.length,
         clientesEsteMes,
         osConcluidas,
+        osTotais: servicos.map((s) => s.status).filter((status) => !isCancelada(status)).length,
+        produtosEmEstoque: produtos.length,
         valorConcluidas: toMoney(valorConcluidas),
         faturamentoMesAtual: toMoney(mesAtual?.valor || 0),
         mesAtual: mesAtual?.mes || "",

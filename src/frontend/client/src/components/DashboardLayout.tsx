@@ -33,7 +33,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         {/* Navbar */}
-        <Navbar user={user} onLogout={onLogout} />
+        <Navbar user={user} config={onNavigate} onLogout={onLogout} />
 
         {/* Content Area */}
         <main className="flex-1 overflow-hidden bg-secondary/30 flex flex-col">

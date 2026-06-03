@@ -11,10 +11,11 @@ import type { User as UserType } from '@/types';
 
 interface NavbarProps {
   user: UserType;
+  config: (path: string) => void;
   onLogout: () => void;
 }
 
-export default function Navbar({ user, onLogout }: NavbarProps) {
+export default function Navbar({ user, config, onLogout }: NavbarProps) {
   const notificationCount = 3;
 
   return (
@@ -68,8 +69,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             <DropdownMenuItem disabled className="text-xs text-muted-foreground">
               {user.email}
             </DropdownMenuItem>
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <DropdownMenuItem>
+              Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => config('/configuracoes')}>
+              Configurações
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onLogout} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               Sair

@@ -39,6 +39,10 @@
     {
       "name": "Fornecedores",
       "description": "Operacoes relacionadas aos fornecedores"
+    },
+    {
+      "name": "Relatorios",
+      "description": "Operacoes relacionadas aos relatorios"
     }
   ],
   "paths": {
@@ -1179,7 +1183,73 @@
       }
     }
   }
-}
+},
+  "/relatorios": {
+    "get": {
+      "summary": "Gera os dados consolidados dos relatorios",
+      "tags": ["Relatorios"],
+      "responses": {
+        "200": {
+          "description": "Dados consolidados dos relatorios",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Relatorio"
+              },
+              "example": {
+                "osStatus": [
+                  {
+                    "status": "Concluida",
+                    "quantidade": 12,
+                    "valor": 4500.5
+                  }
+                ],
+                "topClientes": [
+                  {
+                    "nome": "Maria Silva",
+                    "totalGasto": 2500
+                  }
+                ],
+                "produtosEstoque": [
+                  {
+                    "produto": "Oleo 5W30",
+                    "estoque": 12,
+                    "minimo": 40,
+                    "precoUnitario": 65.5
+                  }
+                ],
+                "faturamento": [
+                  {
+                    "mes": "mai. de 26",
+                    "valor": 4500.5
+                  }
+                ],
+                "resumo": {
+                  "totalClientes": 120,
+                  "clientesEsteMes": 8,
+                  "osConcluidas": 12,
+                  "valorConcluidas": 4500.5,
+                  "faturamentoMesAtual": 4500.5,
+                  "mesAtual": "mai. de 26",
+                  "ticketMedio": 375.04
+                }
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Erro interno ao gerar relatorios",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiMessage"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
   },
   "components": {
     "parameters": {
@@ -1650,6 +1720,180 @@
             "type": "string",
             "nullable": true,
             "example": "Fornecedor de peças"
+          }
+        }
+      },
+      "Relatorio": {
+        "type": "object",
+        "required": [
+          "osStatus",
+          "topClientes",
+          "produtosEstoque",
+          "faturamento",
+          "resumo"
+        ],
+        "properties": {
+          "osStatus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioOsStatus"
+            }
+          },
+          "topClientes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioTopCliente"
+            }
+          },
+          "produtosEstoque": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioProdutoEstoque"
+            }
+          },
+          "faturamento": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioFaturamento"
+            }
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/RelatorioResumo"
+          }
+        }
+      },
+      "RelatorioOsStatus": {
+        "type": "object",
+        "required": [
+          "status",
+          "quantidade",
+          "valor"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "Concluida"
+          },
+          "quantidade": {
+            "type": "number",
+            "format": "float",
+            "example": 12
+          },
+          "valor": {
+            "type": "number",
+            "format": "float",
+            "example": 4500.5
+          }
+        }
+      },
+      "RelatorioTopCliente": {
+        "type": "object",
+        "required": [
+          "nome",
+          "totalGasto"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Maria Silva"
+          },
+          "totalGasto": {
+            "type": "number",
+            "format": "float",
+            "example": 2500
+          }
+        }
+      },
+      "RelatorioProdutoEstoque": {
+        "type": "object",
+        "required": [
+          "produto",
+          "estoque",
+          "minimo",
+          "precoUnitario"
+        ],
+        "properties": {
+          "produto": {
+            "type": "string",
+            "example": "Oleo 5W30"
+          },
+          "estoque": {
+            "type": "number",
+            "format": "float",
+            "example": 12
+          },
+          "minimo": {
+            "type": "number",
+            "format": "float",
+            "example": 40
+          },
+          "precoUnitario": {
+            "type": "number",
+            "format": "float",
+            "example": 65.5
+          }
+        }
+      },
+      "RelatorioFaturamento": {
+        "type": "object",
+        "required": [
+          "mes",
+          "valor"
+        ],
+        "properties": {
+          "mes": {
+            "type": "string",
+            "example": "mai. de 26"
+          },
+          "valor": {
+            "type": "number",
+            "format": "float",
+            "example": 4500.5
+          }
+        }
+      },
+      "RelatorioResumo": {
+        "type": "object",
+        "required": [
+          "totalClientes",
+          "clientesEsteMes",
+          "osConcluidas",
+          "valorConcluidas",
+          "faturamentoMesAtual",
+          "mesAtual",
+          "ticketMedio"
+        ],
+        "properties": {
+          "totalClientes": {
+            "type": "integer",
+            "example": 120
+          },
+          "clientesEsteMes": {
+            "type": "integer",
+            "example": 8
+          },
+          "osConcluidas": {
+            "type": "integer",
+            "example": 12
+          },
+          "valorConcluidas": {
+            "type": "number",
+            "format": "float",
+            "example": 4500.5
+          },
+          "faturamentoMesAtual": {
+            "type": "number",
+            "format": "float",
+            "example": 4500.5
+          },
+          "mesAtual": {
+            "type": "string",
+            "example": "mai. de 26"
+          },
+          "ticketMedio": {
+            "type": "number",
+            "format": "float",
+            "example": 375.04
           }
         }
       },

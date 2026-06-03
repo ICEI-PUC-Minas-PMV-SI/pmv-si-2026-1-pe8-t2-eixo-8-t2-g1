@@ -14,7 +14,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import DashboardLayout from '@/components/DashboardLayout';
-import Dashboard from '@/pages/Dashboard';
+import Dashboard from '@/pages/dashboard/DashboardPage';
 import Pessoas from '@/pages/pessoas/PessoasPage';
 import Veiculos from '@/pages/veiculos/VeiculosPage';
 import OS from '@/pages/os/OSPage';
@@ -32,7 +32,7 @@ import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
 import type { User, OrdemServico, Pessoa } from '@/types';
 import type { UsuarioApi } from '@/api';
 
-const TEMPO_INATIVIDADE = 1 * 60 * 1000;
+const TEMPO_INATIVIDADE = 10 * 60 * 1000;
 
 function useAutoLogout(onLogout: () => void) {
   const timerRef = useRef<number | null>(null);

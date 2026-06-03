@@ -112,7 +112,13 @@ export interface RelatoriosApi {
   topClientes: RelatorioTopClienteApi[];
   produtosEstoque: RelatorioProdutoEstoqueApi[];
   faturamento: RelatorioFaturamentoApi[];
+  top5Produtos: RelatorioTop5ProdutosApi[];
   resumo: RelatorioResumoApi;
+}
+
+export interface RelatorioTop5ProdutosApi {
+  produto: string;
+  quantidadeUtilizada: number;
 }
 
 export interface ItemServicoApi {
