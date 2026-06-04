@@ -23,19 +23,15 @@ export default function Pessoas() {
   const navigate = useNavigate();
   const [pessoas, setPessoas] = useState<ClienteApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
       const loadData = async () => {
         try {
-          setLoading(true);
           const clientesResponse = await clientesApi.getAll();
           setPessoas(clientesResponse);
         } catch (error: any) {
           const message = error.response?.data?.messsage || 'Erro ao carregar';
           toast.error(message);
-        } finally {
-          setLoading(false);
         }
       };
   

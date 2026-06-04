@@ -22,12 +22,11 @@ export default function Veiculos() {
   const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [clientes, setClientes] = useState<ClienteApi[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
         const [clientesResponse, veiculosResponse] = await Promise.all([
           clientesApi.getAll(),
           veiculosApi.getAll(),

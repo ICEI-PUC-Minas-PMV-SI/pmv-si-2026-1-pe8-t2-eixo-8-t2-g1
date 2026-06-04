@@ -66,7 +66,7 @@ export default function OSForm({ onSubmit, onCancel, initialData, veiculos }: OS
     };
   };
 
-  const [formData, setFormData] = useState<FormDataState>(getInitialData());
+  const [formData, setFormData] = useState<FormDataState>(() => getInitialData());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -24,9 +24,10 @@ import {
 } from '@/components/ui/dialog';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import UsuarioForm from '@/components/forms/UsuarioForm';
+import { AUTH_USER_STORAGE_KEY } from '@/const';
 
 function getUsuarioLogado(): UsuarioApi | null {
-  const storedUser = localStorage.getItem('authUser');
+  const storedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
 
   if (!storedUser) {
     return null;
@@ -48,6 +49,31 @@ type AlertAction = {
   usuario: UsuarioApi
 }
 
+async function resetarSenhaUsuario(usuario: UsuarioApi) {
+  await usuariosApi.update(usuario.id, {
+    senha: '123456',
+  });
+
+  toast.success('Senha resetada para 123456');
+}
+
+function getPerfilColor(perfil: string) {
+  switch (perfil) {
+    case 'Administrador':
+      return 'bg-red-100 text-red-800';
+    case 'Supervisor':
+      return 'bg-blue-100 text-blue-800';
+    case 'Padrão':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
+function getStatusColor(status: string) {
+  return status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+}
+
 export default function Usuarios({ onUserUpdate }: UsuariosProps) {
   const [usuarios, setUsuarios] = useState<UsuarioApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -61,7 +87,6 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
   useEffect(() => {
     const loadUsuarios = async () => {
       try {
-        setLoading(true);
         const usuariosResponse = await usuariosApi.getAll();
         setUsuarios(usuariosResponse);
       } catch (error: any) {
@@ -176,14 +201,6 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
     );
   };
 
-  const resetarSenhaUsuario = async (usuario: UsuarioApi) => {
-    await usuariosApi.update(usuario.id, {
-      senha: '123456',
-    });
-
-    toast.success('Senha resetada para 123456');
-  };
-
   const excluirUsuario = async (usuario: UsuarioApi) => {
     await usuariosApi.remove(usuario.id);
 
@@ -247,23 +264,6 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
     }
 
     return `Tem certeza que deseja resetar a senha do usuário ${alertAction?.usuario.nome} para 123456?`;
-  };
-
-  const getPerfilColor = (perfil: string) => {
-    switch (perfil) {
-      case 'Administrador':
-        return 'bg-red-100 text-red-800';
-      case 'Supervisor':
-        return 'bg-blue-100 text-blue-800';
-      case 'Padrão':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    return status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
   return (

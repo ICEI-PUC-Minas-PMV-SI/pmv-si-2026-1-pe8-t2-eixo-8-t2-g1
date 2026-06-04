@@ -58,6 +58,7 @@ export default function EditarProdutoPage({
 
   return (
     <EditarProdutoForm
+      key={produto.id}
       id={id}
       produto={produto}
       onNavigate={onNavigate}

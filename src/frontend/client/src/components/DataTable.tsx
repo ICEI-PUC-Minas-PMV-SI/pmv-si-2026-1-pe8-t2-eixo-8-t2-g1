@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/table';
 import { cn, filterBySearch, paginateArray } from '@/lib/utils';
 
+const EMPTY_SEARCH_FIELDS: never[] = [];
+
 interface Column<T> {
   key: keyof T;
   label: string;
@@ -30,7 +32,7 @@ interface DataTableProps<T> {
 export default function DataTable<T extends { id: string | number }>({
   data,
   columns,
-  searchFields = [],
+  searchFields = EMPTY_SEARCH_FIELDS,
   pageSize = 10,
   onRowClick,
 }: DataTableProps<T>) {

@@ -955,9 +955,9 @@
               "example": {
                 "nome": "Joao Silva",
                 "email": "joao@email.com",
-                "perfil": "Administrador",
                 "status": "Ativo",
-                "senha": "123456"
+                "senha": "123456",
+                "id_perfil": 1
               }
             }
           }

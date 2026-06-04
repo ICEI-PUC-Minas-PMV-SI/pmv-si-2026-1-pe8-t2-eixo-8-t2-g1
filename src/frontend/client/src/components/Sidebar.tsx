@@ -121,6 +121,28 @@ const menuItems: MenuItem[] = [
   },
 ];
 
+function getUserRoleLabel(user: User) {
+  switch (user.role) {
+    case 'Administrador':
+      return 'Admin';
+    case 'Supervisor':
+      return 'Supervisor';
+    case 'Padrão':
+      return 'Usuário';
+  }
+}
+
+function getUserColorClass(user: User) {
+  switch (user.role) {
+    case 'Administrador':
+      return 'text-sidebar-primary';
+    case 'Supervisor':
+      return 'text-sidebar-secondary';
+    case 'Padrão':
+      return 'text-sidebar-tertiary';
+  }
+}
+
 export default function Sidebar({
   user,
   currentPath,
@@ -133,28 +155,6 @@ export default function Sidebar({
   const handleNavigate = (path: string) => {
     onNavigate(path);
     setIsMobileOpen(false);
-  };
-
-  const userRole = (user: User) => {
-    switch (user.role){
-      case ("Administrador"):
-        return "Admin"
-      case ("Supervisor"):
-        return "Supervisor"
-      case ("Padrão"):
-        return "Usuário"
-    }
-  }
-
-  const userColorClass = (user: User) => {
-    switch (user.role) {
-      case "Administrador":
-        return 'text-sidebar-primary';
-      case "Supervisor":
-        return 'text-sidebar-secondary';
-      case "Padrão":
-        return 'text-sidebar-tertiary';
-    }
   };
 
   return (
@@ -175,7 +175,9 @@ export default function Sidebar({
 
       {/* Overlay for mobile */}
       {isMobileOpen && (
-        <div
+        <button
+          type="button"
+          aria-label="Fechar menu"
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
@@ -193,7 +195,7 @@ export default function Sidebar({
         {/* Header */}
         <div className="h-16 border-b border-sidebar-border flex items-center justify-between px-4">
           {!isCollapsed && (
-            <h1 className={`font-bold text-lg ${userColorClass(user)}`}>{userRole(user)}</h1>
+            <h1 className={`font-bold text-lg ${getUserColorClass(user)}`}>{getUserRoleLabel(user)}</h1>
           )}
           <Button
             variant="ghost"
@@ -214,6 +216,7 @@ export default function Sidebar({
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-2">
           {menuItems.map((item) => (
             <button
+              type="button"
               key={item.id}
               onClick={() => handleNavigate(item.href)}
               className={cn(

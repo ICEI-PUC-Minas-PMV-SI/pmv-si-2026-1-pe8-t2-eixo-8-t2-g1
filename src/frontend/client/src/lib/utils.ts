@@ -1,6 +1,11 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+const BRL_CURRENCY_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -10,34 +15,11 @@ export function formatDate(date: string): string {
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-}
-
-export function formatPhone(phone: string): string {
-  return phone.replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
-}
-
-export function formatCEP(cep: string): string {
-  return cep.replace(/(\d{5})(\d{3})/, '$1-$2');
-}
-
-export function formatCNPJ(cnpj: string): string {
-  return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-}
-
-export function formatCPF(cpf: string): string {
-  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  return BRL_CURRENCY_FORMATTER.format(value);
 }
 
 export function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
-}
-
-export function truncate(str: string, length: number): string {
-  return str.length > length ? str.substring(0, length) + '...' : str;
 }
 
 export function getStatusColor(status: string): string {
@@ -63,17 +45,6 @@ export function filterBySearch<T>(items: T[], searchTerm: string, searchFields: 
       return String(value).toLowerCase().includes(lowerSearchTerm);
     })
   );
-}
-
-export function sortByField<T>(items: T[], field: keyof T, ascending: boolean = true): T[] {
-  return [...items].sort((a, b) => {
-    const aValue = a[field];
-    const bValue = b[field];
-
-    if (aValue < bValue) return ascending ? -1 : 1;
-    if (aValue > bValue) return ascending ? 1 : -1;
-    return 0;
-  });
 }
 
 export function paginateArray<T>(items: T[], pageIndex: number, pageSize: number): T[] {

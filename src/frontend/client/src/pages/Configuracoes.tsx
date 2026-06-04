@@ -15,6 +15,14 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
 import type { ConfigSMTP, ConfigEmpresa, Endereco } from '@/types';
 
+function handleSaveSMTP() {
+  toast.success('Configurações SMTP salvas com sucesso!');
+}
+
+function handleSaveEmpresa() {
+  toast.success('Dados da empresa salvos com sucesso!');
+}
+
 export default function Configuracoes() {
   const [smtp, setSMTP] = useState<ConfigSMTP>({
     host: 'smtp.gmail.com',
@@ -41,14 +49,6 @@ export default function Configuracoes() {
     email: 'contato@empresa.com',
     telefone: '(11) 3000-0000',
   });
-
-  const handleSaveSMTP = () => {
-    toast.success('Configurações SMTP salvas com sucesso!');
-  };
-
-  const handleSaveEmpresa = () => {
-    toast.success('Dados da empresa salvos com sucesso!');
-  };
 
   const handleSMTPChange = (field: keyof ConfigSMTP, value: any) => {
     setSMTP((prev) => ({

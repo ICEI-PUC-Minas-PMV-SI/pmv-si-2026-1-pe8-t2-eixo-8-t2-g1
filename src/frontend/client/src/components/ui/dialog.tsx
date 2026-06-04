@@ -17,7 +17,7 @@ const DialogCompositionContext = React.createContext<{
 });
 
 export const useDialogComposition = () =>
-  React.useContext(DialogCompositionContext);
+  React.use(DialogCompositionContext);
 
 function Dialog({
   ...props

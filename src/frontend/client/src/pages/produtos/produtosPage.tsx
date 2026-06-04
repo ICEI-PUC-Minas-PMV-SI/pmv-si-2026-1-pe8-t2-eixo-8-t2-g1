@@ -30,13 +30,10 @@ export default function Produtos() {
 
   const [produtos, setProdutos] = useState<ProdutoApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
-
         const produtosResponse =
           await produtosApi.getAll();
 
@@ -47,8 +44,6 @@ export default function Produtos() {
           'Erro ao carregar produtos';
 
         toast.error(message);
-      } finally {
-        setLoading(false);
       }
     };
 

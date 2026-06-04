@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AUTH_USER_STORAGE_KEY } from '@/const';
 
 interface LoginProps {
   onLogin: (usuario: UsuarioApi) => void;
@@ -22,7 +23,7 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       setLoading(true);
       const response = await authApi.login({ email, senha });
-      localStorage.setItem('authUser', JSON.stringify(response.usuario));
+      localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(response.usuario));
       onLogin(response.usuario);
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {

@@ -1,21 +1,26 @@
-import { useEffect, useState } from 'react';
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { relatoriosApi, type RelatoriosApi } from '@/api';
 import { formatCurrency } from '@/lib/utils';
+
+type RechartsComponent = ComponentType<any>;
+
+const Bar = lazy(() => import('recharts').then((module) => ({ default: module.Bar as unknown as RechartsComponent })));
+const BarChart = lazy(() => import('recharts').then((module) => ({ default: module.BarChart as unknown as RechartsComponent })));
+const CartesianGrid = lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid as unknown as RechartsComponent })));
+const Legend = lazy(() => import('recharts').then((module) => ({ default: module.Legend as unknown as RechartsComponent })));
+const Line = lazy(() => import('recharts').then((module) => ({ default: module.Line as unknown as RechartsComponent })));
+const LineChart = lazy(() => import('recharts').then((module) => ({ default: module.LineChart as unknown as RechartsComponent })));
+const ResponsiveContainer = lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer as unknown as RechartsComponent })));
+const Tooltip = lazy(() => import('recharts').then((module) => ({ default: module.Tooltip as unknown as RechartsComponent })));
+const XAxis = lazy(() => import('recharts').then((module) => ({ default: module.XAxis as unknown as RechartsComponent })));
+const YAxis = lazy(() => import('recharts').then((module) => ({ default: module.YAxis as unknown as RechartsComponent })));
+
+function ChartFallback({ height = 300 }: { height?: number }) {
+  return <div className="w-full" style={{ height }} />;
+}
 
 const relatorioVazio: RelatoriosApi = {
   osStatus: [],
@@ -37,11 +42,24 @@ const relatorioVazio: RelatoriosApi = {
   },
 };
 
-function formatQuantidade(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    maximumFractionDigits: 2,
-  }).format(value);
+const QUANTITY_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  maximumFractionDigits: 2,
+});
+
+function expandCurrencyAxis(dataMax: number) {
+  return dataMax * 1.15;
 }
+
+function expandQuantityAxis(dataMax: number) {
+  return Math.ceil(dataMax * 1.15);
+}
+
+function formatQuantidade(value: number) {
+  return QUANTITY_FORMATTER.format(value);
+}
+
+const CURRENCY_AXIS_DOMAIN = [0, expandCurrencyAxis] as const;
+const QUANTITY_AXIS_DOMAIN = [0, expandQuantityAxis] as const;
 
 export default function Relatorios() {
   const [relatorioData, setRelatorioData] = useState<RelatoriosApi>(relatorioVazio);
@@ -51,7 +69,6 @@ export default function Relatorios() {
   useEffect(() => {
     const loadRelatorios = async () => {
       try {
-        setLoading(true);
         setLoadError(null);
 
         const data = await relatoriosApi.getResumo();
@@ -107,116 +124,122 @@ export default function Relatorios() {
       <Card className="p-6">
         <h3>Status das Ordens de Serviço</h3>
 
-        <ResponsiveContainer width="100%" height={340}>
-          <BarChart
-            data={relatorioData.osStatus}
-            margin={{
-              top: 24,
-              right: 40,
-              left: 40,
-              bottom: 16,
-            }}
-            barGap={8}
-            barCategoryGap="28%"
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-
-            <XAxis
-              dataKey="status"
-              stroke="#6B7280"
-            />
-
-            <YAxis
-              yAxisId="valor"
-              orientation="left"
-              stroke="#10B981"
-              width={100}
-              tickFormatter={(value) => formatCurrency(Number(value))}
-              domain={[0, (dataMax: number) => dataMax * 1.15]}
-            />
-
-            <YAxis
-              yAxisId="quantidade"
-              orientation="right"
-              stroke="#3B82F6"
-              width={45}
-              tickFormatter={(value) => formatQuantidade(Number(value))}
-              domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]}
-              allowDecimals={false}
-            />
-
-            <Tooltip
-              formatter={(value, name) =>
-                name === 'Valor (R$)'
-                  ? formatCurrency(Number(value))
-                  : formatQuantidade(Number(value))
-              }
-              contentStyle={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
+        <Suspense fallback={<ChartFallback height={340} />}>
+          <ResponsiveContainer width="100%" height={340}>
+            <BarChart
+              data={relatorioData.osStatus}
+              margin={{
+                top: 24,
+                right: 40,
+                left: 40,
+                bottom: 16,
               }}
-            />
+              barGap={8}
+              barCategoryGap="28%"
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
 
-            <Legend />
+              <XAxis
+                dataKey="status"
+                stroke="#6B7280"
+              />
 
-            <Bar
-              yAxisId="valor"
-              dataKey="valor"
-              fill="#10B981"
-              name="Quantidade"
-              maxBarSize={90}
-            />
+              <YAxis
+                yAxisId="valor"
+                orientation="left"
+                stroke="#10B981"
+                width={100}
+                tickFormatter={(value: unknown) => formatCurrency(Number(value))}
+                domain={CURRENCY_AXIS_DOMAIN}
+              />
 
-            <Bar
-              yAxisId="quantidade"
-              dataKey="quantidade"
-              fill="#3B82F6"
-              name="Valor (R$)"
-              maxBarSize={90}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+              <YAxis
+                yAxisId="quantidade"
+                orientation="right"
+                stroke="#3B82F6"
+                width={45}
+                tickFormatter={(value: unknown) => formatQuantidade(Number(value))}
+                domain={QUANTITY_AXIS_DOMAIN}
+                allowDecimals={false}
+              />
+
+              <Tooltip
+                formatter={(value: unknown, name: unknown) =>
+                  name === 'Valor (R$)'
+                    ? formatCurrency(Number(value))
+                    : formatQuantidade(Number(value))
+                }
+                contentStyle={{
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #E5E7EB',
+                }}
+              />
+
+              <Legend />
+
+              <Bar
+                yAxisId="valor"
+                dataKey="valor"
+                fill="#10B981"
+                name="Quantidade"
+                maxBarSize={90}
+              />
+
+              <Bar
+                yAxisId="quantidade"
+                dataKey="quantidade"
+                fill="#3B82F6"
+                name="Valor (R$)"
+                maxBarSize={90}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </Suspense>
       </Card>
 
       <Card className="p-6">
         <h3>Top 5 Clientes por Gasto</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={relatorioData.topClientes} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis type="number" stroke="#6B7280" />
-            <YAxis dataKey="nome" type="category" stroke="#6B7280" width={140} />
-            <Tooltip
-              formatter={(value) => formatCurrency(Number(value))}
-              contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}
-            />
-            <Bar barSize={33} dataKey="totalGasto" fill="#1E40AF" name="Total gasto" />
-          </BarChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<ChartFallback />}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={relatorioData.topClientes} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis type="number" stroke="#6B7280" />
+              <YAxis dataKey="nome" type="category" stroke="#6B7280" width={140} />
+              <Tooltip
+                formatter={(value: unknown) => formatCurrency(Number(value))}
+                contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}
+              />
+              <Bar barSize={33} dataKey="totalGasto" fill="#1E40AF" name="Total gasto" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Suspense>
       </Card>
 
       <Card className="p-6">
         <h3>Faturamento Mensal</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={relatorioData.faturamento}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="mes" stroke="#6B7280" />
-            <YAxis stroke="#6B7280" />
-            <Tooltip
-              formatter={(value) => formatCurrency(Number(value))}
-              contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}
-            />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="valor"
-              stroke="#1E40AF"
-              strokeWidth={2}
-              dot={{ fill: '#1E40AF', r: 4 }}
-              activeDot={{ r: 6 }}
-              name="Faturamento"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<ChartFallback />}>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={relatorioData.faturamento}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="mes" stroke="#6B7280" />
+              <YAxis stroke="#6B7280" />
+              <Tooltip
+                formatter={(value: unknown) => formatCurrency(Number(value))}
+                contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="valor"
+                stroke="#1E40AF"
+                strokeWidth={2}
+                dot={{ fill: '#1E40AF', r: 4 }}
+                activeDot={{ r: 6 }}
+                name="Faturamento"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Suspense>
       </Card>
 
       <Card className="p-6">

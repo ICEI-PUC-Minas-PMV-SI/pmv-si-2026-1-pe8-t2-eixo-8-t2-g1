@@ -180,7 +180,7 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  permissoes: [];
+  permissoes?: string[];
   perfil: "Administrador" | "Supervisor" | "Padrão";
   status: 'Ativo' | 'Inativo';
   idPerfil?: number;

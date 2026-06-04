@@ -1,5 +1,4 @@
-import { useEffect, useState, lazy } from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
 import { Card } from '@/components/ui/card';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
@@ -8,6 +7,30 @@ import { formatCurrency } from '@/lib/utils';
 
 
 const COLORS = ['#3B82F6', '#F59E0B', '#7e7e7e', '#10B981', '#EF4444'];
+const TOP_PRODUCTS_BAR_RADIUS = [8, 8, 0, 0] as const;
+type RechartsComponent = ComponentType<any>;
+
+const Bar = lazy(() => import('recharts').then((module) => ({ default: module.Bar as unknown as RechartsComponent })));
+const BarChart = lazy(() => import('recharts').then((module) => ({ default: module.BarChart as unknown as RechartsComponent })));
+const CartesianGrid = lazy(() => import('recharts').then((module) => ({ default: module.CartesianGrid as unknown as RechartsComponent })));
+const Cell = lazy(() => import('recharts').then((module) => ({ default: module.Cell as unknown as RechartsComponent })));
+const Legend = lazy(() => import('recharts').then((module) => ({ default: module.Legend as unknown as RechartsComponent })));
+const Line = lazy(() => import('recharts').then((module) => ({ default: module.Line as unknown as RechartsComponent })));
+const LineChart = lazy(() => import('recharts').then((module) => ({ default: module.LineChart as unknown as RechartsComponent })));
+const Pie = lazy(() => import('recharts').then((module) => ({ default: module.Pie as unknown as RechartsComponent })));
+const PieChart = lazy(() => import('recharts').then((module) => ({ default: module.PieChart as unknown as RechartsComponent })));
+const ResponsiveContainer = lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer as unknown as RechartsComponent })));
+const Tooltip = lazy(() => import('recharts').then((module) => ({ default: module.Tooltip as unknown as RechartsComponent })));
+const XAxis = lazy(() => import('recharts').then((module) => ({ default: module.XAxis as unknown as RechartsComponent })));
+const YAxis = lazy(() => import('recharts').then((module) => ({ default: module.YAxis as unknown as RechartsComponent })));
+
+function ChartFallback({ height = 300 }: { height?: number }) {
+  return <div className="w-full" style={{ height }} />;
+}
+
+function renderStatusLabel({ name, value }: { name: string; value: number }) {
+  return `${name}: ${value}`;
+}
 
 const relatorioVazio: RelatoriosApi = {
   osStatus: [],
@@ -31,8 +54,6 @@ const relatorioVazio: RelatoriosApi = {
 
 export default function Dashboard() {
     const [relatorioData, setRelatorioData] = useState<RelatoriosApi>(relatorioVazio);
-    const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState<string | null>(null);
 
     const dashboardData = {
       stats: [
@@ -58,19 +79,13 @@ export default function Dashboard() {
    useEffect(() => {
     const loadRelatorios = async () => {
       try {
-        setLoading(true);
-        setLoadError(null);
-
         const data = await relatoriosApi.getResumo();
 
         setRelatorioData(data);
       } catch (error: any) {
         const message = error.response?.data?.message || 'Erro ao carregar relatórios';
 
-        setLoadError(message);
         toast.error(message);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -90,8 +105,8 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {dashboardData.stats.map((stat, index) => (
-          <Card key={index} className="p-6">
+        {dashboardData.stats.map((stat) => (
+          <Card key={stat.label} className="p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-muted-foreground text-sm font-medium">{stat.label}</p>
@@ -110,65 +125,71 @@ export default function Dashboard() {
         {/* Revenue Chart */}
         <Card className="p-6">
           <h3>Receita Mensal</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dashboardData.monthlyRevenue}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="month" stroke="#6B7280" />
-              <YAxis stroke="#6B7280" />
-              <Tooltip 
-                formatter={(value) => formatCurrency(value as number)}
-                contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="valor" 
-                stroke="#1E40AF" 
-                strokeWidth={2}
-                dot={{ fill: '#1E40AF', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<ChartFallback />}>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={dashboardData.monthlyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="month" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" />
+                <Tooltip
+                  formatter={(value: unknown) => formatCurrency(Number(value))}
+                  contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="valor"
+                  stroke="#1E40AF"
+                  strokeWidth={2}
+                  dot={{ fill: '#1E40AF', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Suspense>
         </Card>
 
         {/* OS Status Chart */}
         <Card className="p-6">
           <h3>Status das Ordens de Serviço</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={dashboardData.osStatus}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => `${name}: ${value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {dashboardData.osStatus.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<ChartFallback />}>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={dashboardData.osStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderStatusLabel}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {dashboardData.osStatus.map((entry, index) => (
+                    <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Suspense>
         </Card>
       </div>
 
       {/* Top Products */}
       <Card className="p-6">
         <h3>Produtos Mais Vendidos</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={dashboardData.topProducts}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="name" stroke="#6B7280" />
-            <YAxis stroke="#6B7280" />
-            <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }} />
-            <Bar dataKey="vendas" fill="#1E40AF" radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<ChartFallback />}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={dashboardData.topProducts}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="name" stroke="#6B7280" />
+              <YAxis stroke="#6B7280" />
+              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }} />
+              <Bar dataKey="vendas" fill="#1E40AF" radius={TOP_PRODUCTS_BAR_RADIUS} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Suspense>
       </Card>
     </div>
   );

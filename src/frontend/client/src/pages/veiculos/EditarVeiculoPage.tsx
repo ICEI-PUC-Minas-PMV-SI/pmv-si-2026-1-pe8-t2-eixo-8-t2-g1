@@ -45,6 +45,7 @@ export default function EditarVeiculoPage({ id, onNavigate }: EditarVeiculoProps
 
   return (
     <EditarVeiculoForm
+      key={veiculo.id}
       id={id}
       clientes={clientes}
       veiculo={veiculo}

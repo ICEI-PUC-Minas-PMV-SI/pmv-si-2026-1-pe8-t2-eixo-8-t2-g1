@@ -59,7 +59,6 @@ export default function OS() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
         const [servicosResponse, veiculosResponse] = await Promise.all([
           servicosApi.getAll(),
           veiculosApi.getAll(),

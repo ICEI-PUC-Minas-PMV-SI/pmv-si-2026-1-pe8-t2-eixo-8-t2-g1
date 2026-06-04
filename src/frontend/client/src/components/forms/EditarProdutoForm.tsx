@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -58,10 +58,6 @@ export default function EditarProdutoForm({
       [field]: value,
     }));
   };
-
-  useEffect(() => {
-    setFormData(produto);
-  }, [produto.id]);
 
   const handleSubmit = async (
     e: React.FormEvent,

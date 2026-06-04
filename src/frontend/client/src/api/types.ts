@@ -139,7 +139,7 @@ export interface UsuarioApi {
   id: string;
   nome: string;
   email: string;
-  permissoes: [];
+  permissoes?: string[];
   perfil: "Administrador" | "Supervisor" | "Padrão";
   status: "Ativo" | "Inativo";
   idPerfil?: number;
@@ -147,7 +147,7 @@ export interface UsuarioApi {
   dataAtualizacao: string;
 }
 
-export type UsuarioPayload = Omit<UsuarioApi, "id" | "dataCriacao" | "dataAtualizacao"> & {
+export type UsuarioPayload = Omit<UsuarioApi, "id" | "dataCriacao" | "dataAtualizacao" | "permissoes"> & {
   senha?: string;
 };
 

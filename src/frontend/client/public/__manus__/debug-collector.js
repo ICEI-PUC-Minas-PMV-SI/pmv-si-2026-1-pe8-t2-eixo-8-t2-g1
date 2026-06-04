@@ -499,8 +499,10 @@
   // ==========================================================================
 
   function contentTypeMatches(contentType, markers) {
+    var contentTypeText = String(contentType);
+
     for (var i = 0; i < markers.length; i++) {
-      if (contentType.indexOf(markers[i]) !== -1) return true;
+      if (contentTypeText.indexOf(markers[i]) !== -1) return true;
     }
     return false;
   }

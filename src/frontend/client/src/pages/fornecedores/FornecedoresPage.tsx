@@ -13,8 +13,6 @@ export default function Fornecedores() {
   useEffect(() => {
     const loadFornecedores = async () => {
       try {
-        setLoading(true);
-
         const fornecedoresResponse =
           await fornecedoresApi.getAll();
 
@@ -118,4 +116,4 @@ export default function Fornecedores() {
       </Card>
     </div>
   );
-} 
+}

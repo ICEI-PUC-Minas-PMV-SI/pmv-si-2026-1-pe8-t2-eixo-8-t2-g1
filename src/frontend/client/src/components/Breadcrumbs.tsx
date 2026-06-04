@@ -15,12 +15,13 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
     <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumbs">
       {items.map((item, index) => (
-        <div key={index} className="flex items-center gap-2">
+        <div key={`${item.href ?? item.label}-${item.label}`} className="flex items-center gap-2">
           {index > 0 && (
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           )}
           {item.href || item.onClick ? (
             <button
+              type="button"
               onClick={item.onClick}
               className={cn(
                 'hover:text-primary transition-colors',

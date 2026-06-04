@@ -31,48 +31,58 @@ import EditarProduto from '@/pages/produtos/editarProdutoPage';
 import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
 import type { User } from '@/types';
 import { authApi, type UsuarioApi } from '@/api';
+import { AUTH_USER_STORAGE_KEY } from './const';
 
 const TEMPO_INATIVIDADE = 10 * 60 * 1000;
+const AUTO_LOGOUT_EVENTS = [
+  "mousemove",
+  "mousedown",
+  "keydown",
+  "scroll",
+  "touchstart",
+  "click",
+] as const;
 
 function useAutoLogout(onLogout: () => void, isActive: boolean) {
-  const timerRef = useRef<number | null>(null);
-
-  function resetarTimer() {
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-    }
-
-    timerRef.current = window.setTimeout(() => {
-      onLogout();
-    }, TEMPO_INATIVIDADE);
-  }
+  const onLogoutRef = useRef(onLogout);
 
   useEffect(() => {
-    const eventos = [
-      "mousemove",
-      "mousedown",
-      "keydown",
-      "scroll",
-      "touchstart",
-      "click",
-    ];
+    onLogoutRef.current = onLogout;
+  }, [onLogout]);
 
-    eventos.forEach((evento) => {
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
+    let timerId: number | null = null;
+
+    const resetarTimer = () => {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+
+      timerId = window.setTimeout(() => {
+        onLogoutRef.current();
+      }, TEMPO_INATIVIDADE);
+    };
+
+    AUTO_LOGOUT_EVENTS.forEach((evento) => {
       window.addEventListener(evento, resetarTimer);
     });
 
     resetarTimer();
 
     return () => {
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
+      if (timerId) {
+        window.clearTimeout(timerId);
       }
 
-      eventos.forEach((evento) => {
+      AUTO_LOGOUT_EVENTS.forEach((evento) => {
         window.removeEventListener(evento, resetarTimer);
       });
     };
-  }, [onLogout, isActive]);
+  }, [isActive]);
 }
 
 
@@ -87,7 +97,7 @@ function usuarioToUser(usuario: UsuarioApi): User {
 }
 
 function getStoredUser(): User | null {
-  const storedUser = localStorage.getItem('authUser');
+  const storedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
 
   if (!storedUser) {
     return null;
@@ -96,16 +106,16 @@ function getStoredUser(): User | null {
   try {
     return usuarioToUser(JSON.parse(storedUser) as UsuarioApi);
   } catch {
-    localStorage.removeItem('authUser');
+    localStorage.removeItem(AUTH_USER_STORAGE_KEY);
     return null;
   }
 }
 
 function AppLayout({ user, onLogout }: { user: User; onLogout: () => void }) {
+  useAutoLogout(onLogout, !!user);
+
   const location = useLocation();
   const navigate = useNavigate();
-
-  useAutoLogout(onLogout, !!user);
 
   return (
     <DashboardLayout
@@ -220,21 +230,23 @@ function AppRoutes() {
     let ignore = false;
 
     async function validarSessao() {
+      if (ignore) {
+        return;
+      }
+
       try {
         const response = await authApi.me();
 
-        if (ignore) {
-          return;
+        if (!ignore) {
+          localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(response.usuario));
+          setUser(usuarioToUser(response.usuario));
         }
-
-        localStorage.setItem('authUser', JSON.stringify(response.usuario));
-        setUser(usuarioToUser(response.usuario));
       } catch {
         if (ignore) {
           return;
         }
 
-        localStorage.removeItem('authUser');
+        localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         setUser(null);
       } finally {
         if (!ignore) {
@@ -262,7 +274,7 @@ function AppRoutes() {
       // Mantem o logout local mesmo se a API estiver indisponivel.
     }
 
-    localStorage.removeItem('authUser');
+    localStorage.removeItem(AUTH_USER_STORAGE_KEY);
     setUser(null);
     navigate('/login', { replace: true });
   }, [navigate]);
@@ -270,7 +282,7 @@ function AppRoutes() {
   const handleUserUpdate = (usuarioAtualizado: UsuarioApi) => {
     const userAtualizado = usuarioToUser(usuarioAtualizado);
 
-    localStorage.setItem('authUser', JSON.stringify(usuarioAtualizado));
+    localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(usuarioAtualizado));
     setUser(userAtualizado);
   }
 

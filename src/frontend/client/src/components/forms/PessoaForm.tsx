@@ -91,7 +91,7 @@ export default function PessoaForm({
     };
   };
 
-  const [formData, setFormData] = useState<FormDataState>(getInitialData());
+  const [formData, setFormData] = useState<FormDataState>(() => getInitialData());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
