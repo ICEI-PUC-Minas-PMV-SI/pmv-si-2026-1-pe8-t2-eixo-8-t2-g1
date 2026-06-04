@@ -193,7 +193,7 @@ export default function Sidebar({
         {/* Header */}
         <div className="h-16 border-b border-sidebar-border flex items-center justify-between px-4">
           {!isCollapsed && (
-            <h1 className={`font-bold text-lg ${userColorClass(user)}`}>{userRole(user)}</h1>
+            <h1 className="font-bold text-lg text-sidebar-primary">AutoPro</h1>
           )}
           <Button
             variant="ghost"

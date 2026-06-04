@@ -44,7 +44,7 @@ export default function DashboardLayout({
 
         {/* Footer */}
         <footer className="flex-shrink-0 bg-white border-t border-border px-6 py-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 Painel Administrativo. Todos os direitos reservados.</p>
+          <p>&copy; 2026 AutoPro. Todos os direitos reservados.</p>
         </footer>
       </div>
     </div>
