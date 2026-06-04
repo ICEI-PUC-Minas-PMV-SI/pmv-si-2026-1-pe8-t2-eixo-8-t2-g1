@@ -19,6 +19,9 @@ const veiculosRoutes = require("./routes/veiculos");
 const fornecedoresRoutes = require("./routes/fornecedores");
 const perfisRoutes = require("./routes/perfis");
 const permissoesRoutes = require("./routes/permissoes");
+const categoriasRoutes = require("./routes/categorias");
+const marcasRoutes = require("./routes/marcas");
+const tiposRoutes = require("./routes/veiculos_tipos");
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
@@ -63,6 +66,10 @@ app.use("/usuarios", usuariosRoutes);
 app.use("/perfis", autenticarCookie, perfisRoutes);
 app.use("/permissoes", autenticarCookie, permissoesRoutes);
 app.use("/fornecedores", autenticarCookie, fornecedoresRoutes);
+app.use("/categorias", autenticarCookie, categoriasRoutes);
+app.use("/marcas", autenticarCookie, marcasRoutes);
+app.use("/tipos/veiculos", autenticarCookie, tiposRoutes);
+
 
 const PORT = process.env.PORT || 3001;
 /* const PERFIS_PADRAO = ["Administrador", "Supervisor", "Padrão"];
