@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { VeiculoApi, veiculosApi, ClienteApi } from '@/api';
@@ -42,7 +42,7 @@ export default function EditarVeiculoForm({
   onSave,
   onCancel,
 }: EditarVeiculoProps) {
-  const [formData, setFormData] = useState<VeiculoApi>(veiculo);
+  const [formData, setFormData] = useState<VeiculoApi>(() => veiculo);
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
@@ -51,6 +51,10 @@ export default function EditarVeiculoForm({
       [field]: value,
     });
   };
+
+  useEffect(() => {
+    setFormData(veiculo)
+  }, [veiculo.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -174,7 +174,8 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  token: string;
   usuario: UsuarioApi;
   permissoes: string[];
 }
+
+export type SessionResponse = LoginResponse;

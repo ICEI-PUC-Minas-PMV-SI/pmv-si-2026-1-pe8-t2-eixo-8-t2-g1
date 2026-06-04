@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface LoginProps {
-  onLogin: (token: string, usuario: UsuarioApi) => void;
+  onLogin: (usuario: UsuarioApi) => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -22,9 +22,8 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       setLoading(true);
       const response = await authApi.login({ email, senha });
-      localStorage.setItem('authToken', response.token);
       localStorage.setItem('authUser', JSON.stringify(response.usuario));
-      onLogin(response.token, response.usuario);
+      onLogin(response.usuario);
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Não foi possível realizar o login';

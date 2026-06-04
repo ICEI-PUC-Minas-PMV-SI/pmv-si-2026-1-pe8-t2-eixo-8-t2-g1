@@ -1,7 +1,16 @@
 const express = require("express");
 const { Usuario, Perfil, Permissao } = require("../models");
 const { isIntegerGreaterThanZero, isValidEmail, tratarErroSequelize } = require("../utils/utils");
-const { hashPassword, signJwt, verifyPassword } = require("../utils/auth");
+const autenticarCookie = require("../middlewares/auth");
+const {
+  AUTH_COOKIE_NAME,
+  getAuthCookieOptions,
+  getClearAuthCookieOptions,
+  hashPassword,
+  signJwt,
+  verifyJwt,
+  verifyPassword,
+} = require("../utils/auth");
 
 const router = express.Router();
 
@@ -117,6 +126,16 @@ async function buscarUsuarioRole(idPerfil) {
   })
 }
 
+async function responderSessao(usuario, res) {
+  const usuarioJson = usuario.toJSON();
+  const permissoes = await buscarChavesPermissoes(usuario.idPerfil);
+
+  return res.json({
+    usuario: usuarioJson,
+    permissoes,
+  });
+}
+
 router.post("/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -162,19 +181,53 @@ router.post("/login", async (req, res) => {
       perfil: usuarioJson.perfil,
     });
 
-    const permissoes = await buscarChavesPermissoes(usuario.idPerfil);
+    res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
 
-    return res.json({
-      token,
-      usuario: usuarioJson,
-      permissoes,
-    });
+    return responderSessao(usuario, res);
   } catch (error) {
     return res.status(500).json({
       message: "Erro interno ao realizar login",
     });
   }
 });
+
+router.post("/logout", (req, res) => {
+  res.clearCookie(AUTH_COOKIE_NAME, getClearAuthCookieOptions());
+  return res.status(204).send();
+});
+
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.cookies?.[AUTH_COOKIE_NAME];
+    const payload = verifyJwt(token);
+    const usuario = await Usuario.findByPk(payload.sub, {
+      include: usuarioInclude,
+    });
+
+    if (!usuario) {
+      res.clearCookie(AUTH_COOKIE_NAME, getClearAuthCookieOptions());
+      return res.status(401).json({
+        message: "Sessao invalida",
+      });
+    }
+
+    if (usuario.status !== "Ativo") {
+      res.clearCookie(AUTH_COOKIE_NAME, getClearAuthCookieOptions());
+      return res.status(403).json({
+        message: "Usuario inativo",
+      });
+    }
+
+    return responderSessao(usuario, res);
+  } catch (error) {
+    res.clearCookie(AUTH_COOKIE_NAME, getClearAuthCookieOptions());
+    return res.status(401).json({
+      message: "Sessao invalida",
+    });
+  }
+});
+
+router.use(autenticarCookie);
 
 router.get("/", async (req, res) => {
   try {

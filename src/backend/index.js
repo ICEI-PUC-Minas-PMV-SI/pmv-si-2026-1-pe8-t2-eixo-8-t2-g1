@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const { DataTypes } = require("sequelize");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 require("dotenv").config();
 const { sequelize, Perfil } = require("./models");
+const autenticarCookie = require("./middlewares/auth");
 
 const app = express();
 const clientesRoutes = require("./routes/clientes");
@@ -18,16 +20,29 @@ const fornecedoresRoutes = require("./routes/fornecedores");
 const perfisRoutes = require("./routes/perfis");
 const permissoesRoutes = require("./routes/permissoes");
 
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "127.0.0.1:5173/*");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Content-Security-Policy", "default-src 'self'");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   next();
 });
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Origem nao permitida pelo CORS"));
+  },
+  credentials: true,
+}));
+app.use(cookieParser());
 app.use(express.json());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get("/", (req, res) => {
@@ -38,16 +53,16 @@ app.get("/swagger.json", (req, res) => {
   res.json(swaggerDocument);
 });
 
-app.use("/clientes", clientesRoutes);
-app.use("/veiculos", veiculosRoutes);
-app.use("/servicos", servicosRoutes);
-app.use("/itens-servico", itensServicoRoutes);
-app.use("/produtos", produtosRoutes);
-app.use("/relatorios", relatoriosRoutes);
+app.use("/clientes", autenticarCookie, clientesRoutes);
+app.use("/veiculos", autenticarCookie, veiculosRoutes);
+app.use("/servicos", autenticarCookie, servicosRoutes);
+app.use("/itens-servico", autenticarCookie, itensServicoRoutes);
+app.use("/produtos", autenticarCookie, produtosRoutes);
+app.use("/relatorios", autenticarCookie, relatoriosRoutes);
 app.use("/usuarios", usuariosRoutes);
-app.use("/perfis", perfisRoutes);
-app.use("/permissoes", permissoesRoutes);
-app.use("/fornecedores", fornecedoresRoutes);
+app.use("/perfis", autenticarCookie, perfisRoutes);
+app.use("/permissoes", autenticarCookie, permissoesRoutes);
+app.use("/fornecedores", autenticarCookie, fornecedoresRoutes);
 
 const PORT = process.env.PORT || 3001;
 /* const PERFIS_PADRAO = ["Administrador", "Supervisor", "Padrão"];

@@ -879,6 +879,45 @@
         }
       }
     },
+    "/usuarios/logout": {
+      "post": {
+        "summary": "Encerra a sessao do usuario",
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "204": {
+            "description": "Logout realizado com sucesso"
+          }
+        }
+      }
+    },
+    "/usuarios/me": {
+      "get": {
+        "summary": "Retorna a sessao autenticada pelo cookie",
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessao autenticada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
     "/usuarios": {
       "get": {
         "summary": "Lista todos os usuarios",
@@ -2555,12 +2594,18 @@
       "LoginResponse": {
         "type": "object",
         "properties": {
-          "token": {
-            "type": "string",
-            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
           "usuario": {
             "$ref": "#/components/schemas/Usuario"
+          },
+          "permissoes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "clientes:ler",
+              "servicos:escrever"
+            ]
           }
         }
       },

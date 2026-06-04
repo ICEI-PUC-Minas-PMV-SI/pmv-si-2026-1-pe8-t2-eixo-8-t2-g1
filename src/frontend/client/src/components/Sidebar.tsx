@@ -157,9 +157,6 @@ export default function Sidebar({
     }
   };
 
-  console.log(user)
-
-
   return (
     <>
       {/* Mobile Toggle Button */}

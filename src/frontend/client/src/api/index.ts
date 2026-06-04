@@ -15,6 +15,7 @@ export type {
   ItemServicoPayload,
   LoginPayload,
   LoginResponse,
+  SessionResponse,
   ProdutoApi,
   ProdutoPayload,
   RelatorioFaturamentoApi,

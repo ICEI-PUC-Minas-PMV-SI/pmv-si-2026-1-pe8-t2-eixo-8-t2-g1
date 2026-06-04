@@ -14,7 +14,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import DashboardLayout from '@/components/DashboardLayout';
-import Dashboard from '@/pages/dashboard/DashboardPage';
+const Dashboard = lazy(() => import('@/pages/dashboard/DashboardPage'));
 import Pessoas from '@/pages/pessoas/PessoasPage';
 import Veiculos from '@/pages/veiculos/VeiculosPage';
 import OS from '@/pages/os/OSPage';
@@ -22,7 +22,7 @@ import Produtos from '@/pages/produtos/produtosPage';
 import Tabelas from '@/pages/Tabelas';
 import Fornecedores from '@/pages/fornecedores/FornecedoresPage';
 import Configuracoes from '@/pages/Configuracoes';
-import Relatorios from '@/pages/relatorios/RelatoriosPage';
+const Relatorios = lazy(() => import('@/pages/relatorios/RelatoriosPage'));
 import Usuarios from '@/pages/usuarios/UsuariosPage';
 import Login from '@/pages/Login';
 import EditarOS from '@/pages/os/EditarOSPage';
@@ -30,7 +30,7 @@ import EditarPessoaPage from '@/pages/pessoas/EditarPessoaPage';
 import EditarProduto from '@/pages/produtos/editarProdutoPage';
 import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
 import type { User } from '@/types';
-import type { UsuarioApi } from '@/api';
+import { authApi, type UsuarioApi } from '@/api';
 
 const TEMPO_INATIVIDADE = 10 * 60 * 1000;
 
@@ -97,7 +97,6 @@ function getStoredUser(): User | null {
     return usuarioToUser(JSON.parse(storedUser) as UsuarioApi);
   } catch {
     localStorage.removeItem('authUser');
-    localStorage.removeItem('authToken');
     return null;
   }
 }
@@ -120,7 +119,19 @@ function AppLayout({ user, onLogout }: { user: User; onLogout: () => void }) {
   );
 }
 
-function ProtectedLayout({ user, onLogout }: { user: User | null; onLogout: () => void }) {
+function ProtectedLayout({
+  user,
+  onLogout,
+  isSessionLoading,
+}: {
+  user: User | null;
+  onLogout: () => void;
+  isSessionLoading: boolean;
+}) {
+  if (isSessionLoading) {
+    return null;
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -128,7 +139,15 @@ function ProtectedLayout({ user, onLogout }: { user: User | null; onLogout: () =
   return <AppLayout user={user} onLogout={onLogout} />;
 }
 
-function LoginRoute({ user, onLogin }: { user: User | null; onLogin: (token: string, usuario: UsuarioApi) => void }) {
+function LoginRoute({ user, onLogin, isSessionLoading }: {
+  user: User | null;
+  onLogin: (usuario: UsuarioApi) => void;
+  isSessionLoading: boolean;
+}) {
+  if (isSessionLoading) {
+    return null;
+  }
+
   if (user) {
     return <Navigate to="/" replace />;
   }
@@ -195,18 +214,58 @@ function EditarVeiculoRoute() {
 function AppRoutes() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(() => getStoredUser());
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
 
-  const handleLogin = (_token: string, usuario: UsuarioApi) => {
+  useEffect(() => {
+    let ignore = false;
+
+    async function validarSessao() {
+      try {
+        const response = await authApi.me();
+
+        if (ignore) {
+          return;
+        }
+
+        localStorage.setItem('authUser', JSON.stringify(response.usuario));
+        setUser(usuarioToUser(response.usuario));
+      } catch {
+        if (ignore) {
+          return;
+        }
+
+        localStorage.removeItem('authUser');
+        setUser(null);
+      } finally {
+        if (!ignore) {
+          setIsSessionLoading(false);
+        }
+      }
+    }
+
+    validarSessao();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const handleLogin = (usuario: UsuarioApi) => {
     setUser(usuarioToUser(usuario));
     navigate('/', { replace: true });
   };
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('authToken');
+  const handleLogout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Mantem o logout local mesmo se a API estiver indisponivel.
+    }
+
     localStorage.removeItem('authUser');
     setUser(null);
     navigate('/login', { replace: true });
-  }, []);
+  }, [navigate]);
 
   const handleUserUpdate = (usuarioAtualizado: UsuarioApi) => {
     const userAtualizado = usuarioToUser(usuarioAtualizado);
@@ -217,9 +276,12 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginRoute user={user} onLogin={handleLogin} />} />
+      <Route
+        path="/login"
+        element={<LoginRoute user={user} onLogin={handleLogin} isSessionLoading={isSessionLoading} />}
+      />
 
-      <Route element={<ProtectedLayout user={user} onLogout={handleLogout} />}>
+      <Route element={<ProtectedLayout user={user} onLogout={handleLogout} isSessionLoading={isSessionLoading} />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pessoas" element={<Pessoas />} />
         <Route path="/pessoas/:id/editar" element={<EditarPessoaRoute />} />
@@ -247,7 +309,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <BrowserRouter>
-            <AppRoutes />
+            <Suspense fallback={<div>Carregando...</div>}>
+              <AppRoutes />
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
