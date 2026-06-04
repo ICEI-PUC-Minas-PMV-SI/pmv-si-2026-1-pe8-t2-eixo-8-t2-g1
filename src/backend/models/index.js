@@ -7,6 +7,9 @@ const Veiculo = require("./Veiculo");
 const Perfil = require("./Perfil");
 const Permissao = require("./Permissao");
 const PerfilPermissao = require("./PerfilPermissao");
+const Marca = require("./Marca");
+const Categoria = require("./Categoria");
+const TipoVeiculo = require("./TipoVeiculo");
 const sequelize = require("../database/connection");
 
 Cliente.hasMany(Veiculo, {
@@ -83,5 +86,8 @@ module.exports = {
   Usuario,
   Perfil,
   Permissao,
-  PerfilPermissao
+  PerfilPermissao,
+  Marca,
+  Categoria,
+  TipoVeiculo,
 };
