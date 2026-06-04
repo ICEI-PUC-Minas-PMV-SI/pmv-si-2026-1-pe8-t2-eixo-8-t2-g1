@@ -31,7 +31,7 @@ interface OrdemServicoRow extends ServicoApi {
   valorTotal: number;
 }
 
-function getClienteNome(servico: ServicoApi) {
+function getclienteNome(servico: ServicoApi) {
   return servico.veiculo?.cliente?.nomeCompleto || 'Cliente não informado';
 }
 
@@ -44,7 +44,7 @@ function getVeiculoDescricao(servico: ServicoApi) {
 }
 
 function getItemSubtotal(item: NonNullable<ServicoApi['itens']>[number]) {
-  return Number(item.quantidade_utilizada) * Number(item.produto?.preco_unitario || 0);
+  return Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0);
 }
 
 export default function OS() {
@@ -82,9 +82,9 @@ export default function OS() {
     () =>
       ordens.map((ordem) => ({
         ...ordem,
-        clienteNome: getClienteNome(ordem),
+        clienteNome: getclienteNome(ordem),
         veiculoDescricao: getVeiculoDescricao(ordem),
-        valorTotal: Number(ordem.valor_total || 0),
+        valorTotal: Number(ordem.valorTotal || 0),
       })),
     [ordens],
   );
@@ -122,7 +122,7 @@ export default function OS() {
       label: 'Veículo',
     },
     {
-      key: 'data_inicio' as const,
+      key: 'dataInicio' as const,
       label: 'Data de Entrada',
       render: (value: string) => formatDate(value),
     },
@@ -222,12 +222,12 @@ export default function OS() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Data de Entrada</p>
-                    <p className="font-medium">{formatDate(selectedOS.data_inicio)}</p>
+                    <p className="font-medium">{formatDate(selectedOS.dataInicio)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Data de Conclusão</p>
                     <p className="font-medium">
-                      {selectedOS.data_fim ? formatDate(selectedOS.data_fim) : '-'}
+                      {selectedOS.dataFim ? formatDate(selectedOS.dataFim) : '-'}
                     </p>
                   </div>
                   <div>
@@ -258,10 +258,10 @@ export default function OS() {
                       {selectedOS.itens && selectedOS.itens.length > 0 ? (
                         selectedOS.itens.map((item, index) => (
                           <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                            <td className="px-4 py-2">{item.produto?.nome || item.id_produto}</td>
-                            <td className="px-4 py-2">{Number(item.quantidade_utilizada)}</td>
+                            <td className="px-4 py-2">{item.produto?.nome || item.idProduto}</td>
+                            <td className="px-4 py-2">{Number(item.quantidadeUtilizada)}</td>
                             <td className="px-4 py-2">
-                              {formatCurrency(Number(item.produto?.preco_unitario || 0))}
+                              {formatCurrency(Number(item.produto?.precoUnitario || 0))}
                             </td>
                             <td className="px-4 py-2 font-medium">
                               {formatCurrency(getItemSubtotal(item))}

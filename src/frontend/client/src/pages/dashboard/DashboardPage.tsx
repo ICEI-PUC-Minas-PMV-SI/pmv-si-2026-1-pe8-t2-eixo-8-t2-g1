@@ -17,8 +17,11 @@ const relatorioVazio: RelatoriosApi = {
   top5Produtos: [],
   resumo: {
     totalClientes: 0,
+    totalVeiculos: 0,
     clientesEsteMes: 0,
     osConcluidas: 0,
+    osTotais: 0,
+    produtosEmEstoque: 0,
     valorConcluidas: 0,
     faturamentoMesAtual: 0,
     mesAtual: '',

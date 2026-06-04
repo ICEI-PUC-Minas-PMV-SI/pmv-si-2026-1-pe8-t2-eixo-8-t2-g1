@@ -184,11 +184,11 @@ export default function EditarProdutoForm({
                 type="number"
                 step="0.01"
                 value={
-                  formData.preco_unitario
+                  formData.precoUnitario
                 }
                 onChange={(e) =>
                   handleInputChange(
-                    'preco_unitario',
+                    'precoUnitario',
                     Number(
                       e.target.value,
                     ),

@@ -81,30 +81,30 @@ router.post("/", async (req, res) => {
     const {
       descricao,
       status,
-      data_inicio,
-      data_fim,
-      valor_total,
-      id_veiculo
+      dataInicio,
+      dataFim,
+      valorTotal: valorTotalPayload,
+      idVeiculo: idVeiculoPayload
     } = req.body;
 
-    const idVeiculo = Number(id_veiculo);
-    const valorTotal = valor_total === undefined ? 0 : Number(valor_total);
+    const idVeiculo = Number(idVeiculoPayload);
+    const valorTotal = valorTotalPayload === undefined ? 0 : Number(valorTotalPayload);
 
-    if (!descricao || !status || !data_inicio || !id_veiculo) {
+    if (!descricao || !status || !dataInicio || !idVeiculoPayload) {
       return res.status(400).json({
-        message: "descricao, status, data_inicio e id_veiculo são obrigatórios"
+        message: "descricao, status, dataInicio e idVeiculo são obrigatórios"
       });
     }
 
     if (!isIntegerGreaterThanZero(idVeiculo)) {
       return res.status(400).json({
-        message: "id_veiculo deve ser um número inteiro maior que zero"
+        message: "idVeiculo deve ser um número inteiro maior que zero"
       });
     }
 
     if (Number.isNaN(valorTotal) || valorTotal < 0) {
       return res.status(400).json({
-        message: "valor_total deve ser um número maior ou igual a zero"
+        message: "valorTotal deve ser um número maior ou igual a zero"
       });
     }
 
@@ -119,10 +119,10 @@ router.post("/", async (req, res) => {
     const servico = await Servico.create({
       descricao,
       status,
-      data_inicio,
-      data_fim: data_fim ?? null,
-      valor_total: valorTotal,
-      id_veiculo: idVeiculo
+      dataInicio,
+      dataFim: dataFim ?? null,
+      valorTotal: valorTotal,
+      idVeiculo: idVeiculo
     });
 
     const servicoCompleto = await buscarServicoCompleto(servico.id);
@@ -174,21 +174,21 @@ router.put("/:id", async (req, res) => {
     const {
       descricao,
       status,
-      data_inicio,
-      data_fim,
-      valor_total,
-      id_veiculo
+      dataInicio,
+      dataFim,
+      valorTotal: valorTotalPayload,
+      idVeiculo: idVeiculoPayload
     } = req.body;
 
-    let idVeiculo = servico.id_veiculo;
-    let valorTotal = servico.valor_total;
+    let idVeiculo = servico.idVeiculo;
+    let valorTotal = servico.valorTotal;
 
-    if (id_veiculo !== undefined) {
-      idVeiculo = Number(id_veiculo);
+    if (idVeiculoPayload !== undefined) {
+      idVeiculo = Number(idVeiculoPayload);
 
       if (!isIntegerGreaterThanZero(idVeiculo)) {
         return res.status(400).json({
-          message: "id_veiculo deve ser um número inteiro maior que zero"
+          message: "idVeiculo deve ser um número inteiro maior que zero"
         });
       }
 
@@ -201,12 +201,12 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    if (valor_total !== undefined) {
-      valorTotal = Number(valor_total);
+    if (valorTotalPayload !== undefined) {
+      valorTotal = Number(valorTotalPayload);
 
       if (Number.isNaN(valorTotal) || valorTotal < 0) {
         return res.status(400).json({
-          message: "valor_total deve ser um número maior ou igual a zero"
+          message: "valorTotal deve ser um número maior ou igual a zero"
         });
       }
     }
@@ -214,10 +214,10 @@ router.put("/:id", async (req, res) => {
     const servicoAtualizado = await servico.update({
       descricao: descricao ?? servico.descricao,
       status: status ?? servico.status,
-      data_inicio: data_inicio ?? servico.data_inicio,
-      data_fim: data_fim ?? servico.data_fim,
-      valor_total: valorTotal,
-      id_veiculo: idVeiculo
+      dataInicio: dataInicio ?? servico.dataInicio,
+      dataFim: dataFim ?? servico.dataFim,
+      valorTotal: valorTotal,
+      idVeiculo: idVeiculo
     });
 
     const servicoCompleto = await buscarServicoCompleto(servicoAtualizado.id);
@@ -268,7 +268,7 @@ router.delete("/:id", async (req, res) => {
 
     const possuiItens = await ItemServico.findOne({
       where: {
-        id_servico: id
+        idServico: id
       }
     });
 

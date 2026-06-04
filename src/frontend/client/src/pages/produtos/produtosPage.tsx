@@ -105,7 +105,7 @@ export default function Produtos() {
         Number(value),
     },
     {
-    key: 'preco_unitario' as const,
+    key: 'precoUnitario' as const,
     label: 'Preço Unitário',
     render: (value: string | number) =>
         `R$ ${Number(value).toFixed(2)}`,

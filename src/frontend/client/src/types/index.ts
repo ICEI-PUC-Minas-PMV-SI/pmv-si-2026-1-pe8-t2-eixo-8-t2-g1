@@ -21,8 +21,8 @@ export interface Pessoa {
   email: string;
   isFornecedor: boolean;
   observacao?: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 export interface Fornecedor {
@@ -50,8 +50,8 @@ export interface Veiculo {
   numeroChasse?: string;
   tipoCombustivel?: string;
   dataUltimaRevisao?: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 // Tipos para Produtos
@@ -66,14 +66,14 @@ export interface Produto {
   preco: number;
   estoqueAtual: number;
   tipoItem: 'Produto' | 'Serviço';
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 // Tipos para OS (Ordem de Serviço)
 export interface ItemOS {
   id: string;
-  produtoId: string;
+  idProduto: string;
   quantidade: number;
   preco: number;
   subtotal: number;
@@ -110,31 +110,31 @@ export interface OrdemServico {
   // Auditoria
   dataAbertura: string;
   dataConclusao?: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 // Tipos para Tabelas Auxiliares
 export interface Marca {
   id: string;
   nome: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 export interface Categoria {
   id: string;
   nome: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 export interface TipoVeiculo {
   id: string;
   nome: string;
   observacao?: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 // Tipos para Configurações
@@ -180,8 +180,9 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  perfil: 'Administrador' | 'Supervisor' | 'Padrão';
+  idPerfil?: number;
+  perfil?: 'Administrador' | 'Supervisor' | 'Padrão';
   status: 'Ativo' | 'Inativo';
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }

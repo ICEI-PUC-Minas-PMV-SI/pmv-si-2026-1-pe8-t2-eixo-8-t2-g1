@@ -1,24 +1,27 @@
 const express = require("express");
-const { Usuario } = require("../models");
-const { isValidEmail, tratarErroSequelize } = require("../utils/utils");
+const { Usuario, Perfil } = require("../models");
+const { isIntegerGreaterThanZero, isValidEmail, tratarErroSequelize } = require("../utils/utils");
 const { hashPassword, signJwt, verifyPassword } = require("../utils/auth");
 
 const router = express.Router();
 
-const perfisValidos = ["Administrador", "Supervisor", "Padrão"];
 const statusValidos = ["Ativo", "Inativo"];
 
-function validarUsuario({ nome, email, perfil, status, senha }, obrigatorio = true) {
-  if (obrigatorio && (!nome || !email || !perfil || !status || !senha)) {
-    return "nome, email, perfil, status e senha são obrigatórios";
+const usuarioInclude = [
+  {
+    model: Perfil,
+    as: "perfilInfo",
+    attributes: ["id", "nome"],
+  },
+];
+
+function validarUsuario({ nome, email, status, senha }, obrigatorio = true) {
+  if (obrigatorio && (!nome || !email || !status || !senha)) {
+    return "nome, email, status e senha são obrigatórios";
   }
 
   if (email !== undefined && !isValidEmail(email)) {
     return "email deve ser válido";
-  }
-
-  if (perfil !== undefined && !perfisValidos.includes(perfil)) {
-    return "perfil deve ser Administrador, Supervisor ou Padrão";
   }
 
   if (status !== undefined && !statusValidos.includes(status)) {
@@ -30,6 +33,65 @@ function validarUsuario({ nome, email, perfil, status, senha }, obrigatorio = tr
   }
 
   return null;
+}
+
+async function resolverIdPerfil({ perfil, idPerfil }, obrigatorio = true) {
+  if (idPerfil !== undefined) {
+    const idPerfilNumero = Number(idPerfil);
+
+    if (!isIntegerGreaterThanZero(idPerfilNumero)) {
+      return {
+        erro: "idPerfil deve ser um número inteiro maior que zero",
+      };
+    }
+
+    const perfilEncontrado = await Perfil.findByPk(idPerfilNumero);
+
+    if (!perfilEncontrado) {
+      return {
+        erro: "Perfil não encontrado",
+      };
+    }
+
+    return {
+      idPerfil: idPerfilNumero,
+    };
+  }
+
+  if (perfil !== undefined) {
+    const perfilEncontrado = await Perfil.findOne({
+      where: {
+        nome: perfil,
+      },
+    });
+
+    if (!perfilEncontrado) {
+      return {
+        erro: "Perfil não encontrado",
+      };
+    }
+
+    return {
+      idPerfil: perfilEncontrado.id,
+    };
+  }
+
+  if (obrigatorio) {
+    return {
+      erro: "perfil ou idPerfil é obrigatório",
+    };
+  }
+
+  return {
+    idPerfil: undefined,
+  };
+}
+
+async function buscarUsuarioCompleto(id) {
+  return Usuario.findByPk(id, {
+    attributes: { exclude: ['senhaHash'] },
+    include: usuarioInclude,
+  });
 }
 
 router.post("/login", async (req, res) => {
@@ -50,6 +112,7 @@ router.post("/login", async (req, res) => {
 
     const usuario = await Usuario.findOne({
       where: { email },
+      include: usuarioInclude,
     });
 
     if (!usuario || !verifyPassword(senha, usuario.senhaHash)) {
@@ -64,16 +127,18 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    const usuarioJson = usuario.toJSON();
     const token = signJwt({
       sub: usuario.id,
       nome: usuario.nome,
       email: usuario.email,
-      perfil: usuario.perfil,
+      idPerfil: usuario.idPerfil,
+      perfil: usuarioJson.perfil,
     });
 
     return res.json({
       token,
-      usuario,
+      usuario: usuarioJson,
     });
   } catch (error) {
     return res.status(500).json({
@@ -85,7 +150,8 @@ router.post("/login", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
-      order: [["data_criacao", "DESC"]],
+      include: usuarioInclude,
+      order: [["dataCriacao", "DESC"]],
     });
 
     return res.json(usuarios);
@@ -98,7 +164,7 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const usuario = await Usuario.findByPk(req.params.id);
+    const usuario = await buscarUsuarioCompleto(req.params.id);
 
     if (!usuario) {
       return res.status(404).json({
@@ -116,8 +182,8 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { nome, email, perfil, status, senha } = req.body;
-    const erroValidacao = validarUsuario({ nome, email, perfil, status, senha });
+    const { nome, email, perfil, status, senha, idPerfil } = req.body;
+    const erroValidacao = validarUsuario({ nome, email, status, senha });
 
     if (erroValidacao) {
       return res.status(400).json({
@@ -125,15 +191,25 @@ router.post("/", async (req, res) => {
       });
     }
 
+    const { erro, idPerfil: idPerfilResolvido } = await resolverIdPerfil({ perfil, idPerfil });
+
+    if (erro) {
+      return res.status(400).json({
+        message: erro,
+      });
+    }
+
     const usuario = await Usuario.create({
       nome,
       email,
-      perfil,
       status,
       senhaHash: hashPassword(senha),
+      idPerfil: idPerfilResolvido
     });
 
-    return res.status(201).json(usuario);
+    const usuarioCompleto = await buscarUsuarioCompleto(usuario.id);
+
+    return res.status(201).json(usuarioCompleto);
   } catch (error) {
     return tratarErroSequelize(error, res, "Erro interno ao cadastrar usuário");
   }
@@ -149,8 +225,8 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    const { nome, email, perfil, status, senha } = req.body;
-    const erroValidacao = validarUsuario({ nome, email, perfil, status, senha }, false);
+    const { nome, email, perfil, idPerfil, status, senha } = req.body;
+    const erroValidacao = validarUsuario({ nome, email, status, senha }, false);
 
     if (erroValidacao) {
       return res.status(400).json({
@@ -158,15 +234,25 @@ router.put("/:id", async (req, res) => {
       });
     }
 
+    const { erro, idPerfil: idPerfilResolvido } = await resolverIdPerfil({ perfil, idPerfil }, false);
+
+    if (erro) {
+      return res.status(400).json({
+        message: erro,
+      });
+    }
+
     const usuarioAtualizado = await usuario.update({
       nome: nome ?? usuario.nome,
       email: email ?? usuario.email,
-      perfil: perfil ?? usuario.perfil,
+      idPerfil: idPerfilResolvido ?? usuario.idPerfil,
       status: status ?? usuario.status,
       senhaHash: senha !== undefined ? hashPassword(senha) : usuario.senhaHash,
     });
 
-    return res.json(usuarioAtualizado);
+    const usuarioCompleto = await buscarUsuarioCompleto(usuarioAtualizado.id);
+
+    return res.json(usuarioCompleto);
   } catch (error) {
     return tratarErroSequelize(error, res, "Erro interno ao atualizar usuário");
   }

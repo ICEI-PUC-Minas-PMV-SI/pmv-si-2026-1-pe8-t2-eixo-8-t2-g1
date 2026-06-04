@@ -9,25 +9,28 @@ const ItemServico = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    id_servico: {
+    idServico: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "id_servico",
       references: {
         model: "servicos",
         key: "id",
       },
     },
-    id_produto: {
+    idProduto: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "id_produto",
       references: {
         model: "produtos",
         key: "id",
       },
     },
-    quantidade_utilizada: {
+    quantidadeUtilizada: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
+      field: "quantidade_utilizada",
     },
   },
   {

@@ -20,7 +20,7 @@ interface VeiculoFormProps {
 
 interface FormDataState {
   id?: number;
-  id_cliente: number;
+  idCliente: number;
   placa: string;
   modelo: string;
   ano: number;
@@ -31,8 +31,8 @@ interface FormDataState {
   numeroChasse: string;
   tipoCombustivel: string;
   dataUltimaRevisao: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
 export default function VeiculoForm({
@@ -45,7 +45,7 @@ export default function VeiculoForm({
     if (initialData) {
       return {
         id: initialData.id,
-        id_cliente: initialData.id_cliente,
+        idCliente: initialData.idCliente,
         placa: initialData.placa,
         modelo: initialData.modelo,
         ano: initialData.ano,
@@ -56,12 +56,12 @@ export default function VeiculoForm({
         numeroChasse: initialData.numeroChasse || '',
         tipoCombustivel: initialData.tipoCombustivel || '',
         dataUltimaRevisao: initialData.dataUltimaRevisao || '',
-        data_criacao: new Date().toISOString().split('T')[0],
-        data_atualizacao: new Date().toISOString().split('T')[0],
+        dataCriacao: new Date().toISOString().split('T')[0],
+        dataAtualizacao: new Date().toISOString().split('T')[0],
       };
     }
     return {
-      id_cliente: 0,
+      idCliente: 0,
       placa: '',
       modelo: '',
       ano: new Date().getFullYear(),
@@ -72,8 +72,8 @@ export default function VeiculoForm({
       numeroChasse: '',
       tipoCombustivel: 'Gasolina',
       dataUltimaRevisao: '',
-      data_criacao: new Date().toISOString().split('T')[0],
-      data_atualizacao: new Date().toISOString().split('T')[0],
+      dataCriacao: new Date().toISOString().split('T')[0],
+      dataAtualizacao: new Date().toISOString().split('T')[0],
     };
   };
 
@@ -83,7 +83,7 @@ export default function VeiculoForm({
     e.preventDefault();
     const veiculo: VeiculoApi = {
       id: 0,
-      id_cliente: formData.id_cliente,
+      idCliente: formData.idCliente,
       placa: formData.placa,
       modelo: formData.modelo,
       ano: formData.ano,
@@ -235,10 +235,10 @@ export default function VeiculoForm({
             />
           </div>
           <div className="md:col-span-2">
-            <Label htmlFor="id_cliente">Cliente *</Label>
+            <Label htmlFor="idCliente">Cliente *</Label>
               <Select
-                value={formData.id_cliente ? String(formData.id_cliente) : ''}
-                onValueChange={(value) => handleInputChange('id_cliente', Number(value))}
+                value={formData.idCliente ? String(formData.idCliente) : ''}
+                onValueChange={(value) => handleInputChange('idCliente', Number(value))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um cliente..." />

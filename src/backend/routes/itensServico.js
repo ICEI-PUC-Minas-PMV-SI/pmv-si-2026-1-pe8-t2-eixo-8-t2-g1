@@ -7,7 +7,7 @@ const router = express.Router();
 async function recalcularValorServico(idServico, transaction) {
   const itens = await ItemServico.findAll({
     where: {
-      id_servico: idServico
+      idServico: idServico
     },
     include: [
       {
@@ -19,15 +19,15 @@ async function recalcularValorServico(idServico, transaction) {
   });
 
   const valorTotal = itens.reduce((total, item) => {
-    const quantidade = Number(item.quantidade_utilizada);
-    const precoUnitario = Number(item.produto?.preco_unitario || 0);
+    const quantidade = Number(item.quantidadeUtilizada);
+    const precoUnitario = Number(item.produto?.precoUnitario || 0);
 
     return total + quantidade * precoUnitario;
   }, 0);
 
   await Servico.update(
     {
-      valor_total: valorTotal
+      valorTotal: valorTotal
     },
     {
       where: {
@@ -106,17 +106,21 @@ router.post("/", async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { id_servico, id_produto, quantidade_utilizada } = req.body;
+    const {
+      idServico: idServicoPayload,
+      idProduto: idProdutoPayload,
+      quantidadeUtilizada: quantidadeUtilizadaPayload,
+    } = req.body;
 
-    const idServico = Number(id_servico);
-    const idProduto = Number(id_produto);
-    const quantidadeUtilizada = Number(quantidade_utilizada);
+    const idServico = Number(idServicoPayload);
+    const idProduto = Number(idProdutoPayload);
+    const quantidadeUtilizada = Number(quantidadeUtilizadaPayload);
 
     if (!isIntegerGreaterThanZero(idServico)) {
       await transaction.rollback();
 
       return res.status(400).json({
-        message: "id_servico deve ser um número inteiro maior que zero"
+        message: "idServico deve ser um número inteiro maior que zero"
       });
     }
 
@@ -124,7 +128,7 @@ router.post("/", async (req, res) => {
       await transaction.rollback();
 
       return res.status(400).json({
-        message: "id_produto deve ser um número inteiro maior que zero"
+        message: "idProduto deve ser um número inteiro maior que zero"
       });
     }
 
@@ -132,7 +136,7 @@ router.post("/", async (req, res) => {
       await transaction.rollback();
 
       return res.status(400).json({
-        message: "quantidade_utilizada deve ser um número inteiro maior que zero"
+        message: "quantidadeUtilizada deve ser um número inteiro maior que zero"
       });
     }
 
@@ -166,9 +170,9 @@ router.post("/", async (req, res) => {
 
     const itemServico = await ItemServico.create(
       {
-        id_servico: idServico,
-        id_produto: idProduto,
-        quantidade_utilizada: quantidadeUtilizada
+        idServico: idServico,
+        idProduto: idProduto,
+        quantidadeUtilizada: quantidadeUtilizada
       },
       { transaction }
     );
@@ -231,26 +235,30 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    const { id_servico, id_produto, quantidade_utilizada } = req.body;
-    const idServicoAntigo = itemServico.id_servico;
+    const {
+      idServico: idServicoPayload,
+      idProduto: idProdutoPayload,
+      quantidadeUtilizada: quantidadeUtilizadaPayload,
+    } = req.body;
+    const idServicoAntigo = itemServico.idServico;
 
-    const idServico = id_servico !== undefined
-      ? Number(id_servico)
-      : itemServico.id_servico;
+    const idServico = idServicoPayload !== undefined
+      ? Number(idServicoPayload)
+      : itemServico.idServico;
 
-    const idProduto = id_produto !== undefined
-      ? Number(id_produto)
-      : itemServico.id_produto;
+    const idProduto = idProdutoPayload !== undefined
+      ? Number(idProdutoPayload)
+      : itemServico.idProduto;
 
-    const quantidadeUtilizada = quantidade_utilizada !== undefined
-      ? Number(quantidade_utilizada)
-      : Number(itemServico.quantidade_utilizada);
+    const quantidadeUtilizada = quantidadeUtilizadaPayload !== undefined
+      ? Number(quantidadeUtilizadaPayload)
+      : Number(itemServico.quantidadeUtilizada);
 
     if (!isIntegerGreaterThanZero(idServico)) {
       await transaction.rollback();
 
       return res.status(400).json({
-        message: "id_servico deve ser um número inteiro maior que zero"
+        message: "idServico deve ser um número inteiro maior que zero"
       });
     }
 
@@ -258,7 +266,7 @@ router.put("/:id", async (req, res) => {
       await transaction.rollback();
 
       return res.status(400).json({
-        message: "id_produto deve ser um número inteiro maior que zero"
+        message: "idProduto deve ser um número inteiro maior que zero"
       });
     }
 
@@ -266,7 +274,7 @@ router.put("/:id", async (req, res) => {
       await transaction.rollback();
 
       return res.status(400).json({
-        message: "quantidade_utilizada deve ser um número inteiro maior que zero"
+        message: "quantidadeUtilizada deve ser um número inteiro maior que zero"
       });
     }
 
@@ -280,12 +288,12 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    const produtoAntigo = await Produto.findByPk(itemServico.id_produto, {
+    const produtoAntigo = await Produto.findByPk(itemServico.idProduto, {
       transaction
     });
 
     if (produtoAntigo) {
-      produtoAntigo.quantidade = Number(produtoAntigo.quantidade) + Number(itemServico.quantidade_utilizada);
+      produtoAntigo.quantidade = Number(produtoAntigo.quantidade) + Number(itemServico.quantidadeUtilizada);
       await produtoAntigo.save({ transaction });
     }
 
@@ -315,9 +323,9 @@ router.put("/:id", async (req, res) => {
 
     const itemServicoAtualizado = await itemServico.update(
       {
-        id_servico: idServico,
-        id_produto: idProduto,
-        quantidade_utilizada: quantidadeUtilizada
+        idServico: idServico,
+        idProduto: idProduto,
+        quantidadeUtilizada: quantidadeUtilizada
       },
       { transaction }
     );
@@ -382,16 +390,16 @@ router.delete("/:id", async (req, res) => {
       });
     }
 
-    const produto = await Produto.findByPk(itemServico.id_produto, {
+    const produto = await Produto.findByPk(itemServico.idProduto, {
       transaction
     });
 
     if (produto) {
-      produto.quantidade = Number(produto.quantidade) + Number(itemServico.quantidade_utilizada);
+      produto.quantidade = Number(produto.quantidade) + Number(itemServico.quantidadeUtilizada);
       await produto.save({ transaction });
     }
 
-    const idServico = itemServico.id_servico;
+    const idServico = itemServico.idServico;
 
     await itemServico.destroy({ transaction });
     await recalcularValorServico(idServico, transaction);

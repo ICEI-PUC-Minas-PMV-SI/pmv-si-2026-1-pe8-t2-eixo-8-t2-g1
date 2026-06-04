@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
     produtos.map((produto) => ({
       ...produto.toJSON(),
       quantidade: Number(produto.quantidade),
-      preco_unitario: Number(produto.preco_unitario),
+      precoUnitario: Number(produto.precoUnitario),
     }))
   );
   } catch (error) {
@@ -52,16 +52,16 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { nome, quantidade, preco_unitario } = req.body;
+    const { nome, quantidade, precoUnitario } = req.body;
 
-    if (!nome || quantidade === undefined || preco_unitario === undefined) {
+    if (!nome || quantidade === undefined || precoUnitario === undefined) {
       return res.status(400).json({
-        message: "nome, quantidade e preco_unitario são obrigatórios"
+        message: "nome, quantidade e precoUnitario são obrigatórios"
       });
     }
 
     const quantidadeNumero = Number(quantidade);
-    const precoUnitario = Number(preco_unitario);
+    const precoUnitarioNumero = Number(precoUnitario);
 
     if (!isIntegerGreaterThanZero(quantidadeNumero)) {
       return res.status(400).json({
@@ -69,13 +69,13 @@ router.post("/", async (req, res) => {
       });
     }
 
-    if (Number.isNaN(precoUnitario) || precoUnitario < 0) {
+    if (Number.isNaN(precoUnitarioNumero) || precoUnitarioNumero < 0) {
       return res.status(400).json({
-        message: "preco_unitario deve ser um número maior ou igual a zero"
+        message: "precoUnitario deve ser um número maior ou igual a zero"
       });
     }
 
-    if (quantidadeNumero >= Math.pow(10, 8) || precoUnitario >= Math.pow(10, 8)) {
+    if (quantidadeNumero >= Math.pow(10, 8) || precoUnitarioNumero >= Math.pow(10, 8)) {
       return res.status(400).json({
         message: "quantidade ou preço unitário deve ser um número menor que 10^8"
       });
@@ -84,7 +84,7 @@ router.post("/", async (req, res) => {
     const produto = await Produto.create({
       nome,
       quantidade: quantidadeNumero,
-      preco_unitario: precoUnitario
+      precoUnitario: precoUnitarioNumero
     });
 
     return res.status(201).json(produto);
@@ -136,10 +136,10 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    const { nome, quantidade, preco_unitario } = req.body;
+    const { nome, quantidade, precoUnitario } = req.body;
 
     let quantidadeNumero = produto.quantidade;
-    let precoUnitario = produto.preco_unitario;
+    let precoUnitarioNumero = produto.precoUnitario;
 
     if (quantidade !== undefined) {
       quantidadeNumero = Number(quantidade);
@@ -151,16 +151,16 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    if (preco_unitario !== undefined) {
-      precoUnitario = Number(preco_unitario);
-      if (Number.isNaN(precoUnitario) || precoUnitario < 0) {
+    if (precoUnitario !== undefined) {
+      precoUnitarioNumero = Number(precoUnitario);
+      if (Number.isNaN(precoUnitarioNumero) || precoUnitarioNumero < 0) {
         return res.status(400).json({
-          message: "preco_unitario deve ser um número maior ou igual a zero"
+          message: "precoUnitario deve ser um número maior ou igual a zero"
         });
       }
     }
 
-    if (quantidadeNumero >= Math.pow(10, 8) || precoUnitario >= Math.pow(10, 8)) {
+    if (quantidadeNumero >= Math.pow(10, 8) || precoUnitarioNumero >= Math.pow(10, 8)) {
       return res.status(400).json({
         message: "quantidade ou preço unitário deve ser um número menor que 10^8"
       });
@@ -169,7 +169,7 @@ router.put("/:id", async (req, res) => {
     const produtoAtualizado = await produto.update({
       nome: nome ?? produto.nome,
       quantidade: quantidadeNumero,
-      preco_unitario: precoUnitario
+      precoUnitario: precoUnitarioNumero
     });
 
     return res.json(produtoAtualizado);
@@ -223,7 +223,7 @@ router.delete("/:id", async (req, res) => {
 
     const possuiItens = await ItemServico.findOne({
       where: {
-        id_produto: id
+        idProduto: id
       }
     });
 

@@ -5,27 +5,23 @@ const Fornecedor = sequelize.define(
   "Fornecedor",
   {
     id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
+      autoIncrement: true
     },
-
     nome: {
       type: DataTypes.STRING(120),
       allowNull: false,
     },
-
     cnpj: {
       type: DataTypes.STRING(18),
       allowNull: false,
       unique: true,
     },
-
     telefone: {
       type: DataTypes.STRING(20),
       allowNull: false,
     },
-
     email: {
       type: DataTypes.STRING(120),
       allowNull: false,
@@ -45,6 +41,7 @@ const Fornecedor = sequelize.define(
     timestamps: true,
     createdAt: "dataCriacao",
     updatedAt: "dataAtualizacao",
+    underscored: true,
   },
 );
 

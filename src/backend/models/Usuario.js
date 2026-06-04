@@ -5,9 +5,9 @@ const Usuario = sequelize.define(
   "Usuario",
   {
     id: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
+      autoIncrement: true
     },
     nome: {
       type: DataTypes.STRING(120),
@@ -21,11 +21,6 @@ const Usuario = sequelize.define(
         isEmail: true,
       },
     },
-    perfil: {
-      type: DataTypes.ENUM("Administrador", "Supervisor", "Padrão"),
-      allowNull: false,
-      defaultValue: "Padrão",
-    },
     status: {
       type: DataTypes.ENUM("Ativo", "Inativo"),
       allowNull: false,
@@ -36,18 +31,30 @@ const Usuario = sequelize.define(
       allowNull: true,
       field: "senha_hash",
     },
+    idPerfil: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "id_perfil",
+      references: {
+        model: "perfis",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "usuarios",
     timestamps: true,
-    createdAt: "data_criacao",
-    updatedAt: "data_atualizacao",
+    createdAt: "dataCriacao",
+    updatedAt: "dataAtualizacao",
+    underscored: true,
   },
 );
 
 Usuario.prototype.toJSON = function () {
   const values = { ...this.get() };
+  values.perfil = values.perfilInfo?.nome;
   delete values.senhaHash;
+  delete values.perfilInfo;
   return values;
 };
 

@@ -68,15 +68,15 @@ router.post("/", async (req, res) => {
       numeroChasse,
       tipoCombustivel,
       dataUltimaRevisao,
-      id_cliente
+      idCliente: idClientePayload
     } = req.body;
 
     const anoNumero = Number(ano);
-    const idCliente = Number(id_cliente);
+    const idCliente = Number(idClientePayload);
 
-    if (!placa || !modelo || !ano || !cor || !id_cliente) {
+    if (!placa || !modelo || !ano || !cor || !idClientePayload) {
       return res.status(400).json({
-        message: "placa, modelo, ano, cor e id_cliente são obrigatórios"
+        message: "placa, modelo, ano, cor e idCliente são obrigatórios"
       });
     }
 
@@ -88,7 +88,7 @@ router.post("/", async (req, res) => {
 
     if (!isIntegerGreaterThanZero(idCliente)) {
       return res.status(400).json({
-        message: "id_cliente deve ser um número inteiro maior que zero"
+        message: "idCliente deve ser um número inteiro maior que zero"
       });
     }
 
@@ -111,7 +111,7 @@ router.post("/", async (req, res) => {
       numeroChasse,
       tipoCombustivel,
       dataUltimaRevisao,
-      id_cliente: idCliente
+      idCliente: idCliente
     });
 
     return res.status(201).json(veiculo);
@@ -180,11 +180,11 @@ router.put("/:id", async (req, res) => {
       numeroChasse,
       tipoCombustivel,
       dataUltimaRevisao,
-      id_cliente
+      idCliente: idClientePayload
     } = req.body;
 
     let anoNumero = veiculo.ano;
-    let idCliente = veiculo.id_cliente;
+    let idCliente = veiculo.idCliente;
 
     if (ano !== undefined) {
       anoNumero = Number(ano);
@@ -196,12 +196,12 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    if (id_cliente !== undefined) {
-      idCliente = Number(id_cliente);
+    if (idClientePayload !== undefined) {
+      idCliente = Number(idClientePayload);
 
       if (!isIntegerGreaterThanZero(idCliente)) {
         return res.status(400).json({
-          message: "id_cliente deve ser um número inteiro maior que zero"
+          message: "idCliente deve ser um número inteiro maior que zero"
         });
       }
 
@@ -225,7 +225,7 @@ router.put("/:id", async (req, res) => {
       numeroChasse: numeroChasse ?? veiculo.numeroChasse,
       tipoCombustivel: tipoCombustivel ?? veiculo.tipoCombustivel,
       dataUltimaRevisao: dataUltimaRevisao ?? veiculo.dataUltimaRevisao,
-      id_cliente: idCliente
+      idCliente: idCliente
     });
 
     return res.json(veiculoAtualizado);
@@ -285,7 +285,7 @@ router.delete("/:id", async (req, res) => {
 
     const possuiServicos = await Servico.findOne({
       where: {
-        id_veiculo: id
+        idVeiculo: id
       }
     });
 

@@ -18,15 +18,15 @@ export interface ClienteApi {
   email: string;
   isFornecedor: boolean;
   observacao?: string | null;
-  data_criacao?: string;
-  data_atualizacao?: string;
+  dataCriacao?: string;
+  dataAtualizacao?: string;
 }
 
-export type ClientePayload = Omit<ClienteApi, "id" | "data_criacao" | "data_atualizacao">;
+export type ClientePayload = Omit<ClienteApi, "id" | "dataCriacao" | "dataAtualizacao">;
 
 export interface VeiculoApi {
   id: number;
-  id_cliente: number;
+  idCliente: number;
   placa: string;
   modelo: string;
   ano: number;
@@ -37,8 +37,8 @@ export interface VeiculoApi {
   numeroChasse?: string | null;
   tipoCombustivel?: string | null;
   dataUltimaRevisao?: string | null;
-  data_criacao?: string;
-  data_atualizacao?: string;
+  dataCriacao?: string;
+  dataAtualizacao?: string;
   cliente?: ClienteApi | null;
 }
 
@@ -48,10 +48,10 @@ export interface ServicoApi {
   id: number;
   descricao: string;
   status: string;
-  data_inicio: string;
-  data_fim: string | null;
-  valor_total: number | string;
-  id_veiculo: number;
+  dataInicio: string;
+  dataFim: string | null;
+  valorTotal: number | string;
+  idVeiculo: number;
   veiculo?: VeiculoApi | null;
   itens?: ItemServicoApi[];
 }
@@ -59,17 +59,17 @@ export interface ServicoApi {
 export interface ServicoPayload {
   descricao: string;
   status: string;
-  data_inicio: string;
-  data_fim?: string | null;
-  valor_total?: number;
-  id_veiculo: number;
+  dataInicio: string;
+  dataFim?: string | null;
+  valorTotal?: number;
+  idVeiculo: number;
 }
 
 export interface ProdutoApi {
   id: number;
   nome: string;
   quantidade: number | string;
-  preco_unitario: number | string;
+  precoUnitario: number | string;
 }
 
 export type ProdutoPayload = Omit<ProdutoApi, "id">;
@@ -99,8 +99,11 @@ export interface RelatorioFaturamentoApi {
 
 export interface RelatorioResumoApi {
   totalClientes: number;
+  totalVeiculos: number;
   clientesEsteMes: number;
   osConcluidas: number;
+  osTotais: number;
+  produtosEmEstoque: number;
   valorConcluidas: number;
   faturamentoMesAtual: number;
   mesAtual: string;
@@ -123,9 +126,9 @@ export interface RelatorioTop5ProdutosApi {
 
 export interface ItemServicoApi {
   id: number;
-  id_servico: number;
-  id_produto: number;
-  quantidade_utilizada: number | string;
+  idServico: number;
+  idProduto: number;
+  quantidadeUtilizada: number | string;
   produto?: ProdutoApi | null;
   servico?: ServicoApi | null;
 }
@@ -136,13 +139,14 @@ export interface UsuarioApi {
   id: string;
   nome: string;
   email: string;
+  idPerfil?: number;
   perfil: "Administrador" | "Supervisor" | "Padrão";
   status: "Ativo" | "Inativo";
-  data_criacao: string;
-  data_atualizacao: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
 }
 
-export type UsuarioPayload = Omit<UsuarioApi, "id" | "data_criacao" | "data_atualizacao"> & {
+export type UsuarioPayload = Omit<UsuarioApi, "id" | "dataCriacao" | "dataAtualizacao"> & {
   senha?: string;
 };
 
@@ -156,10 +160,10 @@ export interface FornecedorApi {
 }
 
 export interface FornecedorPayload {
-  nome: string;
-  cnpj: string;
+  nomeCompleto: string;
   telefone: string;
   email: string;
+  isFornecedor: boolean;
   observacao?: string | null;
 }
 

@@ -148,14 +148,14 @@ router.get("/", async (req, res) => {
   try {
     const [clientes, servicos, produtos, veiculos, itemServico] = await Promise.all([
       Cliente.findAll({
-        attributes: ["id", "nomeCompleto", "data_criacao"],
+        attributes: ["id", "nomeCompleto", "dataCriacao"],
       }),
       Servico.findAll({
         include: [
           {
             model: Veiculo,
             as: "veiculo",
-            attributes: ["id", "id_cliente"],
+            attributes: ["id", "idCliente"],
             include: [
               {
                 model: Cliente,
@@ -173,18 +173,18 @@ router.get("/", async (req, res) => {
         ],
       }),
       Veiculo.findAll({
-        attributes: ["id", "id_cliente"],
+        attributes: ["id", "idCliente"],
       }),
       ItemServico.findAll({
         attributes: [
-          "id_produto",
-          [fn("SUM", col("quantidade_utilizada")), "totalQuantidadeUtilizada"],
+          "idProduto",
+          [fn("SUM", col("ItemServico.quantidade_utilizada")), "totalQuantidadeUtilizada"],
         ],
         include: [
           {
             model: Produto,
             as: "produto",
-            attributes: ["id", "nome", "preco_unitario"],
+            attributes: ["id", "nome", "precoUnitario"],
           },
         ],
         group: [
@@ -220,7 +220,7 @@ router.get("/", async (req, res) => {
 
     for (const servico of servicos) {
       const status = canonicalizeStatus(servico.status);
-      const valor = toNumber(servico.valor_total);
+      const valor = toNumber(servico.valorTotal);
       const statusBucket = osStatus.get(status) || {
         status,
         quantidade: 0,
@@ -249,7 +249,7 @@ router.get("/", async (req, res) => {
       clienteBucket.totalGasto += valor;
       topClientes.set(clienteId, clienteBucket);
 
-      const monthKey = getMonthKey(servico.data_fim || servico.data_inicio);
+      const monthKey = getMonthKey(servico.dataFim || servico.dataInicio);
       const monthBucket = monthKey ? faturamentoPorMes.get(monthKey) : null;
 
       if (monthBucket) {
@@ -259,7 +259,7 @@ router.get("/", async (req, res) => {
 
     const currentMonthKey = getMonthKey(new Date().toISOString().slice(0, 10));
     const clientesEsteMes = clientes.filter(
-      (cliente) => getMonthKey(cliente.data_criacao) === currentMonthKey,
+      (cliente) => getMonthKey(cliente.dataCriacao) === currentMonthKey,
     ).length;
     const mesAtual = faturamentoPorMes.get(currentMonthKey) || faturamentoMensal.at(-1);
 
@@ -279,7 +279,7 @@ router.get("/", async (req, res) => {
         produto: produto.nome,
         estoque: toNumber(produto.quantidade),
         minimo: getEstoqueMinimo(produto.nome),
-        precoUnitario: toNumber(produto.preco_unitario),
+        precoUnitario: toNumber(produto.precoUnitario),
       })),
       faturamento: faturamentoMensal.map(({ key, ...item }) => ({
         ...item,

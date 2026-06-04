@@ -47,10 +47,10 @@ interface EditarOSProps {
 interface FormDataState {
   descricao: string;
   status: string;
-  data_inicio: string;
-  data_fim: string;
-  valor_total: number;
-  id_veiculo: number;
+  dataInicio: string;
+  dataFim: string;
+  valorTotal: number;
+  idVeiculo: number;
 }
 
 const statusOptions = [
@@ -65,10 +65,10 @@ function toFormData(servico: ServicoApi): FormDataState {
   return {
     descricao: servico.descricao,
     status: servico.status,
-    data_inicio: servico.data_inicio,
-    data_fim: servico.data_fim || '',
-    valor_total: Number(servico.valor_total || 0),
-    id_veiculo: servico.id_veiculo,
+    dataInicio: servico.dataInicio,
+    dataFim: servico.dataFim || '',
+    valorTotal: Number(servico.valorTotal || 0),
+    idVeiculo: servico.idVeiculo,
   };
 }
 
@@ -80,11 +80,11 @@ function getVeiculoLabel(veiculo: VeiculoApi) {
 }
 
 function getProdutoLabel(produto: ProdutoApi) {
-  return `${produto.nome} - ${formatCurrency(Number(produto.preco_unitario || 0))}`;
+  return `${produto.nome} - ${formatCurrency(Number(produto.precoUnitario || 0))}`;
 }
 
 function getItemSubtotal(item: ItemServicoApi) {
-  return Number(item.quantidade_utilizada) * Number(item.produto?.preco_unitario || 0);
+  return Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0);
 }
 
 export default function EditarOS({ id, onNavigate }: EditarOSProps) {
@@ -131,7 +131,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
       dadosAtuais
         ? {
             ...dadosAtuais,
-            valor_total: Number(servicoResponse.valor_total || 0),
+            valorTotal: Number(servicoResponse.valorTotal || 0),
           }
         : toFormData(servicoResponse),
     );
@@ -156,10 +156,10 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
     return {
       descricao: formData.descricao,
       status: formData.status,
-      data_inicio: formData.data_inicio,
-      data_fim: formData.data_fim || null,
-      valor_total: Number(formData.valor_total) || 0,
-      id_veiculo: formData.id_veiculo,
+      dataInicio: formData.dataInicio,
+      dataFim: formData.dataFim || null,
+      valorTotal: Number(formData.valorTotal) || 0,
+      idVeiculo: formData.idVeiculo,
     };
   };
 
@@ -194,9 +194,9 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
     try {
       setSaving(true);
       await itensServicoApi.create({
-        id_servico: Number(id),
-        id_produto: Number(selectedProduto),
-        quantidade_utilizada: quantidade,
+        idServico: Number(id),
+        idProduto: Number(selectedProduto),
+        quantidadeUtilizada: quantidade,
       });
 
       setSelectedProduto('');
@@ -264,10 +264,10 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <Label htmlFor="id_veiculo">Veículo</Label>
+              <Label htmlFor="idVeiculo">Veículo</Label>
               <Select
-                value={formData.id_veiculo ? String(formData.id_veiculo) : ''}
-                onValueChange={(value) => handleInputChange('id_veiculo', Number(value))}
+                value={formData.idVeiculo ? String(formData.idVeiculo) : ''}
+                onValueChange={(value) => handleInputChange('idVeiculo', Number(value))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um veículo..." />
@@ -300,33 +300,33 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="data_inicio">Data de Entrada</Label>
+              <Label htmlFor="dataInicio">Data de Entrada</Label>
               <Input
-                id="data_inicio"
+                id="dataInicio"
                 type="date"
-                value={formData.data_inicio}
-                onChange={(e) => handleInputChange('data_inicio', e.target.value)}
+                value={formData.dataInicio}
+                onChange={(e) => handleInputChange('dataInicio', e.target.value)}
                 required
               />
             </div>
             <div>
-              <Label htmlFor="data_fim">Data de Conclusão</Label>
+              <Label htmlFor="dataFim">Data de Conclusão</Label>
               <Input
-                id="data_fim"
+                id="dataFim"
                 type="date"
-                value={formData.data_fim}
-                onChange={(e) => handleInputChange('data_fim', e.target.value)}
+                value={formData.dataFim}
+                onChange={(e) => handleInputChange('dataFim', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="valor_total">Valor Total (R$)</Label>
+              <Label htmlFor="valorTotal">Valor Total (R$)</Label>
               <Input
-                id="valor_total"
+                id="valorTotal"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.valor_total}
-                onChange={(e) => handleInputChange('valor_total', Number(e.target.value))}
+                value={formData.valorTotal}
+                onChange={(e) => handleInputChange('valorTotal', Number(e.target.value))}
               />
             </div>
           </div>
@@ -352,7 +352,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
                 <Label htmlFor="selectProduto">Produto/Serviço</Label>
-                <Select className="w-300" value={selectedProduto} onValueChange={setSelectedProduto}>
+                <Select value={selectedProduto} onValueChange={setSelectedProduto}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
@@ -399,10 +399,10 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
                 <tbody>
                   {servico.itens.map((item, index) => (
                     <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                      <td className="px-4 py-3">{item.produto?.nome || item.id_produto}</td>
-                      <td className="px-4 py-3 text-center">{Number(item.quantidade_utilizada)}</td>
+                      <td className="px-4 py-3">{item.produto?.nome || item.idProduto}</td>
+                      <td className="px-4 py-3 text-center">{Number(item.quantidadeUtilizada)}</td>
                       <td className="px-4 py-3 text-right">
-                        {formatCurrency(Number(item.produto?.preco_unitario || 0))}
+                        {formatCurrency(Number(item.produto?.precoUnitario || 0))}
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
                         {formatCurrency(getItemSubtotal(item))}
@@ -427,7 +427,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
               <div className="bg-secondary/50 px-4 py-3 border-t border-border flex justify-end">
                 <div className="text-right">
                   <p className="text-muted-foreground text-sm">Valor Total</p>
-                  <p className="text-2xl font-bold">{formatCurrency(Number(servico.valor_total || 0))}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(Number(servico.valorTotal || 0))}</p>
                 </div>
               </div>
             </div>

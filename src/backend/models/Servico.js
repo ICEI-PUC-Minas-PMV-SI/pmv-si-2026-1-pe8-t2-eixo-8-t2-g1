@@ -17,22 +17,26 @@ const Servico = sequelize.define(
       type: DataTypes.STRING(40),
       allowNull: false,
     },
-    data_inicio: {
+    dataInicio: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+      field: "data_inicio",
     },
-    data_fim: {
+    dataFim: {
       type: DataTypes.DATEONLY,
       allowNull: true,
+      field: "data_fim",
     },
-    valor_total: {
+    valorTotal: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
+      field: "valor_total",
     },
-    id_veiculo: {
+    idVeiculo: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "id_veiculo",
       references: {
         model: "veiculos",
         key: "id",

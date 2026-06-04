@@ -132,10 +132,10 @@ export default function EditarVeiculoForm({
               />
             </div>
             <div>
-              <Label htmlFor="id_cliente">Cliente</Label>
+              <Label htmlFor="idCliente">Cliente</Label>
               <Select
-                value={formData.id_cliente ? String(formData.id_cliente) : ''}
-                onValueChange={(value) => handleInputChange('id_cliente', Number(value))}
+                value={formData.idCliente ? String(formData.idCliente) : ''}
+                onValueChange={(value) => handleInputChange('idCliente', Number(value))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um cliente..." />

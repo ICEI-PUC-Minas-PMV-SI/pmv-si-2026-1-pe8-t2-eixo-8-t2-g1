@@ -49,7 +49,7 @@ export default function Veiculos() {
     try {
 
       const veiculoCriado = await veiculosApi.create({
-        id_cliente: novoVeiculo.id_cliente,
+        idCliente: novoVeiculo.idCliente,
         placa: novoVeiculo.placa,
         modelo: novoVeiculo.modelo,
         ano: novoVeiculo.ano,
@@ -99,7 +99,7 @@ export default function Veiculos() {
       render: (value: number) => `${value.toLocaleString('pt-BR')} km`,
     },
     {
-      key: 'id_cliente' as const,
+      key: 'idCliente' as const,
       label: 'Cliente',
     },
   ];

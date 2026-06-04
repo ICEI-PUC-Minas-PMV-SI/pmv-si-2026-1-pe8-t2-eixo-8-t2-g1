@@ -104,7 +104,7 @@ function validarCliente(cliente, obrigatorio = true) {
 router.get("/", async (req, res) => {
   try {
     const clientes = await Cliente.findAll({
-      order: [["data_criacao", "DESC"]],
+      order: [["dataCriacao", "DESC"]],
     });
 
     return res.json(clientes);
@@ -225,7 +225,7 @@ router.delete("/:id", async (req, res) => {
 
     const possuiVeiculos = await Veiculo.findOne({
       where: {
-        id_cliente: id,
+        idCliente: id,
       },
     });
 

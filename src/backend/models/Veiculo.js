@@ -55,9 +55,10 @@ const Veiculo = sequelize.define(
       allowNull: true,
       field: "data_ultima_revisao",
     },
-    id_cliente: {
+    idCliente: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "id_cliente",
       references: {
         model: "clientes",
         key: "id",
@@ -67,8 +68,9 @@ const Veiculo = sequelize.define(
   {
     tableName: "veiculos",
     timestamps: true,
-    createdAt: "data_criacao",
-    updatedAt: "data_atualizacao",
+    createdAt: "dataCriacao",
+    updatedAt: "dataAtualizacao",
+    underscored: true,
   },
 );
 

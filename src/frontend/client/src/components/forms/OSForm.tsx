@@ -22,10 +22,10 @@ interface OSFormProps {
 interface FormDataState {
   descricao: string;
   status: string;
-  data_inicio: string;
-  data_fim: string;
-  valor_total: number;
-  id_veiculo: number;
+  dataInicio: string;
+  dataFim: string;
+  valorTotal: number;
+  idVeiculo: number;
 }
 
 const statusOptions = [
@@ -49,20 +49,20 @@ export default function OSForm({ onSubmit, onCancel, initialData, veiculos }: OS
       return {
         descricao: initialData.descricao,
         status: initialData.status,
-        data_inicio: initialData.data_inicio,
-        data_fim: initialData.data_fim || '',
-        valor_total: Number(initialData.valor_total || 0),
-        id_veiculo: initialData.id_veiculo,
+        dataInicio: initialData.dataInicio,
+        dataFim: initialData.dataFim || '',
+        valorTotal: Number(initialData.valorTotal || 0),
+        idVeiculo: initialData.idVeiculo,
       };
     }
 
     return {
       descricao: '',
       status: 'Aberta',
-      data_inicio: new Date().toISOString().split('T')[0],
-      data_fim: '',
-      valor_total: 0,
-      id_veiculo: 0,
+      dataInicio: new Date().toISOString().split('T')[0],
+      dataFim: '',
+      valorTotal: 0,
+      idVeiculo: 0,
     };
   };
 
@@ -74,10 +74,10 @@ export default function OSForm({ onSubmit, onCancel, initialData, veiculos }: OS
     onSubmit({
       descricao: formData.descricao,
       status: formData.status,
-      data_inicio: formData.data_inicio,
-      data_fim: formData.data_fim || null,
-      valor_total: Number(formData.valor_total) || 0,
-      id_veiculo: formData.id_veiculo,
+      dataInicio: formData.dataInicio,
+      dataFim: formData.dataFim || null,
+      valorTotal: Number(formData.valorTotal) || 0,
+      idVeiculo: formData.idVeiculo,
     });
   };
 
@@ -94,10 +94,10 @@ export default function OSForm({ onSubmit, onCancel, initialData, veiculos }: OS
         <h3 className="font-semibold mb-4">Informações da Ordem de Serviço</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <Label htmlFor="id_veiculo">Veículo *</Label>
+            <Label htmlFor="idVeiculo">Veículo *</Label>
             <Select
-              value={formData.id_veiculo ? String(formData.id_veiculo) : ''}
-              onValueChange={(value) => handleInputChange('id_veiculo', Number(value))}
+              value={formData.idVeiculo ? String(formData.idVeiculo) : ''}
+              onValueChange={(value) => handleInputChange('idVeiculo', Number(value))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione um veículo..." />
@@ -130,33 +130,33 @@ export default function OSForm({ onSubmit, onCancel, initialData, veiculos }: OS
             </Select>
           </div>
           <div>
-            <Label htmlFor="data_inicio">Data de Entrada *</Label>
+            <Label htmlFor="dataInicio">Data de Entrada *</Label>
             <Input
-              id="data_inicio"
+              id="dataInicio"
               type="date"
-              value={formData.data_inicio}
-              onChange={(e) => handleInputChange('data_inicio', e.target.value)}
+              value={formData.dataInicio}
+              onChange={(e) => handleInputChange('dataInicio', e.target.value)}
               required
             />
           </div>
           <div>
-            <Label htmlFor="data_fim">Data de Conclusão</Label>
+            <Label htmlFor="dataFim">Data de Conclusão</Label>
             <Input
-              id="data_fim"
+              id="dataFim"
               type="date"
-              value={formData.data_fim}
-              onChange={(e) => handleInputChange('data_fim', e.target.value)}
+              value={formData.dataFim}
+              onChange={(e) => handleInputChange('dataFim', e.target.value)}
             />
           </div>
           <div>
-            <Label htmlFor="valor_total">Valor Total (R$)</Label>
+            <Label htmlFor="valorTotal">Valor Total (R$)</Label>
             <Input
-              id="valor_total"
+              id="valorTotal"
               type="number"
               step="0.01"
               min="0"
-              value={formData.valor_total}
-              onChange={(e) => handleInputChange('valor_total', Number(e.target.value))}
+              value={formData.valorTotal}
+              onChange={(e) => handleInputChange('valorTotal', Number(e.target.value))}
             />
           </div>
         </div>

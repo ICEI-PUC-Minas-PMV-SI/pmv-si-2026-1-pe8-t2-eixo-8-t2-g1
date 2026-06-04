@@ -5,46 +5,73 @@ const Servico = require("./Servico");
 const Usuario = require("./Usuario");
 const Veiculo = require("./Veiculo");
 const Fornecedor = require("./Fornecedor");
+const Perfil = require("./Perfil");
+const Permissao = require("./Permissao");
+const PerfilPermissao = require("./PerfilPermissao");
 const sequelize = require("../database/connection");
 
 Cliente.hasMany(Veiculo, {
-  foreignKey: "id_cliente",
+  foreignKey: "idCliente",
   as: "veiculos",
 });
 
 Veiculo.belongsTo(Cliente, {
-  foreignKey: "id_cliente",
+  foreignKey: "idCliente",
   as: "cliente",
 });
 
 Veiculo.hasMany(Servico, {
-  foreignKey: "id_veiculo",
+  foreignKey: "idVeiculo",
   as: "servicos",
 });
 
 Servico.belongsTo(Veiculo, {
-  foreignKey: "id_veiculo",
+  foreignKey: "idVeiculo",
   as: "veiculo",
 });
 
 Servico.hasMany(ItemServico, {
-  foreignKey: "id_servico",
+  foreignKey: "idServico",
   as: "itens",
 });
 
 ItemServico.belongsTo(Servico, {
-  foreignKey: "id_servico",
+  foreignKey: "idServico",
   as: "servico",
 });
 
 Produto.hasMany(ItemServico, {
-  foreignKey: "id_produto",
-  as: "itens_servico",
+  foreignKey: "idProduto",
+  as: "itensServico",
 });
 
 ItemServico.belongsTo(Produto, {
-  foreignKey: "id_produto",
+  foreignKey: "idProduto",
   as: "produto",
+});
+
+Perfil.hasMany(Usuario, {
+  foreignKey: "idPerfil",
+  as: "usuarios",
+});
+
+Usuario.belongsTo(Perfil, {
+  foreignKey: "idPerfil",
+  as: "perfilInfo",
+});
+
+Perfil.belongsToMany(Permissao, {
+  through: PerfilPermissao,
+  foreignKey: "idPerfil",
+  otherKey: "idPermissao",
+  as: "permissoes",
+});
+
+Permissao.belongsToMany(Perfil, {
+  through: PerfilPermissao,
+  foreignKey: "idPermissao",
+  otherKey: "idPerfil",
+  as: "perfis",
 });
 
 module.exports = {
@@ -55,5 +82,8 @@ module.exports = {
   ItemServico,
   Produto,
   Usuario,
-  Fornecedor
+  Fornecedor,
+  Perfil,
+  Permissao,
+  PerfilPermissao
 };

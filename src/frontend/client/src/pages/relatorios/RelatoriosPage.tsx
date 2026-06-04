@@ -22,10 +22,14 @@ const relatorioVazio: RelatoriosApi = {
   topClientes: [],
   produtosEstoque: [],
   faturamento: [],
+  top5Produtos: [],
   resumo: {
     totalClientes: 0,
+    totalVeiculos: 0,
     clientesEsteMes: 0,
     osConcluidas: 0,
+    osTotais: 0,
+    produtosEmEstoque: 0,
     valorConcluidas: 0,
     faturamentoMesAtual: 0,
     mesAtual: '',
@@ -128,7 +132,7 @@ export default function Relatorios() {
               stroke="#10B981"
               width={100}
               tickFormatter={(value) => formatCurrency(Number(value))}
-              domain={[0, (dataMax) => dataMax * 1.15]}
+              domain={[0, (dataMax: number) => dataMax * 1.15]}
             />
 
             <YAxis
@@ -137,7 +141,7 @@ export default function Relatorios() {
               stroke="#3B82F6"
               width={45}
               tickFormatter={(value) => formatQuantidade(Number(value))}
-              domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]}
+              domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]}
               allowDecimals={false}
             />
 

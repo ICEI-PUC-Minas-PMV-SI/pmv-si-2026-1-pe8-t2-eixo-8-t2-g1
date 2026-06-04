@@ -43,6 +43,14 @@
     {
       "name": "Relatorios",
       "description": "Operacoes relacionadas aos relatorios"
+    },
+    {
+      "name": "Perfis",
+      "description": "Operacoes relacionadas aos perfis de usuario"
+    },
+    {
+      "name": "Permissoes",
+      "description": "Operacoes relacionadas as permissoes do sistema"
     }
   ],
   "paths": {
@@ -273,7 +281,7 @@
                 "numeroChasse": "9BWZZZ377VT004251",
                 "tipoCombustivel": "Flex",
                 "dataUltimaRevisao": "2026-04-20",
-                "id_cliente": 1
+                "idCliente": 1
               }
             }
           }
@@ -421,10 +429,10 @@
               "example": {
                 "descricao": "Troca de oleo",
                 "status": "em andamento",
-                "data_inicio": "2026-05-01",
-                "data_fim": null,
-                "valor_total": 250,
-                "id_veiculo": 1
+                "dataInicio": "2026-05-01",
+                "dataFim": null,
+                "valorTotal": 250,
+                "idVeiculo": 1
               }
             }
           }
@@ -570,9 +578,9 @@
                 "$ref": "#/components/schemas/ItemServicoInput"
               },
               "example": {
-                "id_servico": 1,
-                "id_produto": 1,
-                "quantidade_utilizada": 2
+                "idServico": 1,
+                "idProduto": 1,
+                "quantidadeUtilizada": 2
               }
             }
           }
@@ -720,7 +728,7 @@
               "example": {
                 "nome": "Oleo 5W30",
                 "quantidade": 12,
-                "preco_unitario": 65.5
+                "precoUnitario": 65.5
               }
             }
           }
@@ -1038,218 +1046,694 @@
         }
       }
     },
-    "/fornecedores": {
-    "get": {
-      "summary": "Lista todos os fornecedores",
-      "tags": ["Fornecedores"],
-      "responses": {
-        "200": {
-          "description": "Lista de fornecedores",
+    "/perfis": {
+      "get": {
+        "summary": "Lista todos os perfis",
+        "tags": [
+          "Perfis"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de perfis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Perfil"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria um perfil",
+        "tags": [
+          "Perfis"
+        ],
+        "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "array",
-                "items": {
+                "$ref": "#/components/schemas/PerfilInput"
+              },
+              "example": {
+                "nome": "Atendente"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Perfil criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Perfil"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/perfis/{id}": {
+      "get": {
+        "summary": "Busca um perfil por ID",
+        "tags": [
+          "Perfis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Perfil"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um perfil",
+        "tags": [
+          "Perfis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilUpdateInput"
+              },
+              "example": {
+                "nome": "Supervisor"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Perfil"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove um perfil",
+        "tags": [
+          "Perfis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil removido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/perfis/{id}/permissoes": {
+      "get": {
+        "summary": "Lista as permissoes de um perfil",
+        "tags": [
+          "Perfis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de permissoes do perfil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Permissao"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Substitui as permissoes de um perfil",
+        "tags": [
+          "Perfis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilPermissoesInput"
+              },
+              "example": {
+                "ids_permissoes": [
+                  1,
+                  2,
+                  3
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permissoes do perfil atualizadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Perfil"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/permissoes": {
+      "get": {
+        "summary": "Lista todas as permissoes",
+        "tags": [
+          "Permissoes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de permissoes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Permissao"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria uma permissao",
+        "tags": [
+          "Permissoes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissaoInput"
+              },
+              "example": {
+                "chave": "usuarios.criar",
+                "descricao": "Permite cadastrar usuarios"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Permissao criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Permissao"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/permissoes/{id}": {
+      "get": {
+        "summary": "Busca uma permissao por ID",
+        "tags": [
+          "Permissoes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permissao encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Permissao"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza uma permissao",
+        "tags": [
+          "Permissoes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissaoUpdateInput"
+              },
+              "example": {
+                "chave": "usuarios.editar",
+                "descricao": "Permite editar usuarios"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permissao atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Permissao"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove uma permissao",
+        "tags": [
+          "Permissoes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID numerico do recurso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permissao removida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/fornecedores": {
+      "get": {
+        "summary": "Lista todos os fornecedores",
+        "tags": [
+          "Fornecedores"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de fornecedores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Fornecedor"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria um fornecedor",
+        "tags": [
+          "Fornecedores"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FornecedorInput"
+              },
+              "example": {
+                "nome": "Fornecedor XPTO",
+                "cnpj": "12.345.678/0001-99",
+                "telefone": "(31) 99999-9999",
+                "email": "contato@xpto.com",
+                "observacao": "Fornecedor de peças"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Fornecedor criado",
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/Fornecedor"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           }
         }
       }
     },
-    "post": {
-      "summary": "Cria um fornecedor",
-      "tags": ["Fornecedores"],
-      "requestBody": {
-        "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/FornecedorInput"
-            },
-            "example": {
-              "nome": "Fornecedor XPTO",
-              "cnpj": "12.345.678/0001-99",
-              "telefone": "(31) 99999-9999",
-              "email": "contato@xpto.com",
-              "observacao": "Fornecedor de peças"
+    "/fornecedores/{id}": {
+      "get": {
+        "summary": "Busca um fornecedor por ID",
+        "tags": [
+          "Fornecedores"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fornecedor encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fornecedor"
+                }
+              }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
-      "responses": {
-        "201": {
-          "description": "Fornecedor criado",
+      "put": {
+        "summary": "Atualiza um fornecedor",
+        "tags": [
+          "Fornecedores"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Uuid"
+          }
+        ],
+        "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Fornecedor"
+                "$ref": "#/components/schemas/FornecedorInput"
               }
             }
           }
         },
-        "400": {
-          "$ref": "#/components/responses/BadRequest"
-        },
-        "409": {
-          "$ref": "#/components/responses/Conflict"
-        }
-      }
-    }
-  },
-  "/fornecedores/{id}": {
-  "get": {
-    "summary": "Busca um fornecedor por ID",
-    "tags": ["Fornecedores"],
-    "parameters": [
-      {
-        "$ref": "#/components/parameters/Uuid"
-      }
-    ],
-    "responses": {
-      "200": {
-        "description": "Fornecedor encontrado",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Fornecedor"
+        "responses": {
+          "200": {
+            "description": "Fornecedor atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fornecedor"
+                }
+              }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
-      "404": {
-        "$ref": "#/components/responses/NotFound"
-      }
-    }
-  },
-
-  "put": {
-    "summary": "Atualiza um fornecedor",
-    "tags": ["Fornecedores"],
-    "parameters": [
-      {
-        "$ref": "#/components/parameters/Uuid"
-      }
-    ],
-    "requestBody": {
-      "required": true,
-      "content": {
-        "application/json": {
-          "schema": {
-            "$ref": "#/components/schemas/FornecedorInput"
+      "delete": {
+        "summary": "Remove um fornecedor",
+        "tags": [
+          "Fornecedores"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fornecedor removido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
     },
-    "responses": {
-      "200": {
-        "description": "Fornecedor atualizado",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Fornecedor"
+    "/relatorios": {
+      "get": {
+        "summary": "Gera os dados consolidados dos relatorios",
+        "tags": [
+          "Relatorios"
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados consolidados dos relatorios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Relatorio"
+                },
+                "example": {
+                  "osStatus": [
+                    {
+                      "status": "Concluida",
+                      "quantidade": 12,
+                      "valor": 4500.5
+                    }
+                  ],
+                  "topClientes": [
+                    {
+                      "nome": "Maria Silva",
+                      "totalGasto": 2500
+                    }
+                  ],
+                  "produtosEstoque": [
+                    {
+                      "produto": "Oleo 5W30",
+                      "estoque": 12,
+                      "minimo": 40,
+                      "precoUnitario": 65.5
+                    }
+                  ],
+                  "faturamento": [
+                    {
+                      "mes": "mai. de 26",
+                      "valor": 4500.5
+                    }
+                  ],
+                  "resumo": {
+                    "totalClientes": 120,
+                    "clientesEsteMes": 8,
+                    "osConcluidas": 12,
+                    "valorConcluidas": 4500.5,
+                    "faturamentoMesAtual": 4500.5,
+                    "mesAtual": "mai. de 26",
+                    "ticketMedio": 375.04
+                  }
+                }
+              }
             }
-          }
-        }
-      },
-      "404": {
-        "$ref": "#/components/responses/NotFound"
-      }
-    }
-  },
-
-  "delete": {
-    "summary": "Remove um fornecedor",
-    "tags": ["Fornecedores"],
-    "parameters": [
-      {
-        "$ref": "#/components/parameters/Uuid"
-      }
-    ],
-    "responses": {
-      "200": {
-        "description": "Fornecedor removido",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ApiMessage"
-            }
-          }
-        }
-      },
-      "404": {
-        "$ref": "#/components/responses/NotFound"
-      }
-    }
-  }
-},
-  "/relatorios": {
-    "get": {
-      "summary": "Gera os dados consolidados dos relatorios",
-      "tags": ["Relatorios"],
-      "responses": {
-        "200": {
-          "description": "Dados consolidados dos relatorios",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Relatorio"
-              },
-              "example": {
-                "osStatus": [
-                  {
-                    "status": "Concluida",
-                    "quantidade": 12,
-                    "valor": 4500.5
-                  }
-                ],
-                "topClientes": [
-                  {
-                    "nome": "Maria Silva",
-                    "totalGasto": 2500
-                  }
-                ],
-                "produtosEstoque": [
-                  {
-                    "produto": "Oleo 5W30",
-                    "estoque": 12,
-                    "minimo": 40,
-                    "precoUnitario": 65.5
-                  }
-                ],
-                "faturamento": [
-                  {
-                    "mes": "mai. de 26",
-                    "valor": 4500.5
-                  }
-                ],
-                "resumo": {
-                  "totalClientes": 120,
-                  "clientesEsteMes": 8,
-                  "osConcluidas": 12,
-                  "valorConcluidas": 4500.5,
-                  "faturamentoMesAtual": 4500.5,
-                  "mesAtual": "mai. de 26",
-                  "ticketMedio": 375.04
+          },
+          "500": {
+            "description": "Erro interno ao gerar relatorios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
                 }
               }
             }
           }
-        },
-        "500": {
-          "description": "Erro interno ao gerar relatorios",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiMessage"
-              }
-            }
-          }
         }
       }
     }
-  }
   },
   "components": {
     "parameters": {
@@ -1346,12 +1830,12 @@
                 "type": "integer",
                 "example": 1
               },
-              "data_criacao": {
+              "dataCriacao": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2026-05-03T21:03:42.226Z"
               },
-              "data_atualizacao": {
+              "dataAtualizacao": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2026-05-03T21:03:42.226Z"
@@ -1434,12 +1918,12 @@
                 "type": "integer",
                 "example": 1
               },
-              "data_criacao": {
+              "dataCriacao": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2026-05-03T14:23:20.266Z"
               },
-              "data_atualizacao": {
+              "dataAtualizacao": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2026-05-03T14:23:20.266Z"
@@ -1458,7 +1942,7 @@
           "modelo",
           "ano",
           "cor",
-          "id_cliente"
+          "idCliente"
         ],
         "properties": {
           "placa": {
@@ -1508,7 +1992,7 @@
             "nullable": true,
             "example": "2026-04-20"
           },
-          "id_cliente": {
+          "idCliente": {
             "type": "integer",
             "example": 1
           }
@@ -1535,9 +2019,9 @@
         "required": [
           "descricao",
           "status",
-          "data_inicio",
-          "valor_total",
-          "id_veiculo"
+          "dataInicio",
+          "valorTotal",
+          "idVeiculo"
         ],
         "properties": {
           "descricao": {
@@ -1548,23 +2032,23 @@
             "type": "string",
             "example": "em andamento"
           },
-          "data_inicio": {
+          "dataInicio": {
             "type": "string",
             "format": "date",
             "example": "2026-05-01"
           },
-          "data_fim": {
+          "dataFim": {
             "type": "string",
             "format": "date",
             "nullable": true,
             "example": "2026-05-02"
           },
-          "valor_total": {
+          "valorTotal": {
             "type": "number",
             "format": "float",
             "example": 250
           },
-          "id_veiculo": {
+          "idVeiculo": {
             "type": "integer",
             "example": 1
           }
@@ -1589,20 +2073,20 @@
       "ItemServicoInput": {
         "type": "object",
         "required": [
-          "id_servico",
-          "id_produto",
-          "quantidade_utilizada"
+          "idServico",
+          "idProduto",
+          "quantidadeUtilizada"
         ],
         "properties": {
-          "id_servico": {
+          "idServico": {
             "type": "integer",
             "example": 1
           },
-          "id_produto": {
+          "idProduto": {
             "type": "integer",
             "example": 1
           },
-          "quantidade_utilizada": {
+          "quantidadeUtilizada": {
             "type": "number",
             "format": "float",
             "example": 2
@@ -1630,7 +2114,7 @@
         "required": [
           "nome",
           "quantidade",
-          "preco_unitario"
+          "precoUnitario"
         ],
         "properties": {
           "nome": {
@@ -1642,7 +2126,7 @@
             "format": "float",
             "example": 12
           },
-          "preco_unitario": {
+          "precoUnitario": {
             "type": "number",
             "format": "float",
             "example": 65.5
@@ -1689,7 +2173,6 @@
           }
         }
       },
-
       "FornecedorInput": {
         "type": "object",
         "required": [
@@ -1921,7 +2404,8 @@
               "Supervisor",
               "Padr?o"
             ],
-            "example": "Administrador"
+            "example": "Administrador",
+            "description": "Nome do perfil associado ao idPerfil"
           },
           "status": {
             "type": "string",
@@ -1931,15 +2415,19 @@
             ],
             "example": "Ativo"
           },
-          "data_criacao": {
+          "dataCriacao": {
             "type": "string",
             "format": "date-time",
             "example": "2026-05-03T14:23:20.266Z"
           },
-          "data_atualizacao": {
+          "dataAtualizacao": {
             "type": "string",
             "format": "date-time",
             "example": "2026-05-03T14:23:20.266Z"
+          },
+          "idPerfil": {
+            "type": "integer",
+            "example": 1
           }
         }
       },
@@ -1948,7 +2436,6 @@
         "required": [
           "nome",
           "email",
-          "perfil",
           "status",
           "senha"
         ],
@@ -1969,7 +2456,8 @@
               "Supervisor",
               "Padr?o"
             ],
-            "example": "Administrador"
+            "example": "Administrador",
+            "description": "Nome do perfil. Alternativa a idPerfil."
           },
           "status": {
             "type": "string",
@@ -1984,8 +2472,24 @@
             "format": "password",
             "minLength": 6,
             "example": "123456"
+          },
+          "idPerfil": {
+            "type": "integer",
+            "example": 1
           }
-        }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "perfil"
+            ]
+          },
+          {
+            "required": [
+              "idPerfil"
+            ]
+          }
+        ]
       },
       "UsuarioUpdateInput": {
         "type": "object",
@@ -2006,7 +2510,8 @@
               "Supervisor",
               "Padr?o"
             ],
-            "example": "Administrador"
+            "example": "Administrador",
+            "description": "Nome do perfil. Alternativa a idPerfil."
           },
           "status": {
             "type": "string",
@@ -2021,6 +2526,10 @@
             "format": "password",
             "minLength": 6,
             "example": "123456"
+          },
+          "idPerfil": {
+            "type": "integer",
+            "example": 2
           }
         }
       },
@@ -2099,6 +2608,114 @@
           "cep": {
             "type": "string",
             "example": "01000-000"
+          }
+        }
+      },
+      "Perfil": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "example": "Administrador"
+          },
+          "permissoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permissao"
+            }
+          }
+        }
+      },
+      "PerfilInput": {
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Atendente"
+          }
+        }
+      },
+      "PerfilUpdateInput": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Supervisor"
+          }
+        }
+      },
+      "PerfilPermissoesInput": {
+        "type": "object",
+        "required": [
+          "ids_permissoes"
+        ],
+        "properties": {
+          "ids_permissoes": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "example": [
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      },
+      "Permissao": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "chave": {
+            "type": "string",
+            "example": "usuarios.criar"
+          },
+          "descricao": {
+            "type": "string",
+            "nullable": true,
+            "example": "Permite cadastrar usuarios"
+          }
+        }
+      },
+      "PermissaoInput": {
+        "type": "object",
+        "required": [
+          "chave"
+        ],
+        "properties": {
+          "chave": {
+            "type": "string",
+            "example": "usuarios.criar"
+          },
+          "descricao": {
+            "type": "string",
+            "nullable": true,
+            "example": "Permite cadastrar usuarios"
+          }
+        }
+      },
+      "PermissaoUpdateInput": {
+        "type": "object",
+        "properties": {
+          "chave": {
+            "type": "string",
+            "example": "usuarios.editar"
+          },
+          "descricao": {
+            "type": "string",
+            "nullable": true,
+            "example": "Permite editar usuarios"
           }
         }
       }

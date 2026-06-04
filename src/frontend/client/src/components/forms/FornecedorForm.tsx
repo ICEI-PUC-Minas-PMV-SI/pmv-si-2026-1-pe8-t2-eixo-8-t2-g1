@@ -11,8 +11,7 @@ interface FornecedorFormProps {
 }
 
 interface FormDataState {
-  nome: string;
-  cnpj: string;
+  nomeCompleto: string;
   telefone: string;
   email: string;
   observacao: string;
@@ -24,8 +23,7 @@ export default function FornecedorForm({
   initialData,
 }: FornecedorFormProps) {
   const [formData, setFormData] = useState<FormDataState>(() => ({
-    nome: initialData?.nome || '',
-    cnpj: initialData?.cnpj || '',
+    nomeCompleto: initialData?.nomeCompleto || '',
     telefone: initialData?.telefone || '',
     email: initialData?.email || '',
     observacao: initialData?.observacao || '',
@@ -35,10 +33,10 @@ export default function FornecedorForm({
     e.preventDefault();
 
     onSubmit({
-      nome: formData.nome,
-      cnpj: formData.cnpj,
+      nomeCompleto: formData.nomeCompleto,
       telefone: formData.telefone,
       email: formData.email,
+      isFornecedor: true,
       observacao: formData.observacao || undefined,
     });
   };
@@ -65,24 +63,11 @@ export default function FornecedorForm({
             <Label htmlFor="nome">Nome *</Label>
             <Input
               id="nome"
-              value={formData.nome}
+              value={formData.nomeCompleto}
               onChange={(e) =>
-                handleInputChange('nome', e.target.value)
+                handleInputChange('nomeCompleto', e.target.value)
               }
               placeholder="Nome do fornecedor"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="cnpj">CNPJ *</Label>
-            <Input
-              id="cnpj"
-              value={formData.cnpj}
-              onChange={(e) =>
-                handleInputChange('cnpj', e.target.value)
-              }
-              placeholder="00.000.000/0000-00"
               required
             />
           </div>

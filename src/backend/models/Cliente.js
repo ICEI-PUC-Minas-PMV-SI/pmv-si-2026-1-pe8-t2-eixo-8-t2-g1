@@ -57,8 +57,9 @@ const Cliente = sequelize.define(
   {
     tableName: "clientes",
     timestamps: true,
-    createdAt: "data_criacao",
-    updatedAt: "data_atualizacao",
+    createdAt: "dataCriacao",
+    updatedAt: "dataAtualizacao",
+    underscored: true,
   },
 );
 

@@ -12,7 +12,7 @@ interface ProdutoFormProps {
 interface FormDataState {
   nome: string;
   quantidade: number;
-  preco_unitario: number;
+  precoUnitario: number;
 }
 
 export default function ProdutoForm({
@@ -22,7 +22,7 @@ export default function ProdutoForm({
   const [formData, setFormData] = useState<FormDataState>({
     nome: '',
     quantidade: 0,
-    preco_unitario: 0,
+    precoUnitario: 0,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,7 +31,7 @@ export default function ProdutoForm({
     onSubmit({
       nome: formData.nome,
       quantidade: formData.quantidade,
-      preco_unitario: formData.preco_unitario,
+      precoUnitario: formData.precoUnitario,
     });
   };
 
@@ -85,17 +85,17 @@ export default function ProdutoForm({
           </div>
 
           <div>
-            <Label htmlFor="preco_unitario">
+            <Label htmlFor="precoUnitario">
               Preço Unitário *
             </Label>
             <Input
-              id="preco_unitario"
+              id="precoUnitario"
               type="number"
               step="0.01"
-              value={formData.preco_unitario}
+              value={formData.precoUnitario}
               onChange={(e) =>
                 handleInputChange(
-                  'preco_unitario',
+                  'precoUnitario',
                   Number(e.target.value),
                 )
               }
