@@ -173,16 +173,17 @@ export interface User {
   id: string;
   nome: string;
   email: string;
-  role: 'Administrador' | 'Supervisor' | 'Padrão';
+  role: "Administrador" | "Supervisor" | "Padrão";
 }
 
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  idPerfil?: number;
-  perfil?: 'Administrador' | 'Supervisor' | 'Padrão';
+  permissoes: [];
+  perfil: "Administrador" | "Supervisor" | "Padrão";
   status: 'Ativo' | 'Inativo';
+  idPerfil?: number;
   dataCriacao: string;
   dataAtualizacao: string;
 }

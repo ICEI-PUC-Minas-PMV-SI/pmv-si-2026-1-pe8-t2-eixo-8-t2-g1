@@ -1,5 +1,5 @@
 const express = require("express");
-const { Usuario, Perfil } = require("../models");
+const { Usuario, Perfil, Permissao } = require("../models");
 const { isIntegerGreaterThanZero, isValidEmail, tratarErroSequelize } = require("../utils/utils");
 const { hashPassword, signJwt, verifyPassword } = require("../utils/auth");
 
@@ -94,6 +94,29 @@ async function buscarUsuarioCompleto(id) {
   });
 }
 
+async function buscarChavesPermissoes(idPerfil) {
+  const perfil = await Perfil.findByPk(idPerfil, {
+    include: [
+      {
+        model: Permissao,
+        as: "permissoes",
+        attributes: ["chave"],
+        through: {
+          attributes: [],
+        },
+      },
+    ],
+  });
+
+  return perfil?.permissoes?.map((permissao) => permissao.chave) || [];
+}
+
+async function buscarUsuarioRole(idPerfil) {
+  const perfil = await Perfil.findByPk(idPerfil, {
+    attributes: ["nome"]
+  })
+}
+
 router.post("/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -111,9 +134,12 @@ router.post("/login", async (req, res) => {
     }
 
     const usuario = await Usuario.findOne({
-      where: { email },
+      where: { 
+        email 
+      },
       include: usuarioInclude,
     });
+
 
     if (!usuario || !verifyPassword(senha, usuario.senhaHash)) {
       return res.status(401).json({
@@ -136,9 +162,12 @@ router.post("/login", async (req, res) => {
       perfil: usuarioJson.perfil,
     });
 
+    const permissoes = await buscarChavesPermissoes(usuario.idPerfil);
+
     return res.json({
       token,
       usuario: usuarioJson,
+      permissoes,
     });
   } catch (error) {
     return res.status(500).json({

@@ -4,7 +4,6 @@ const Produto = require("./Produto");
 const Servico = require("./Servico");
 const Usuario = require("./Usuario");
 const Veiculo = require("./Veiculo");
-const Fornecedor = require("./Fornecedor");
 const Perfil = require("./Perfil");
 const Permissao = require("./Permissao");
 const PerfilPermissao = require("./PerfilPermissao");
@@ -82,7 +81,6 @@ module.exports = {
   ItemServico,
   Produto,
   Usuario,
-  Fornecedor,
   Perfil,
   Permissao,
   PerfilPermissao

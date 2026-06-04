@@ -137,25 +137,27 @@ export default function Sidebar({
 
   const userRole = (user: User) => {
     switch (user.role){
-      case ('Administrador'):
-        return 'Admin'
-      case ('Supervisor'):
-        return 'Supervisor'
-      case ('Padrão'):
-        return 'Usuário'
+      case ("Administrador"):
+        return "Admin"
+      case ("Supervisor"):
+        return "Supervisor"
+      case ("Padrão"):
+        return "Usuário"
     }
   }
 
   const userColorClass = (user: User) => {
     switch (user.role) {
-      case 'Administrador':
+      case "Administrador":
         return 'text-sidebar-primary';
-      case 'Supervisor':
+      case "Supervisor":
         return 'text-sidebar-secondary';
-      case 'Padrão':
+      case "Padrão":
         return 'text-sidebar-tertiary';
     }
   };
+
+  console.log(user)
 
 
   return (

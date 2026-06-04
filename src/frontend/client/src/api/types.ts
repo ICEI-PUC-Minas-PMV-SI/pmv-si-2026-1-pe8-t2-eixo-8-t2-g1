@@ -139,9 +139,10 @@ export interface UsuarioApi {
   id: string;
   nome: string;
   email: string;
-  idPerfil?: number;
+  permissoes: [];
   perfil: "Administrador" | "Supervisor" | "Padrão";
   status: "Ativo" | "Inativo";
+  idPerfil?: number;
   dataCriacao: string;
   dataAtualizacao: string;
 }
@@ -175,4 +176,5 @@ export interface LoginPayload {
 export interface LoginResponse {
   token: string;
   usuario: UsuarioApi;
+  permissoes: string[];
 }
