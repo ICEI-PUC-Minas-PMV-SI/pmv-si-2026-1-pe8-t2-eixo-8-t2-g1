@@ -22,6 +22,8 @@ const permissoesRoutes = require("./routes/permissoes");
 const categoriasRoutes = require("./routes/categorias");
 const marcasRoutes = require("./routes/marcas");
 const tiposRoutes = require("./routes/veiculos_tipos");
+const empresaRoutes = require("./routes/empresas");
+const smtpRoutes = require("./routes/smtp");
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
@@ -69,6 +71,8 @@ app.use("/fornecedores", autenticarCookie, fornecedoresRoutes);
 app.use("/categorias", autenticarCookie, categoriasRoutes);
 app.use("/marcas", autenticarCookie, marcasRoutes);
 app.use("/tipos/veiculos", autenticarCookie, tiposRoutes);
+app.use("/config/empresa", autenticarCookie, empresaRoutes);
+app.use("/config/smtp", autenticarCookie, smtpRoutes);
 
 
 const PORT = process.env.PORT || 3001;

@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
         return res.json(marcas);
     } catch (error) {
         return res.status(500).json({
-            message: "Erro interno ao buscar usuários",
+            message: "Erro interno ao buscar marcas",
         });
     }
 });

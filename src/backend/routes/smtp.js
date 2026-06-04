@@ -1,5 +1,5 @@
 const express = require("express");
-const { TipoVeiculo, } = require("../models");
+const { Smtp, } = require("../models");
 const { isIntegerGreaterThanZero } = require("../utils/utils");
 const autenticarCookie = require("../middlewares/auth");
 const {
@@ -16,12 +16,12 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-        const tipos = await TipoVeiculo.findAll();
+        const smtp = await Smtp.findByPk(1);
 
-        return res.json(tipos);
+        return res.json(smtp);
     } catch (error) {
         return res.status(500).json({
-            message: "Erro interno ao buscar tipos de veiculos",
+            message: "Erro interno ao buscar configuracao smtp",
         });
     }
 });
