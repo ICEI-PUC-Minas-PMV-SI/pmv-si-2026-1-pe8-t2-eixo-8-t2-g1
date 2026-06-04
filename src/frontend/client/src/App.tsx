@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -29,12 +29,12 @@ import EditarOS from '@/pages/os/EditarOSPage';
 import EditarPessoaPage from '@/pages/pessoas/EditarPessoaPage';
 import EditarProduto from '@/pages/produtos/EditarProdutoPage';
 import EditarVeiculoPage from '@/pages/veiculos/EditarVeiculoPage';
-import type { User, OrdemServico, Pessoa } from '@/types';
+import type { User } from '@/types';
 import type { UsuarioApi } from '@/api';
 
 const TEMPO_INATIVIDADE = 10 * 60 * 1000;
 
-function useAutoLogout(onLogout: () => void) {
+function useAutoLogout(onLogout: () => void, isActive: boolean) {
   const timerRef = useRef<number | null>(null);
 
   function resetarTimer() {
@@ -72,15 +72,17 @@ function useAutoLogout(onLogout: () => void) {
         window.removeEventListener(evento, resetarTimer);
       });
     };
-  }, [onLogout]);
+  }, [onLogout, isActive]);
 }
+
+
 
 function usuarioToUser(usuario: UsuarioApi): User {
   return {
     id: usuario.id,
     nome: usuario.nome,
     email: usuario.email,
-    role: usuario.perfil === 'Administrador' ? 'admin' : 'user',
+    role: usuario.perfil,
   };
 }
 
@@ -104,6 +106,8 @@ function AppLayout({ user, onLogout }: { user: User; onLogout: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  useAutoLogout(onLogout, !!user);
+
   return (
     <DashboardLayout
       user={user}
@@ -120,8 +124,6 @@ function ProtectedLayout({ user, onLogout }: { user: User | null; onLogout: () =
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
-  useAutoLogout(onLogout);
 
   return <AppLayout user={user} onLogout={onLogout} />;
 }
@@ -199,12 +201,12 @@ function AppRoutes() {
     navigate('/', { replace: true });
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
     setUser(null);
     navigate('/login', { replace: true });
-  };
+  }, []);
 
   const handleUserUpdate = (usuarioAtualizado: UsuarioApi) => {
     const userAtualizado = usuarioToUser(usuarioAtualizado);

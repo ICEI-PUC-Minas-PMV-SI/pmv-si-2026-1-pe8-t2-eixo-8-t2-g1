@@ -199,9 +199,10 @@ router.get("/", async (req, res) => {
     ]);
 
     const osStatus = new Map(
-      STATUS_ORDER.map((status) => [
+      STATUS_ORDER.map((status, index) => [
         status,
         {
+          id: index + 1,
           status,
           quantidade: 0,
           valor: 0,

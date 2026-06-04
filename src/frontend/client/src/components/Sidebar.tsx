@@ -135,6 +135,29 @@ export default function Sidebar({
     setIsMobileOpen(false);
   };
 
+  const userRole = (user: User) => {
+    switch (user.role){
+      case ('Administrador'):
+        return 'Admin'
+      case ('Supervisor'):
+        return 'Supervisor'
+      case ('Padrão'):
+        return 'Usuário'
+    }
+  }
+
+  const userColorClass = (user: User) => {
+    switch (user.role) {
+      case 'Administrador':
+        return 'text-sidebar-primary';
+      case 'Supervisor':
+        return 'text-sidebar-secondary';
+      case 'Padrão':
+        return 'text-sidebar-tertiary';
+    }
+  };
+
+
   return (
     <>
       {/* Mobile Toggle Button */}
@@ -171,7 +194,7 @@ export default function Sidebar({
         {/* Header */}
         <div className="h-16 border-b border-sidebar-border flex items-center justify-between px-4">
           {!isCollapsed && (
-            <h1 className="font-bold text-lg text-sidebar-primary">Admin</h1>
+            <h1 className={`font-bold text-lg ${userColorClass(user)}`}>{userRole(user)}</h1>
           )}
           <Button
             variant="ghost"

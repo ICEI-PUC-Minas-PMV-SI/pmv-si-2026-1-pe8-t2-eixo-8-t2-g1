@@ -16,14 +16,18 @@ const usuariosRoutes = require("./routes/usuarios");
 const veiculosRoutes = require("./routes/veiculos");
 const fornecedoresRoutes = require("./routes/fornecedores");
 
-app.use(cors());
-app.use(express.json());
+
 app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "127.0.0.1:5173/*");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Security-Policy", "default-src 'self'");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
   next();
 });
+app.use(cors());
+app.use(express.json());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
 app.get("/", (req, res) => {
   res.json({ message: "API AutoPro rodando" });
 });

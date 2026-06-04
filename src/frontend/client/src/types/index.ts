@@ -173,7 +173,7 @@ export interface User {
   id: string;
   nome: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'Administrador' | 'Supervisor' | 'Padrão';
 }
 
 export interface Usuario {
