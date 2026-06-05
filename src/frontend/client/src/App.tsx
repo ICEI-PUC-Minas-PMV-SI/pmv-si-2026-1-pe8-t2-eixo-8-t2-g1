@@ -76,7 +76,6 @@ function useAutoLogout(onLogout: () => void, isActive: boolean) {
 }
 
 
-
 function usuarioToUser(usuario: UsuarioApi): User {
   return {
     id: usuario.id,

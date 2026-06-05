@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateId } from '@/lib/utils';
 import type { Pessoa } from '@/types';
+import { UF, UF_LABELS } from '@/enum/ufEnum'
 
 interface PessoaFormProps {
   onSubmit: (pessoa: Pessoa) => void;
@@ -92,7 +93,9 @@ export default function PessoaForm({
   };
 
   const [formData, setFormData] = useState<FormDataState>(getInitialData());
-
+  const ufs = Object.values(UF);
+  const isOutroUF = formData.endereco.uf === UF.OUTRO;
+ 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const pessoa: Pessoa = {
@@ -125,6 +128,15 @@ export default function PessoaForm({
       endereco: {
         ...prev.endereco,
         [field]: value,
+        ...(value === UF.OUTRO && {
+          logradouro: 'Outro',
+          numero: 'Outro',
+          complemento: 'Outro',
+          bairro: 'Outro',
+          cidade: 'Outro',
+          pais: 'Outro',
+          cep: 'Outro',
+          })
       } as any,
     }));
   };
@@ -218,6 +230,7 @@ export default function PessoaForm({
               id="logradouro"
               value={formData.endereco.logradouro}
               onChange={(e) => handleEnderecoChange('logradouro', e.target.value)}
+              disabled={isOutroUF}
               required
             />
           </div>
@@ -227,6 +240,7 @@ export default function PessoaForm({
               id="numero"
               value={formData.endereco.numero}
               onChange={(e) => handleEnderecoChange('numero', e.target.value)}
+              disabled={isOutroUF}
               required
             />
           </div>
@@ -236,6 +250,7 @@ export default function PessoaForm({
               id="complemento"
               value={formData.endereco.complemento}
               onChange={(e) => handleEnderecoChange('complemento', e.target.value)}
+              disabled={isOutroUF}
             />
           </div>
           <div>
@@ -244,6 +259,7 @@ export default function PessoaForm({
               id="bairro"
               value={formData.endereco.bairro}
               onChange={(e) => handleEnderecoChange('bairro', e.target.value)}
+              disabled={isOutroUF}
               required
             />
           </div>
@@ -253,18 +269,25 @@ export default function PessoaForm({
               id="cidade"
               value={formData.endereco.cidade}
               onChange={(e) => handleEnderecoChange('cidade', e.target.value)}
+              disabled={isOutroUF}
               required
             />
           </div>
-          <div>
+          <div className="w-full">
             <Label htmlFor="uf">UF *</Label>
-            <Input
-              id="uf"
-              maxLength={2}
+            <Select
               value={formData.endereco.uf}
-              onChange={(e) => handleEnderecoChange('uf', e.target.value.toUpperCase())}
-              required
-            />
+              onValueChange={(value) => handleEnderecoChange('uf', value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ufs.map((uf) => (
+                  <SelectItem key={uf} value={uf}>{UF_LABELS[uf]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="cep">CEP *</Label>
@@ -273,6 +296,7 @@ export default function PessoaForm({
               value={formData.endereco.cep}
               onChange={(e) => handleEnderecoChange('cep', e.target.value)}
               placeholder="01310-100"
+              disabled={isOutroUF}
               required
             />
           </div>
@@ -282,6 +306,7 @@ export default function PessoaForm({
               id="pais"
               value={formData.endereco.pais}
               onChange={(e) => handleEnderecoChange('pais', e.target.value)}
+              disabled={isOutroUF}
               required
             />
           </div>

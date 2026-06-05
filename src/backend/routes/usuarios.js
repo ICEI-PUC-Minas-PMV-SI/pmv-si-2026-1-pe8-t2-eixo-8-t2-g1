@@ -44,28 +44,7 @@ function validarUsuario({ nome, email, status, senha }, obrigatorio = true) {
   return null;
 }
 
-async function resolverIdPerfil({ perfil, idPerfil }, obrigatorio = true) {
-  if (idPerfil !== undefined) {
-    const idPerfilNumero = Number(idPerfil);
-
-    if (!isIntegerGreaterThanZero(idPerfilNumero)) {
-      return {
-        erro: "idPerfil deve ser um número inteiro maior que zero",
-      };
-    }
-
-    const perfilEncontrado = await Perfil.findByPk(idPerfilNumero);
-
-    if (!perfilEncontrado) {
-      return {
-        erro: "Perfil não encontrado",
-      };
-    }
-
-    return {
-      idPerfil: idPerfilNumero,
-    };
-  }
+async function perfilToIdPerfil({ perfil }, obrigatorio = true) {
 
   if (perfil !== undefined) {
     const perfilEncontrado = await Perfil.findOne({
@@ -90,10 +69,6 @@ async function resolverIdPerfil({ perfil, idPerfil }, obrigatorio = true) {
       erro: "perfil ou idPerfil é obrigatório",
     };
   }
-
-  return {
-    idPerfil: undefined,
-  };
 }
 
 async function buscarUsuarioCompleto(id) {
@@ -130,9 +105,13 @@ async function responderSessao(usuario, res) {
   const usuarioJson = usuario.toJSON();
   const permissoes = await buscarChavesPermissoes(usuario.idPerfil);
 
+  const usuarioComPermissoes = {
+    ...usuarioJson,
+    permissoes
+  }
+
   return res.json({
-    usuario: usuarioJson,
-    permissoes,
+    usuario: usuarioComPermissoes
   });
 }
 
@@ -264,7 +243,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { nome, email, perfil, status, senha, idPerfil } = req.body;
+    const { nome, email, perfil, status, senha } = req.body;
     const erroValidacao = validarUsuario({ nome, email, status, senha });
 
     if (erroValidacao) {
@@ -273,7 +252,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const { erro, idPerfil: idPerfilResolvido } = await resolverIdPerfil({ perfil, idPerfil });
+    const { erro, idPerfil } = await perfilToIdPerfil({ perfil });
 
     if (erro) {
       return res.status(400).json({
@@ -286,7 +265,7 @@ router.post("/", async (req, res) => {
       email,
       status,
       senhaHash: hashPassword(senha),
-      idPerfil: idPerfilResolvido
+      idPerfil: idPerfil
     });
 
     const usuarioCompleto = await buscarUsuarioCompleto(usuario.id);

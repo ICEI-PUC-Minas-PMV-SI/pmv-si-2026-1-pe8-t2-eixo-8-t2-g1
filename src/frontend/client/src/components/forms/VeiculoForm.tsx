@@ -42,6 +42,7 @@ export default function VeiculoForm({
   clientes
 }: VeiculoFormProps) {
   const getInitialData = (): FormDataState => {
+    console.log(initialData)
     if (initialData) {
       return {
         id: initialData.id,

@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { UF, UF_LABELS } from '@/enum/ufEnum'
 
 interface EditarPessoaFormProps {
   id: string;
@@ -51,6 +52,8 @@ export default function EditarPessoaForm({
     },
   }));
   const [loading, setLoading] = useState(false);
+  const ufs = Object.values(UF);
+  const isOutroUF = formData.endereco.uf === UF.OUTRO;
 
   const handleInputChange = <K extends keyof ClienteApi>(field: K, value: ClienteApi[K]) => {
     setFormData((prev) => ({
@@ -65,6 +68,15 @@ export default function EditarPessoaForm({
       endereco: {
         ...prev.endereco,
         [field]: value,
+        ...(value === UF.OUTRO && {
+          logradouro: 'Outro',
+          numero: 'Outro',
+          complemento: 'Outro',
+          bairro: 'Outro',
+          cidade: 'Outro',
+          pais: 'Outro',
+          cep: 'Outro',
+          })
       },
     }));
   };
@@ -212,6 +224,7 @@ export default function EditarPessoaForm({
                 id="logradouro"
                 value={formData.endereco.logradouro}
                 onChange={(e) => handleEnderecoChange('logradouro', e.target.value)}
+                disabled={isOutroUF}
                 required
               />
             </div>
@@ -221,6 +234,7 @@ export default function EditarPessoaForm({
                 id="numero"
                 value={formData.endereco.numero}
                 onChange={(e) => handleEnderecoChange('numero', e.target.value)}
+                disabled={isOutroUF}
                 required
               />
             </div>
@@ -230,6 +244,7 @@ export default function EditarPessoaForm({
                 id="complemento"
                 value={formData.endereco.complemento || ''}
                 onChange={(e) => handleEnderecoChange('complemento', e.target.value)}
+                disabled={isOutroUF}
               />
             </div>
             <div>
@@ -238,6 +253,7 @@ export default function EditarPessoaForm({
                 id="bairro"
                 value={formData.endereco.bairro}
                 onChange={(e) => handleEnderecoChange('bairro', e.target.value)}
+                disabled={isOutroUF}
                 required
               />
             </div>
@@ -247,25 +263,33 @@ export default function EditarPessoaForm({
                 id="cidade"
                 value={formData.endereco.cidade}
                 onChange={(e) => handleEnderecoChange('cidade', e.target.value)}
+                disabled={isOutroUF}
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="uf">UF *</Label>
-              <Input
-                id="uf"
-                value={formData.endereco.uf}
-                onChange={(e) => handleEnderecoChange('uf', e.target.value.toUpperCase())}
-                maxLength={2}
-                required
-              />
-            </div>
+          <div className="w-full">
+            <Label htmlFor="uf">UF *</Label>
+            <Select
+              value={formData.endereco.uf}
+              onValueChange={(value) => handleEnderecoChange('uf', value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ufs.map((uf) => (
+                  <SelectItem key={uf} value={uf}>{UF_LABELS[uf]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
             <div>
               <Label htmlFor="cep">CEP *</Label>
               <Input
                 id="cep"
                 value={formData.endereco.cep}
                 onChange={(e) => handleEnderecoChange('cep', e.target.value)}
+                disabled={isOutroUF}
                 required
               />
             </div>
@@ -275,6 +299,7 @@ export default function EditarPessoaForm({
                 id="pais"
                 value={formData.endereco.pais}
                 onChange={(e) => handleEnderecoChange('pais', e.target.value)}
+                disabled={isOutroUF}
                 required
               />
             </div>
