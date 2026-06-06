@@ -13,6 +13,8 @@ const TipoVeiculo = require("./TipoVeiculo");
 const Smtp = require("./Smtp");
 const Empresa = require("./Empresa");
 const sequelize = require("../database/connection");
+const Marca = require("./Marca");
+const Categoria = require("./Categoria");
 
 Cliente.hasMany(Veiculo, {
   foreignKey: "idCliente",
@@ -54,6 +56,31 @@ ItemServico.belongsTo(Produto, {
   as: "produto",
 });
 
+Marca.hasMany(Produto, {
+  foreignKey: "idMarca",
+  as: "produtos",
+});
+
+Produto.belongsTo(Marca, {
+  foreignKey: "idMarca",
+  as: "marca",
+});
+
+Categoria.hasMany(Produto, {
+  foreignKey: "idCategoria",
+  as: "produtos",
+});
+
+Produto.belongsTo(Categoria, {
+  foreignKey: "idCategoria",
+  as: "categoria",
+});
+
+Usuario.belongsTo(Perfil, {
+  foreignKey: "idPerfil",
+  as: "perfilInfo",
+});
+
 Perfil.hasMany(Usuario, {
   foreignKey: "idPerfil",
   as: "usuarios",
@@ -77,6 +104,8 @@ Permissao.belongsToMany(Perfil, {
   otherKey: "idPerfil",
   as: "perfis",
 });
+
+Pr
 
 module.exports = {
   sequelize,

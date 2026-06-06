@@ -70,12 +70,26 @@ export interface ServicoPayload {
 
 export interface ProdutoApi {
   id: number;
-  nome: string;
-  quantidade: number | string;
-  precoUnitario: number | string;
+
+  titulo: string;
+  descricao?: string;
+
+  codigoSku: string;
+
+  idMarca: number;
+  idCategoria: number;
+  idFornecedor: number;
+
+  tipoItem: string;
+
+  preco: number;
+  estoqueAtual: number;
 }
 
-export type ProdutoPayload = Omit<ProdutoApi, "id">;
+export type ProdutoPayload = Omit<
+  ProdutoApi,
+  'id'
+>;
 
 export interface RelatorioOsStatusApi {
   status: string;
@@ -181,6 +195,19 @@ export interface FornecedorPayload {
   observacao?: string | null;
 }
 
+export interface MarcaApi {
+  id: number;
+  nome: string;
+}
+
+export type MarcaPayload = Omit<MarcaApi, "id">;
+
+export interface CategoriaApi {
+  id: number;
+  nome: string;
+}
+
+export type CategoriaPayload = Omit<CategoriaApi, "id">;
 export interface LoginPayload {
   email: string;
   senha: string;

@@ -85,26 +85,22 @@ export default function Produtos() {
 
   const columns = [
     {
-      key: "nome" as const,
-      label: "Nome",
-    },
-    //quantidade com casas decimais
-    // {
-    // key: 'quantidade' as const,
-    // label: 'Quantidade',
-    // render: (value: string | number) =>
-    //     Number(value).toFixed(2),
-    // }
-    //
-    {
-      key: "quantidade" as const,
-      label: "Quantidade",
-      render: (value: string | number) => Number(value),
+      key: 'titulo',
+      label: 'Título',
     },
     {
-      key: "precoUnitario" as const,
-      label: "Preço Unitário",
-      render: (value: string | number) => `R$ ${Number(value).toFixed(2)}`,
+      key: 'codigoSku',
+      label: 'SKU',
+    },
+    {
+      key: 'preco',
+      label: 'Preço',
+      render: (value: string | number) =>
+        `R$ ${Number(value).toFixed(2)}`,
+    },
+    {
+      key: 'estoqueAtual',
+      label: 'Estoque',
     },
   ];
 
@@ -156,7 +152,7 @@ export default function Produtos() {
         <DataTable<ProdutoApi>
           data={produtos}
           columns={columns}
-          searchFields={["nome"]}
+          searchFields={['titulo', 'codigoSku']}
           pageSize={10}
           onRowClick={canEdit ? handleRowClick : undefined}
         />
