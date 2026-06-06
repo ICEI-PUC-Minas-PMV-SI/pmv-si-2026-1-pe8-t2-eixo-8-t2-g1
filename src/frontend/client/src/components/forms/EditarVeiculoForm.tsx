@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import { VeiculoApi, veiculosApi, ClienteApi } from '@/api';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { VeiculoApi, veiculosApi, ClienteApi } from "@/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,18 +12,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EditarVeiculoProps {
   id: string;
@@ -42,8 +44,10 @@ export default function EditarVeiculoForm({
   onSave,
   onCancel,
 }: EditarVeiculoProps) {
+  const { hasPermission } = useAuth();
   const [formData, setFormData] = useState<VeiculoApi>(() => veiculo);
   const [loading, setLoading] = useState(false);
+  const canDelete = hasPermission(PERMISSIONS.VEICULOS.DELETE);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData({
@@ -53,8 +57,8 @@ export default function EditarVeiculoForm({
   };
 
   useEffect(() => {
-    setFormData(veiculo)
-  }, [veiculo.id])
+    setFormData(veiculo);
+  }, [veiculo.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,9 +66,10 @@ export default function EditarVeiculoForm({
     try {
       setLoading(true);
       await onSave(formData);
-      toast.success('Veículo atualizado com sucesso!');
+      toast.success("Veículo atualizado com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao atualizar veículo';
+      const message =
+        error.response?.data?.message || "Erro ao atualizar veículo";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -72,13 +77,18 @@ export default function EditarVeiculoForm({
   };
 
   const handleDelete = async () => {
+    if (!canDelete) {
+      return;
+    }
+
     try {
       setLoading(true);
       await veiculosApi.remove(id);
-      toast.success('Veículo deletado com sucesso!');
-      onNavigate('/veiculos');
+      toast.success("Veículo deletado com sucesso!");
+      onNavigate("/veiculos");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao deletar veículo';
+      const message =
+        error.response?.data?.message || "Erro ao deletar veículo";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -87,7 +97,13 @@ export default function EditarVeiculoForm({
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Veículos' }, { label: 'Editar' }]} />
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard" },
+          { label: "Veículos" },
+          { label: "Editar" },
+        ]}
+      />
 
       <div>
         <h1>Editar Veículo</h1>
@@ -103,7 +119,7 @@ export default function EditarVeiculoForm({
               <Input
                 id="placa"
                 value={formData.placa}
-                onChange={(e) => handleInputChange('placa', e.target.value)}
+                onChange={e => handleInputChange("placa", e.target.value)}
                 required
               />
             </div>
@@ -112,7 +128,7 @@ export default function EditarVeiculoForm({
               <Input
                 id="modelo"
                 value={formData.modelo}
-                onChange={(e) => handleInputChange('modelo', e.target.value)}
+                onChange={e => handleInputChange("modelo", e.target.value)}
                 required
               />
             </div>
@@ -122,7 +138,9 @@ export default function EditarVeiculoForm({
                 id="ano"
                 type="number"
                 value={formData.ano}
-                onChange={(e) => handleInputChange('ano', parseInt(e.target.value))}
+                onChange={e =>
+                  handleInputChange("ano", parseInt(e.target.value))
+                }
                 required
               />
             </div>
@@ -131,21 +149,23 @@ export default function EditarVeiculoForm({
               <Input
                 id="cor"
                 value={formData.cor}
-                onChange={(e) => handleInputChange('cor', e.target.value)}
+                onChange={e => handleInputChange("cor", e.target.value)}
                 required
               />
             </div>
             <div>
               <Label htmlFor="idCliente">Cliente</Label>
               <Select
-                value={formData.idCliente ? String(formData.idCliente) : ''}
-                onValueChange={(value) => handleInputChange('idCliente', Number(value))}
+                value={formData.idCliente ? String(formData.idCliente) : ""}
+                onValueChange={value =>
+                  handleInputChange("idCliente", Number(value))
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um cliente..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientes.map((cliente) => (
+                  {clientes.map(cliente => (
                     <SelectItem key={cliente.id} value={String(cliente.id)}>
                       {cliente.nomeCompleto}
                     </SelectItem>
@@ -159,15 +179,17 @@ export default function EditarVeiculoForm({
                 id="quilometragem"
                 type="number"
                 value={formData.quilometragem}
-                onChange={(e) => handleInputChange('quilometragem', parseInt(e.target.value))}
+                onChange={e =>
+                  handleInputChange("quilometragem", parseInt(e.target.value))
+                }
                 required
               />
             </div>
             <div className="md:col-span-2">
               <Label htmlFor="tipoVeiculo">Tipo de Veículo</Label>
               <Select
-                value={formData.tipoVeiculo || ''}
-                onValueChange={(value) => handleInputChange('tipoVeiculo', value)}
+                value={formData.tipoVeiculo || ""}
+                onValueChange={value => handleInputChange("tipoVeiculo", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo..." />
@@ -196,24 +218,28 @@ export default function EditarVeiculoForm({
               <Label htmlFor="motorizacao">Motorização</Label>
               <Input
                 id="motorizacao"
-                value={formData.motorizacao || ''}
-                onChange={(e) => handleInputChange('motorizacao', e.target.value)}
+                value={formData.motorizacao || ""}
+                onChange={e => handleInputChange("motorizacao", e.target.value)}
               />
             </div>
             <div>
               <Label htmlFor="numeroChasse">Número do Chassi</Label>
               <Input
                 id="numeroChasse"
-                value={formData.numeroChasse || ''}
-                onChange={(e) => handleInputChange('numeroChasse', e.target.value)}
+                value={formData.numeroChasse || ""}
+                onChange={e =>
+                  handleInputChange("numeroChasse", e.target.value)
+                }
               />
             </div>
             <div>
               <Label htmlFor="tipoCombustivel">Tipo de Combustível</Label>
               <Input
                 id="tipoCombustivel"
-                value={formData.tipoCombustivel || ''}
-                onChange={(e) => handleInputChange('tipoCombustivel', e.target.value)}
+                value={formData.tipoCombustivel || ""}
+                onChange={e =>
+                  handleInputChange("tipoCombustivel", e.target.value)
+                }
               />
             </div>
             <div>
@@ -221,43 +247,54 @@ export default function EditarVeiculoForm({
               <Input
                 id="dataUltimaRevisao"
                 type="date"
-                value={formData.dataUltimaRevisao || ''}
-                onChange={(e) => handleInputChange('dataUltimaRevisao', e.target.value)}
+                value={formData.dataUltimaRevisao || ""}
+                onChange={e =>
+                  handleInputChange("dataUltimaRevisao", e.target.value)
+                }
               />
             </div>
           </div>
         </Card>
 
         <div className="flex gap-3 justify-end pt-4 border-t border-border">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={loading}
+          >
             Cancelar
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive" disabled={loading}>
-                Excluir veículo
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir veículo?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação não pode ser desfeita. O veículo {formData.placa} será removido
-                  permanentemente do sistema.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={loading}
-                >
-                  Confirmar exclusão
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" disabled={loading}>
+                  Excluir veículo
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir veículo?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. O veículo {formData.placa}{" "}
+                    será removido permanentemente do sistema.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={loading}>
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={loading}
+                  >
+                    Confirmar exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button type="submit" disabled={loading}>
             Salvar Alterações
           </Button>

@@ -29,7 +29,8 @@ export type {
   VeiculoApi,
   VeiculoPayload,
   UsuarioApi,
+  UsuarioSessaoApi,
   UsuarioPayload,
   FornecedorApi,
-  FornecedorPayload
+  FornecedorPayload,
 } from "./types";

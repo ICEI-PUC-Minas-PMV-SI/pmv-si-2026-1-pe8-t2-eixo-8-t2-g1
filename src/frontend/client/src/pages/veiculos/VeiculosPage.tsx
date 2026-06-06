@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -10,19 +10,24 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import DataTable from '@/components/DataTable';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import VeiculoForm from '@/components/forms/VeiculoForm';
-import { VeiculoApi, ClienteApi, veiculosApi, clientesApi } from '@/api';
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import DataTable from "@/components/DataTable";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import VeiculoForm from "@/components/forms/VeiculoForm";
+import { VeiculoApi, ClienteApi, veiculosApi, clientesApi } from "@/api";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Veiculos() {
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
   const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [clientes, setClientes] = useState<ClienteApi[]>([]);
   const [loading, setLoading] = useState(false);
+  const canCreate = hasPermission(PERMISSIONS.VEICULOS.CREATE);
+  const canEdit = hasPermission(PERMISSIONS.VEICULOS.EDIT);
 
   useEffect(() => {
     const loadData = async () => {
@@ -35,7 +40,7 @@ export default function Veiculos() {
         setClientes(clientesResponse);
         setVeiculos(veiculosResponse);
       } catch (error: any) {
-        const message = error.response?.data?.messsage || 'Erro ao carregar';
+        const message = error.response?.data?.messsage || "Erro ao carregar";
         toast.error(message);
       } finally {
         setLoading(false);
@@ -46,8 +51,11 @@ export default function Veiculos() {
   }, []);
 
   const handleAddVeiculo = async (novoVeiculo: VeiculoApi) => {
-    try {
+    if (!canCreate) {
+      return;
+    }
 
+    try {
       const veiculoCriado = await veiculosApi.create({
         idCliente: novoVeiculo.idCliente,
         placa: novoVeiculo.placa,
@@ -62,45 +70,50 @@ export default function Veiculos() {
         dataUltimaRevisao: novoVeiculo.dataUltimaRevisao,
       });
 
-      setVeiculos((prevVeiculos) => [...prevVeiculos, veiculoCriado]);
+      setVeiculos(prevVeiculos => [...prevVeiculos, veiculoCriado]);
 
       setIsDialogOpen(false);
-      toast.success('Veículo cadastrado com sucesso');
+      toast.success("Veículo cadastrado com sucesso");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao cadastrar usuário';
-      toast.error(message)
+      const message =
+        error.response?.data?.message || "Erro ao cadastrar usuário";
+      toast.error(message);
     }
   };
 
   const handleEditVeiculo = (veiculo: VeiculoApi) => {
+    if (!canEdit) {
+      return;
+    }
+
     navigate(`/veiculos/${veiculo.id}/editar`);
   };
 
   const columns = [
     {
-      key: 'placa' as const,
-      label: 'Placa',
+      key: "placa" as const,
+      label: "Placa",
     },
     {
-      key: 'modelo' as const,
-      label: 'Modelo',
+      key: "modelo" as const,
+      label: "Modelo",
     },
     {
-      key: 'ano' as const,
-      label: 'Ano',
+      key: "ano" as const,
+      label: "Ano",
     },
     {
-      key: 'cor' as const,
-      label: 'Cor',
+      key: "cor" as const,
+      label: "Cor",
     },
     {
-      key: 'quilometragem' as const,
-      label: 'Quilometragem',
-      render: (value: number) => `${value.toLocaleString('pt-BR')} km`,
+      key: "quilometragem" as const,
+      label: "Quilometragem",
+      render: (value: number) => `${value.toLocaleString("pt-BR")} km`,
     },
     {
-      key: 'idCliente' as const,
-      label: 'Cliente',
+      key: "idCliente" as const,
+      label: "Cliente",
     },
   ];
 
@@ -118,31 +131,39 @@ export default function Veiculos() {
   return (
     <div className="space-y-6">
       {/* Breadcrumbs */}
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Veículos' }]} />
+      <Breadcrumbs items={[{ label: "Dashboard" }, { label: "Veículos" }]} />
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1>Veículos</h1>
-          <p className="text-muted-foreground mt-1">Gerenciamento de veículos</p>
+          <p className="text-muted-foreground mt-1">
+            Gerenciamento de veículos
+          </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Cadastrar Veículo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Novo Veículo</DialogTitle>
-              <DialogDescription>
-                Preencha os dados abaixo para cadastrar um novo veículo
-              </DialogDescription>
-            </DialogHeader>
-            <VeiculoForm clientes={clientes} onSubmit={handleAddVeiculo} onCancel={() => setIsDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        {canCreate && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Cadastrar Veículo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Veículo</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados abaixo para cadastrar um novo veículo
+                </DialogDescription>
+              </DialogHeader>
+              <VeiculoForm
+                clientes={clientes}
+                onSubmit={handleAddVeiculo}
+                onCancel={() => setIsDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Table */}
@@ -150,9 +171,9 @@ export default function Veiculos() {
         <DataTable<VeiculoApi>
           data={veiculos}
           columns={columns}
-          searchFields={['placa', 'modelo', 'cor']}
+          searchFields={["placa", "modelo", "cor"]}
           pageSize={10}
-          onRowClick={handleRowClick}
+          onRowClick={canEdit ? handleRowClick : undefined}
         />
       </Card>
     </div>

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 import {
   Dialog,
@@ -13,38 +13,37 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
-import Breadcrumbs from '@/components/Breadcrumbs';
-import DataTable from '@/components/DataTable';
-import ProdutoForm from '@/components/forms/ProdutoForm';
+import Breadcrumbs from "@/components/Breadcrumbs";
+import DataTable from "@/components/DataTable";
+import ProdutoForm from "@/components/forms/ProdutoForm";
 
-import {
-  produtosApi,
-  type ProdutoApi,
-  type ProdutoPayload,
-} from '@/api';
+import { produtosApi, type ProdutoApi, type ProdutoPayload } from "@/api";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Produtos() {
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
 
   const [produtos, setProdutos] = useState<ProdutoApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const canCreate = hasPermission(PERMISSIONS.PRODUTOS.CREATE);
+  const canEdit = hasPermission(PERMISSIONS.PRODUTOS.EDIT);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
 
-        const produtosResponse =
-          await produtosApi.getAll();
+        const produtosResponse = await produtosApi.getAll();
 
         setProdutos(produtosResponse);
       } catch (error: any) {
         const message =
-          error.response?.data?.message ||
-          'Erro ao carregar produtos';
+          error.response?.data?.message || "Erro ao carregar produtos";
 
         toast.error(message);
       } finally {
@@ -55,40 +54,39 @@ export default function Produtos() {
     loadData();
   }, []);
 
-  const handleAddProduto = async (
-    novoProduto: ProdutoPayload,
-  ) => {
-    try {
-      const produtoCriado =
-        await produtosApi.create(novoProduto);
+  const handleAddProduto = async (novoProduto: ProdutoPayload) => {
+    if (!canCreate) {
+      return;
+    }
 
-      setProdutos((produtosAtuais) => [
-        produtoCriado,
-        ...produtosAtuais,
-      ]);
+    try {
+      const produtoCriado = await produtosApi.create(novoProduto);
+
+      setProdutos(produtosAtuais => [produtoCriado, ...produtosAtuais]);
 
       setIsDialogOpen(false);
 
-      toast.success('Produto cadastrado com sucesso!');
+      toast.success("Produto cadastrado com sucesso!");
     } catch (error: any) {
       const message =
-        error.response?.data?.message ||
-        'Erro ao cadastrar produto';
+        error.response?.data?.message || "Erro ao cadastrar produto";
 
       toast.error(message);
     }
   };
 
-  const handleEditProduto = (
-    produto: ProdutoApi,
-  ) => {
+  const handleEditProduto = (produto: ProdutoApi) => {
+    if (!canEdit) {
+      return;
+    }
+
     navigate(`/produtos/${produto.id}/editar`);
   };
 
   const columns = [
     {
-      key: 'nome' as const,
-      label: 'Nome',
+      key: "nome" as const,
+      label: "Nome",
     },
     //quantidade com casas decimais
     // {
@@ -99,33 +97,24 @@ export default function Produtos() {
     // }
     //
     {
-    key: 'quantidade' as const,
-    label: 'Quantidade',
-    render: (value: string | number) =>
-        Number(value),
+      key: "quantidade" as const,
+      label: "Quantidade",
+      render: (value: string | number) => Number(value),
     },
     {
-    key: 'precoUnitario' as const,
-    label: 'Preço Unitário',
-    render: (value: string | number) =>
-        `R$ ${Number(value).toFixed(2)}`,
+      key: "precoUnitario" as const,
+      label: "Preço Unitário",
+      render: (value: string | number) => `R$ ${Number(value).toFixed(2)}`,
     },
   ];
 
-  const handleRowClick = (
-    row: ProdutoApi,
-  ) => {
+  const handleRowClick = (row: ProdutoApi) => {
     handleEditProduto(row);
   };
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs
-        items={[
-          { label: 'Dashboard' },
-          { label: 'Produtos' },
-        ]}
-      />
+      <Breadcrumbs items={[{ label: "Dashboard" }, { label: "Produtos" }]} />
 
       <div className="flex items-center justify-between">
         <div>
@@ -136,45 +125,40 @@ export default function Produtos() {
           </p>
         </div>
 
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-        >
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Novo Produto
-            </Button>
-          </DialogTrigger>
+        {canCreate && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Novo Produto
+              </Button>
+            </DialogTrigger>
 
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                Cadastrar Novo Produto
-              </DialogTitle>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Produto</DialogTitle>
 
-              <DialogDescription>
-                Preencha os dados abaixo para cadastrar um novo produto
-              </DialogDescription>
-            </DialogHeader>
+                <DialogDescription>
+                  Preencha os dados abaixo para cadastrar um novo produto
+                </DialogDescription>
+              </DialogHeader>
 
-            <ProdutoForm
-              onSubmit={handleAddProduto}
-              onCancel={() =>
-                setIsDialogOpen(false)
-              }
-            />
-          </DialogContent>
-        </Dialog>
+              <ProdutoForm
+                onSubmit={handleAddProduto}
+                onCancel={() => setIsDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Card className="p-6">
         <DataTable<ProdutoApi>
           data={produtos}
           columns={columns}
-          searchFields={['nome']}
+          searchFields={["nome"]}
           pageSize={10}
-          onRowClick={handleRowClick}
+          onRowClick={canEdit ? handleRowClick : undefined}
         />
       </Card>
     </div>

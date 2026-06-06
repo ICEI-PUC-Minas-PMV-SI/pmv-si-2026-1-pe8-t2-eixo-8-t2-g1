@@ -22,7 +22,10 @@ export interface ClienteApi {
   dataAtualizacao?: string;
 }
 
-export type ClientePayload = Omit<ClienteApi, "id" | "dataCriacao" | "dataAtualizacao">;
+export type ClientePayload = Omit<
+  ClienteApi,
+  "id" | "dataCriacao" | "dataAtualizacao"
+>;
 
 export interface VeiculoApi {
   id: number;
@@ -139,7 +142,6 @@ export interface UsuarioApi {
   id: string;
   nome: string;
   email: string;
-  permissoes: [];
   perfil: "Administrador" | "Supervisor" | "Padrão";
   status: "Ativo" | "Inativo";
   idPerfil?: number;
@@ -147,9 +149,20 @@ export interface UsuarioApi {
   dataAtualizacao: string;
 }
 
-export type UsuarioPayload = Omit<UsuarioApi, "id" | "dataCriacao" | "dataAtualizacao"> & {
+export type UsuarioPayload = Omit<
+  UsuarioApi,
+  "id" | "dataCriacao" | "dataAtualizacao" | "idPerfil"
+> & {
   senha?: string;
 };
+
+export interface UsuarioSessaoApi {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: UsuarioApi["perfil"];
+  permissoes: string[];
+}
 
 export interface FornecedorApi {
   id: number;
@@ -174,8 +187,7 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  usuario: UsuarioApi;
-  permissoes: string[];
+  usuario: UsuarioSessaoApi;
 }
 
 export type SessionResponse = LoginResponse;

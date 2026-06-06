@@ -286,16 +286,12 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    const { nome, email, perfil, idPerfil, status, senha } = req.body;
-    const erroValidacao = validarUsuario({ nome, email, status, senha }, false);
-
-    if (erroValidacao) {
-      return res.status(400).json({
-        message: erroValidacao,
-      });
+    const { nome, email, perfil, status, senha } = req.body;
+    let erro;
+    let idPerfil;
+    if (perfil) {
+      ({ erro, idPerfil }  = await perfilToIdPerfil({ perfil }));
     }
-
-    const { erro, idPerfil: idPerfilResolvido } = await resolverIdPerfil({ perfil, idPerfil }, false);
 
     if (erro) {
       return res.status(400).json({
@@ -306,9 +302,9 @@ router.put("/:id", async (req, res) => {
     const usuarioAtualizado = await usuario.update({
       nome: nome ?? usuario.nome,
       email: email ?? usuario.email,
-      idPerfil: idPerfilResolvido ?? usuario.idPerfil,
       status: status ?? usuario.status,
       senhaHash: senha !== undefined ? hashPassword(senha) : usuario.senhaHash,
+      idPerfil: perfil ? idPerfil : usuario.idPerfil
     });
 
     const usuarioCompleto = await buscarUsuarioCompleto(usuarioAtualizado.id);

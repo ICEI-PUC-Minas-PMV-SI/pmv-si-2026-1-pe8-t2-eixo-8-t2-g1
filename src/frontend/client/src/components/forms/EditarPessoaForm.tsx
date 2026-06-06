@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { clientesApi, type ClienteApi } from '@/api';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { toast } from "sonner";
+import { clientesApi, type ClienteApi } from "@/api";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +25,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { UF, UF_LABELS } from '@/enum/ufEnum'
+} from "@/components/ui/alert-dialog";
+import { UF, UF_LABELS } from "@/enum/ufEnum";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EditarPessoaFormProps {
   id: string;
@@ -43,40 +45,48 @@ export default function EditarPessoaForm({
   onSave,
   onCancel,
 }: EditarPessoaFormProps) {
+  const { hasPermission } = useAuth();
   const [formData, setFormData] = useState<ClienteApi>(() => ({
     ...cliente,
-    observacao: cliente.observacao || '',
+    observacao: cliente.observacao || "",
     endereco: {
       ...cliente.endereco,
-      complemento: cliente.endereco.complemento || '',
+      complemento: cliente.endereco.complemento || "",
     },
   }));
   const [loading, setLoading] = useState(false);
   const ufs = Object.values(UF);
   const isOutroUF = formData.endereco.uf === UF.OUTRO;
+  const canDelete = hasPermission(PERMISSIONS.CLIENTES.DELETE);
 
-  const handleInputChange = <K extends keyof ClienteApi>(field: K, value: ClienteApi[K]) => {
-    setFormData((prev) => ({
+  const handleInputChange = <K extends keyof ClienteApi>(
+    field: K,
+    value: ClienteApi[K]
+  ) => {
+    setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleEnderecoChange = (field: keyof ClienteApi['endereco'], value: string) => {
-    setFormData((prev) => ({
+  const handleEnderecoChange = (
+    field: keyof ClienteApi["endereco"],
+    value: string
+  ) => {
+    setFormData(prev => ({
       ...prev,
       endereco: {
         ...prev.endereco,
         [field]: value,
         ...(value === UF.OUTRO && {
-          logradouro: 'Outro',
-          numero: 'Outro',
-          complemento: 'Outro',
-          bairro: 'Outro',
-          cidade: 'Outro',
-          pais: 'Outro',
-          cep: 'Outro',
-          })
+          logradouro: "Outro",
+          numero: "Outro",
+          complemento: "Outro",
+          bairro: "Outro",
+          cidade: "Outro",
+          pais: "Outro",
+          cep: "Outro",
+        }),
       },
     }));
   };
@@ -87,9 +97,10 @@ export default function EditarPessoaForm({
     try {
       setLoading(true);
       await onSave(formData);
-      toast.success('Pessoa atualizada com sucesso!');
+      toast.success("Pessoa atualizada com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao atualizar pessoa';
+      const message =
+        error.response?.data?.message || "Erro ao atualizar pessoa";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -97,13 +108,17 @@ export default function EditarPessoaForm({
   };
 
   const handleDelete = async () => {
+    if (!canDelete) {
+      return;
+    }
+
     try {
       setLoading(true);
       await clientesApi.remove(id);
-      toast.success('Pessoa deletada com sucesso!');
-      onNavigate('/pessoas');
+      toast.success("Pessoa deletada com sucesso!");
+      onNavigate("/pessoas");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao deletar pessoa';
+      const message = error.response?.data?.message || "Erro ao deletar pessoa";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -112,7 +127,13 @@ export default function EditarPessoaForm({
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Pessoas' }, { label: 'Editar' }]} />
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard" },
+          { label: "Pessoas" },
+          { label: "Editar" },
+        ]}
+      />
 
       <div>
         <h1>Editar Pessoa</h1>
@@ -128,7 +149,9 @@ export default function EditarPessoaForm({
               <Input
                 id="nomeCompleto"
                 value={formData.nomeCompleto}
-                onChange={(e) => handleInputChange('nomeCompleto', e.target.value)}
+                onChange={e =>
+                  handleInputChange("nomeCompleto", e.target.value)
+                }
                 required
               />
             </div>
@@ -137,7 +160,9 @@ export default function EditarPessoaForm({
               <Label htmlFor="genero">Gênero *</Label>
               <Select
                 value={formData.genero}
-                onValueChange={(value: ClienteApi['genero']) => handleInputChange('genero', value)}
+                onValueChange={(value: ClienteApi["genero"]) =>
+                  handleInputChange("genero", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -156,7 +181,9 @@ export default function EditarPessoaForm({
                 id="dataNascimento"
                 type="date"
                 value={formData.dataNascimento}
-                onChange={(e) => handleInputChange('dataNascimento', e.target.value)}
+                onChange={e =>
+                  handleInputChange("dataNascimento", e.target.value)
+                }
                 required
               />
             </div>
@@ -165,7 +192,9 @@ export default function EditarPessoaForm({
               <Label htmlFor="tipo">Tipo *</Label>
               <Select
                 value={formData.tipo}
-                onValueChange={(value: ClienteApi['tipo']) => handleInputChange('tipo', value)}
+                onValueChange={(value: ClienteApi["tipo"]) =>
+                  handleInputChange("tipo", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -181,7 +210,9 @@ export default function EditarPessoaForm({
               <Switch
                 id="isFornecedor"
                 checked={formData.isFornecedor}
-                onCheckedChange={(checked) => handleInputChange('isFornecedor', checked)}
+                onCheckedChange={checked =>
+                  handleInputChange("isFornecedor", checked)
+                }
               />
               <Label htmlFor="isFornecedor" className="mb-0 cursor-pointer">
                 Marcar como fornecedor
@@ -198,7 +229,7 @@ export default function EditarPessoaForm({
               <Input
                 id="telefone"
                 value={formData.telefone}
-                onChange={(e) => handleInputChange('telefone', e.target.value)}
+                onChange={e => handleInputChange("telefone", e.target.value)}
                 required
               />
             </div>
@@ -208,7 +239,7 @@ export default function EditarPessoaForm({
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={e => handleInputChange("email", e.target.value)}
                 required
               />
             </div>
@@ -223,7 +254,9 @@ export default function EditarPessoaForm({
               <Input
                 id="logradouro"
                 value={formData.endereco.logradouro}
-                onChange={(e) => handleEnderecoChange('logradouro', e.target.value)}
+                onChange={e =>
+                  handleEnderecoChange("logradouro", e.target.value)
+                }
                 disabled={isOutroUF}
                 required
               />
@@ -233,7 +266,7 @@ export default function EditarPessoaForm({
               <Input
                 id="numero"
                 value={formData.endereco.numero}
-                onChange={(e) => handleEnderecoChange('numero', e.target.value)}
+                onChange={e => handleEnderecoChange("numero", e.target.value)}
                 disabled={isOutroUF}
                 required
               />
@@ -242,8 +275,10 @@ export default function EditarPessoaForm({
               <Label htmlFor="complemento">Complemento</Label>
               <Input
                 id="complemento"
-                value={formData.endereco.complemento || ''}
-                onChange={(e) => handleEnderecoChange('complemento', e.target.value)}
+                value={formData.endereco.complemento || ""}
+                onChange={e =>
+                  handleEnderecoChange("complemento", e.target.value)
+                }
                 disabled={isOutroUF}
               />
             </div>
@@ -252,7 +287,7 @@ export default function EditarPessoaForm({
               <Input
                 id="bairro"
                 value={formData.endereco.bairro}
-                onChange={(e) => handleEnderecoChange('bairro', e.target.value)}
+                onChange={e => handleEnderecoChange("bairro", e.target.value)}
                 disabled={isOutroUF}
                 required
               />
@@ -262,33 +297,35 @@ export default function EditarPessoaForm({
               <Input
                 id="cidade"
                 value={formData.endereco.cidade}
-                onChange={(e) => handleEnderecoChange('cidade', e.target.value)}
+                onChange={e => handleEnderecoChange("cidade", e.target.value)}
                 disabled={isOutroUF}
                 required
               />
             </div>
-          <div className="w-full">
-            <Label htmlFor="uf">UF *</Label>
-            <Select
-              value={formData.endereco.uf}
-              onValueChange={(value) => handleEnderecoChange('uf', value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ufs.map((uf) => (
-                  <SelectItem key={uf} value={uf}>{UF_LABELS[uf]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="w-full">
+              <Label htmlFor="uf">UF *</Label>
+              <Select
+                value={formData.endereco.uf}
+                onValueChange={value => handleEnderecoChange("uf", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ufs.map(uf => (
+                    <SelectItem key={uf} value={uf}>
+                      {UF_LABELS[uf]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label htmlFor="cep">CEP *</Label>
               <Input
                 id="cep"
                 value={formData.endereco.cep}
-                onChange={(e) => handleEnderecoChange('cep', e.target.value)}
+                onChange={e => handleEnderecoChange("cep", e.target.value)}
                 disabled={isOutroUF}
                 required
               />
@@ -298,7 +335,7 @@ export default function EditarPessoaForm({
               <Input
                 id="pais"
                 value={formData.endereco.pais}
-                onChange={(e) => handleEnderecoChange('pais', e.target.value)}
+                onChange={e => handleEnderecoChange("pais", e.target.value)}
                 disabled={isOutroUF}
                 required
               />
@@ -312,43 +349,53 @@ export default function EditarPessoaForm({
             <Label htmlFor="observacao">Observação</Label>
             <Textarea
               id="observacao"
-              value={formData.observacao || ''}
-              onChange={(e) => handleInputChange('observacao', e.target.value)}
+              value={formData.observacao || ""}
+              onChange={e => handleInputChange("observacao", e.target.value)}
               rows={3}
             />
           </div>
         </Card>
 
         <div className="flex gap-3 justify-end pt-4 border-t border-border">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={loading}
+          >
             Cancelar
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive" disabled={loading}>
-                Excluir Pessoa
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir pessoa?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação não pode ser desfeita. A pessoa {formData.nomeCompleto} será removida
-                  permanentemente do sistema.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={loading}
-                >
-                  Confirmar exclusão
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" disabled={loading}>
+                  Excluir Pessoa
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir pessoa?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. A pessoa{" "}
+                    {formData.nomeCompleto} será removida permanentemente do
+                    sistema.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={loading}>
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={loading}
+                  >
+                    Confirmar exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button type="submit" disabled={loading}>
             Salvar Alterações
           </Button>

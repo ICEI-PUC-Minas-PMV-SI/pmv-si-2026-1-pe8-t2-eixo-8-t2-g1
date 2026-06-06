@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { Lock, LogIn, Mail } from 'lucide-react';
-import { toast } from 'sonner';
-import { authApi, type UsuarioApi } from '@/api';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Lock, LogIn, Mail } from "lucide-react";
+import { toast } from "sonner";
+import { authApi } from "@/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface LoginProps {
-  onLogin: (usuario: UsuarioApi) => void;
-}
-
-export default function Login({ onLogin }: LoginProps) {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -22,11 +22,12 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       setLoading(true);
       const response = await authApi.login({ email, senha });
-      localStorage.setItem('authUser', JSON.stringify(response.usuario));
-      onLogin(response.usuario);
-      toast.success('Login realizado com sucesso!');
+      login(response.usuario);
+      navigate("/", { replace: true });
+      toast.success("Login realizado com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Não foi possível realizar o login';
+      const message =
+        error.response?.data?.message || "Não foi possível realizar o login";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -56,7 +57,7 @@ export default function Login({ onLogin }: LoginProps) {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={event => setEmail(event.target.value)}
                   className="pl-9"
                   placeholder="usuario@email.com"
                   autoComplete="email"
@@ -73,7 +74,7 @@ export default function Login({ onLogin }: LoginProps) {
                   id="senha"
                   type="password"
                   value={senha}
-                  onChange={(event) => setSenha(event.target.value)}
+                  onChange={event => setSenha(event.target.value)}
                   className="pl-9"
                   placeholder="Digite sua senha"
                   autoComplete="current-password"
@@ -84,7 +85,7 @@ export default function Login({ onLogin }: LoginProps) {
 
             <Button type="submit" className="w-full gap-2" disabled={loading}>
               <LogIn className="h-4 w-4" />
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
         </Card>

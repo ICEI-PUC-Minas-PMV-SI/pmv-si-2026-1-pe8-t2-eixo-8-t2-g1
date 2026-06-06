@@ -54,7 +54,6 @@ Usuario.prototype.toJSON = function () {
   const values = { ...this.get() };
   values.perfil = values.perfilInfo?.nome;
   delete values.idPerfil;
-  delete values.status;
   delete values.dataCriacao;
   delete values.dataAtualizacao;
   delete values.senhaHash;

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Edit, Lock, Plus, RotateCcw, Trash } from 'lucide-react';
-import { toast } from 'sonner';
-import { usuariosApi, type UsuarioApi, type UsuarioPayload } from '@/api';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useEffect, useState } from "react";
+import { Edit, Lock, Plus, RotateCcw, Trash, LockOpen } from "lucide-react";
+import { toast } from "sonner";
+import { usuariosApi, type UsuarioApi, type UsuarioPayload } from "@/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,7 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -21,42 +21,34 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import UsuarioForm from '@/components/forms/UsuarioForm';
-
-function getUsuarioLogado(): UsuarioApi | null {
-  const storedUser = localStorage.getItem('authUser');
-
-  if (!storedUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUser) as UsuarioApi;
-  } catch {
-    return null;
-  }
-}
-
-interface UsuariosProps {
-  onUserUpdate?: (usuario: UsuarioApi) => void;
-}
+} from "@/components/ui/dialog";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import UsuarioForm from "@/components/forms/UsuarioForm";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 type AlertAction = {
-  type: 'disable' | 'reset' | 'delete'
-  usuario: UsuarioApi
-}
+  type: "disable" | "reset" | "delete";
+  usuario: UsuarioApi;
+};
 
-export default function Usuarios({ onUserUpdate }: UsuariosProps) {
+export default function Usuarios() {
+  const { user, hasPermission, refreshSession } = useAuth();
   const [usuarios, setUsuarios] = useState<UsuarioApi[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<UsuarioApi | null>(null);
   const [alertAction, setAlertAction] = useState<AlertAction | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const usuarioLogado = getUsuarioLogado();
-  const isAdmin = usuarioLogado?.perfil === 'Administrador';
+  const canCreate = hasPermission(PERMISSIONS.USUARIOS.CREATE);
+  const canEdit = hasPermission(PERMISSIONS.USUARIOS.EDIT);
+  const canDelete = hasPermission(PERMISSIONS.USUARIOS.DELETE);
+  const canModify = [canCreate, canEdit, canDelete].includes(true);
+  const canManageActions = [canEdit, canDelete].includes(true);
+  const alertActionPermissions = {
+    disable: canEdit,
+    reset: canEdit,
+    delete: canDelete,
+  };
 
   useEffect(() => {
     const loadUsuarios = async () => {
@@ -65,7 +57,7 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
         const usuariosResponse = await usuariosApi.getAll();
         setUsuarios(usuariosResponse);
       } catch (error: any) {
-        const message = error.response?.data?.messsage || 'Erro ao carregar';
+        const message = error.response?.data?.messsage || "Erro ao carregar";
         toast.error(message);
       } finally {
         setLoading(false);
@@ -75,95 +67,101 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
     loadUsuarios();
   }, []);
 
-  const requireAdmin = () => {
-    if (isAdmin) {
+  const requirePermission = (allowed: boolean) => {
+    if (allowed) {
       return true;
     }
 
-    toast.error('Apenas administradores podem modificar usuários');
+    toast.error("Você não possui permissão para executar esta ação");
     return false;
   };
 
   const handleAddUsuario = async (novoUsuario: UsuarioPayload) => {
-    if (!requireAdmin()) return;
+    if (!requirePermission(canCreate)) return;
 
     try {
       const usuarioCriado = await usuariosApi.create(novoUsuario);
-      setUsuarios((usuariosAtuais) => [usuarioCriado, ...usuariosAtuais]);
+      setUsuarios(usuariosAtuais => [usuarioCriado, ...usuariosAtuais]);
       setIsDialogOpen(false);
-      toast.success('Usuário cadastrado com sucesso!');
+      toast.success("Usuário cadastrado com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao cadastrar usuário';
+      const message =
+        error.response?.data?.message || "Erro ao cadastrar usuário";
       toast.error(message);
     }
   };
 
   const handleEditUsuario = (usuario: UsuarioApi) => {
-    if (!requireAdmin()) return;
+    if (!requirePermission(canEdit)) return;
 
     setEditingUsuario(usuario);
     setIsDialogOpen(true);
   };
 
   const handleSaveUsuario = async (usuarioPayload: UsuarioPayload) => {
-    if (!requireAdmin()) return;
-
     if (!editingUsuario) {
+      if (!requirePermission(canCreate)) return;
       await handleAddUsuario(usuarioPayload);
       return;
     }
 
-    try { 
-      const usuarioAtualizado = await usuariosApi.update(editingUsuario.id, usuarioPayload);
+    if (!requirePermission(canEdit)) return;
 
-      setUsuarios((usuariosAtuais) =>
-        usuariosAtuais.map((usuario) =>
-          usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario,
-        ),
+    try {
+      const usuarioAtualizado = await usuariosApi.update(
+        editingUsuario.id,
+        usuarioPayload
       );
-      if (usuarioLogado?.id === usuarioAtualizado.id) {
-        onUserUpdate?.(usuarioAtualizado);
-      };
+
+      setUsuarios(usuariosAtuais =>
+        usuariosAtuais.map(usuario =>
+          usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario
+        )
+      );
+      if (user?.id === usuarioAtualizado.id) {
+        await refreshSession();
+      }
       setEditingUsuario(null);
       setIsDialogOpen(false);
-      toast.success('Usuário atualizado com sucesso!');
+      toast.success("Usuário atualizado com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao atualizar usuário';
+      const message =
+        error.response?.data?.message || "Erro ao atualizar usuário";
       toast.error(message);
     }
   };
 
   const handleDesabilitar = (usuario: UsuarioApi) => {
-    if (!requireAdmin()) return;
-    setAlertAction({ type: 'disable', usuario });
+    if (!requirePermission(canEdit)) return;
+    setAlertAction({ type: "disable", usuario });
   };
 
   const handleResetarSenha = (usuario: UsuarioApi) => {
-    if (!requireAdmin()) return;
-    setAlertAction({ type: 'reset', usuario });
+    if (!requirePermission(canEdit)) return;
+    setAlertAction({ type: "reset", usuario });
   };
 
   const handleDeletarUsuario = (usuario: UsuarioApi) => {
-    if (!requireAdmin()) return;
-    setAlertAction({ type: 'delete', usuario });
+    if (!requirePermission(canDelete)) return;
+    setAlertAction({ type: "delete", usuario });
   };
 
   const atualizarUsuarioNaLista = (usuarioAtualizado: UsuarioApi) => {
-    setUsuarios((usuariosAtuais) =>
-      usuariosAtuais.map((usuario) =>
-        usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario,
-      ),
+    setUsuarios(usuariosAtuais =>
+      usuariosAtuais.map(usuario =>
+        usuario.id === usuarioAtualizado.id ? usuarioAtualizado : usuario
+      )
     );
   };
 
   const removerUsuarioDaLista = (usuarioId: string) => {
-    setUsuarios((usuariosAtuais) =>
-      usuariosAtuais.filter((usuario) => usuario.id !== usuarioId),
+    setUsuarios(usuariosAtuais =>
+      usuariosAtuais.filter(usuario => usuario.id !== usuarioId)
     );
   };
 
   const alternarStatusUsuario = async (usuario: UsuarioApi) => {
-    const novoStatus = usuario.status === 'Ativo' ? 'Inativo' : 'Ativo';
+    const novoStatus = usuario.status === "Ativo" ? "Inativo" : "Ativo";
 
     const usuarioAtualizado = await usuariosApi.update(usuario.id, {
       status: novoStatus,
@@ -172,16 +170,16 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
     atualizarUsuarioNaLista(usuarioAtualizado);
 
     toast.success(
-      `Usuário ${novoStatus === 'Ativo' ? 'habilitado' : 'desabilitado'} com sucesso!`,
+      `Usuário ${novoStatus === "Ativo" ? "habilitado" : "desabilitado"} com sucesso!`
     );
   };
 
   const resetarSenhaUsuario = async (usuario: UsuarioApi) => {
     await usuariosApi.update(usuario.id, {
-      senha: '123456',
+      senha: "123456",
     });
 
-    toast.success('Senha resetada para 123456');
+    toast.success("Senha resetada para 123456");
   };
 
   const excluirUsuario = async (usuario: UsuarioApi) => {
@@ -189,34 +187,38 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
 
     removerUsuarioDaLista(usuario.id);
 
-    toast.success('Usuário excluído com sucesso!');
+    toast.success("Usuário excluído com sucesso!");
   };
 
   const executarAlertAction = async (alertAction: AlertAction) => {
     const { type, usuario } = alertAction;
 
     switch (type) {
-      case 'disable':
+      case "disable":
         return alternarStatusUsuario(usuario);
 
-      case 'reset':
+      case "reset":
         return resetarSenhaUsuario(usuario);
 
-      case 'delete':
+      case "delete":
         return excluirUsuario(usuario);
 
       default:
-        throw new Error('Ação inválida');
+        throw new Error("Ação inválida");
     }
-};
+  };
 
   const confirmAction = async () => {
-    if (!alertAction || !requireAdmin()) return;
+    if (!alertAction) return;
+
+    const allowed = alertActionPermissions[alertAction.type];
+
+    if (!requirePermission(allowed)) return;
 
     try {
       await executarAlertAction(alertAction);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao executar ação';
+      const message = error.response?.data?.message || "Erro ao executar ação";
       toast.error(message);
     } finally {
       setAlertAction(null);
@@ -224,25 +226,26 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
   };
 
   const getAlertTitle = () => {
-    if (alertAction?.type === 'disable') {
-      return 'Alterar Status do Usuário';
+    if (alertAction?.type === "disable") {
+      return "Alterar Status do Usuário";
     }
 
-    if (alertAction?.type === 'delete') {
-      return 'Excluir Usuário';
+    if (alertAction?.type === "delete") {
+      return "Excluir Usuário";
     }
 
-    return 'Resetar Senha';
+    return "Resetar Senha";
   };
 
   const getAlertDescription = () => {
-    if (alertAction?.type === 'disable') {
-      const acao = alertAction.usuario.status === 'Ativo' ? 'desabilitar' : 'habilitar';
+    if (alertAction?.type === "disable") {
+      const acao =
+        alertAction.usuario.status === "Ativo" ? "desabilitar" : "habilitar";
 
       return `Tem certeza que deseja ${acao} o usuário ${alertAction.usuario.nome}?`;
     }
 
-    if (alertAction?.type === 'delete') {
+    if (alertAction?.type === "delete") {
       return `Tem certeza que deseja excluir o usuário ${alertAction.usuario.nome}? Essa ação não poderá ser desfeita.`;
     }
 
@@ -251,45 +254,47 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
 
   const getPerfilColor = (perfil: string) => {
     switch (perfil) {
-      case 'Administrador':
-        return 'bg-red-100 text-red-800';
-      case 'Supervisor':
-        return 'bg-blue-100 text-blue-800';
-      case 'Padrão':
-        return 'bg-gray-100 text-gray-800';
+      case "Administrador":
+        return "bg-red-100 text-red-800";
+      case "Supervisor":
+        return "bg-blue-100 text-blue-800";
+      case "Padrão":
+        return "bg-gray-100 text-gray-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+    return status === "Ativo"
+      ? "bg-green-100 text-green-800"
+      : "bg-red-100 text-red-800";
   };
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Usuários' }]} />
+      <Breadcrumbs items={[{ label: "Dashboard" }, { label: "Usuários" }]} />
 
       <div className="flex items-center justify-between">
         <div>
           <h1>Usuários</h1>
           <p className="text-muted-foreground mt-1">
-            {isAdmin
-              ? 'Gerenciamento de usuários do sistema'
-              : 'Consulta de usuários do sistema'}
+            {canModify
+              ? "Gerenciamento de usuários do sistema"
+              : "Consulta de usuários do sistema"}
           </p>
         </div>
 
         <Dialog
           open={isDialogOpen}
-          onOpenChange={(open) => {
+          onOpenChange={open => {
             setIsDialogOpen(open);
             if (!open) {
               setEditingUsuario(null);
             }
           }}
         >
-          {isAdmin && (
+          {canCreate && (
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -299,11 +304,13 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
           )}
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingUsuario ? 'Editar Usuário' : 'Cadastrar Novo Usuário'}</DialogTitle>
+              <DialogTitle>
+                {editingUsuario ? "Editar Usuário" : "Cadastrar Novo Usuário"}
+              </DialogTitle>
               <DialogDescription>
                 {editingUsuario
-                  ? 'Atualize os dados do usuário selecionado'
-                  : 'Preencha os dados abaixo para cadastrar um novo usuário'}
+                  ? "Atualize os dados do usuário selecionado"
+                  : "Preencha os dados abaixo para cadastrar um novo usuário"}
               </DialogDescription>
             </DialogHeader>
             <UsuarioForm
@@ -320,7 +327,9 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
 
       <Card className="p-6">
         {loading ? (
-          <div className="py-8 text-center text-muted-foreground">Carregando usuários...</div>
+          <div className="py-8 text-center text-muted-foreground">
+            Carregando usuários...
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -330,57 +339,75 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
                   <th className="px-4 py-3 text-left font-semibold">E-mail</th>
                   <th className="px-4 py-3 text-left font-semibold">Perfil</th>
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
-                  {isAdmin && <th className="px-4 py-3 text-left font-semibold">Ações</th>}
+                  {canManageActions && (
+                    <th className="px-4 py-3 text-left font-semibold">Ações</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {usuarios.map((usuario, index) => (
-                  <tr key={usuario.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
+                  <tr
+                    key={usuario.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-secondary/20"}
+                  >
                     <td className="px-4 py-3">{usuario.nome}</td>
                     <td className="px-4 py-3">{usuario.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getPerfilColor(usuario.perfil)}`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${getPerfilColor(usuario.perfil)}`}
+                      >
                         {usuario.perfil}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge className={getStatusColor(usuario.status)}>{usuario.status}</Badge>
+                      <Badge className={getStatusColor(usuario.status)}>
+                        {usuario.status}
+                      </Badge>
                     </td>
-                    {isAdmin && (
+                    {canManageActions && (
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditUsuario(usuario)}
-                            title="Editar usuário"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDesabilitar(usuario)}
-                            title={usuario.status === 'Ativo' ? 'Desabilitar' : 'Habilitar'}
-                          >
-                            <Lock className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleResetarSenha(usuario)}
-                            title="Resetar senha"
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletarUsuario(usuario)}
-                            title="Excluir usuário"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </Button>
+                          {canEdit && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditUsuario(usuario)}
+                                title="Editar usuário"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDesabilitar(usuario)}
+                                title={
+                                  usuario.status === "Ativo"
+                                    ? "Desabilitar"
+                                    : "Habilitar"
+                                }>
+                                { usuario.status === "Ativo" ?  <Lock className="w-4 h-4"/> : <LockOpen className="w-4 h-4" /> }
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleResetarSenha(usuario)}
+                                title="Resetar senha"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletarUsuario(usuario)}
+                              title="Excluir usuário"
+                            >
+                              <Trash className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     )}
@@ -392,19 +419,22 @@ export default function Usuarios({ onUserUpdate }: UsuariosProps) {
         )}
       </Card>
 
-      <AlertDialog open={!!alertAction} onOpenChange={() => setAlertAction(null)}>
+      <AlertDialog
+        open={!!alertAction}
+        onOpenChange={() => setAlertAction(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {getAlertTitle()}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{getAlertTitle()}</AlertDialogTitle>
             <AlertDialogDescription>
               {getAlertDescription()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex gap-3 justify-end">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAction}>Confirmar</AlertDialogAction>
+            <AlertDialogAction onClick={confirmAction}>
+              Confirmar
+            </AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>

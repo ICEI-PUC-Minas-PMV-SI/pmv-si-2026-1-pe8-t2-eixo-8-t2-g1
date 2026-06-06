@@ -13,9 +13,9 @@ export interface Endereco {
 export interface Pessoa {
   id: string;
   nomeCompleto: string;
-  genero: 'M' | 'F' | 'Outro';
+  genero: "M" | "F" | "Outro";
   dataNascimento: string;
-  tipo: 'Física' | 'Jurídica';
+  tipo: "Física" | "Jurídica";
   endereco: Endereco;
   telefone: string;
   email: string;
@@ -65,7 +65,7 @@ export interface Produto {
   fornecedor: string;
   preco: number;
   estoqueAtual: number;
-  tipoItem: 'Produto' | 'Serviço';
+  tipoItem: "Produto" | "Serviço";
   dataCriacao: string;
   dataAtualizacao: string;
 }
@@ -81,14 +81,14 @@ export interface ItemOS {
 
 export interface OrdemServico {
   id: string;
-  status: 'Aberta' | 'Em Andamento' | 'Concluída' | 'Cancelada';
-  
+  status: "Aberta" | "Em Andamento" | "Concluída" | "Cancelada";
+
   // Dados do Cliente
   clienteNome: string;
   clienteCpfCnpj: string;
   clienteTelefone: string;
   clienteEmail: string;
-  
+
   // Dados do Veículo
   veiculoMarca: string;
   veiculoModelo: string;
@@ -96,17 +96,17 @@ export interface OrdemServico {
   veiculoPlaca: string;
   veiculoCor: string;
   veiculoQuilometragem: number;
-  
+
   // Informações da OS
-  nivelCombustivel: 'Vazio' | '1/4' | '1/2' | '3/4' | 'Cheio';
+  nivelCombustivel: "Vazio" | "1/4" | "1/2" | "3/4" | "Cheio";
   dataEntrada: string;
   solicitacaoCliente: string;
   diagnostico: string;
-  
+
   // Itens e valores
   itens: ItemOS[];
   valorTotal: number;
-  
+
   // Auditoria
   dataAbertura: string;
   dataConclusao?: string;
@@ -143,7 +143,7 @@ export interface ConfigSMTP {
   email: string;
   password: string;
   porta: number;
-  seguranca: 'SSL' | 'TLS';
+  seguranca: "SSL" | "TLS";
 }
 
 export interface ConfigEmpresa {
@@ -180,9 +180,8 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  permissoes: [];
   perfil: "Administrador" | "Supervisor" | "Padrão";
-  status: 'Ativo' | 'Inativo';
+  status: "Ativo" | "Inativo";
   idPerfil?: number;
   dataCriacao: string;
   dataAtualizacao: string;

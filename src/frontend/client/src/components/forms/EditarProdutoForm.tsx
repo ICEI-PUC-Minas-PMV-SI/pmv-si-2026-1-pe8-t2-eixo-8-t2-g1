@@ -1,17 +1,14 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
-import {
-  produtosApi,
-  type ProdutoApi,
-} from '@/api';
+import { produtosApi, type ProdutoApi } from "@/api";
 
-import Breadcrumbs from '@/components/Breadcrumbs';
+import Breadcrumbs from "@/components/Breadcrumbs";
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import {
   AlertDialog,
@@ -23,15 +20,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EditarProdutoFormProps {
   id: string;
   produto: ProdutoApi;
   onNavigate: (path: string) => void;
-  onSave: (
-    produto: ProdutoApi,
-  ) => Promise<void>;
+  onSave: (produto: ProdutoApi) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -42,18 +39,17 @@ export default function EditarProdutoForm({
   onSave,
   onCancel,
 }: EditarProdutoFormProps) {
+  const { hasPermission } = useAuth();
   const [formData, setFormData] = useState<ProdutoApi>(() => produto);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
+  const canDelete = hasPermission(PERMISSIONS.PRODUTOS.DELETE);
 
-  const handleInputChange = <
-    K extends keyof ProdutoApi,
-  >(
+  const handleInputChange = <K extends keyof ProdutoApi>(
     field: K,
-    value: ProdutoApi[K],
+    value: ProdutoApi[K]
   ) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
@@ -63,9 +59,7 @@ export default function EditarProdutoForm({
     setFormData(produto);
   }, [produto.id]);
 
-  const handleSubmit = async (
-    e: React.FormEvent,
-  ) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
@@ -73,13 +67,10 @@ export default function EditarProdutoForm({
 
       await onSave(formData);
 
-      toast.success(
-        'Produto atualizado com sucesso!',
-      );
+      toast.success("Produto atualizado com sucesso!");
     } catch (error: any) {
       const message =
-        error.response?.data?.message ||
-        'Erro ao atualizar produto';
+        error.response?.data?.message || "Erro ao atualizar produto";
 
       toast.error(message);
     } finally {
@@ -88,20 +79,21 @@ export default function EditarProdutoForm({
   };
 
   const handleDelete = async () => {
+    if (!canDelete) {
+      return;
+    }
+
     try {
       setLoading(true);
 
       await produtosApi.remove(id);
 
-      toast.success(
-        'Produto excluído com sucesso!',
-      );
+      toast.success("Produto excluído com sucesso!");
 
-      onNavigate('/produtos');
+      onNavigate("/produtos");
     } catch (error: any) {
       const message =
-        error.response?.data?.message ||
-        'Erro ao excluir produto';
+        error.response?.data?.message || "Erro ao excluir produto";
 
       toast.error(message);
     } finally {
@@ -113,89 +105,59 @@ export default function EditarProdutoForm({
     <div className="space-y-6">
       <Breadcrumbs
         items={[
-          { label: 'Dashboard' },
-          { label: 'Produtos' },
-          { label: 'Editar' },
+          { label: "Dashboard" },
+          { label: "Produtos" },
+          { label: "Editar" },
         ]}
       />
 
       <div>
         <h1>Editar Produto</h1>
 
-        <p className="text-muted-foreground mt-1">
-          ID: {formData.id}
-        </p>
+        <p className="text-muted-foreground mt-1">ID: {formData.id}</p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6"
-      >
+      <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6">
-          <h3 className="font-semibold mb-4">
-            Dados do Produto
-          </h3>
+          <h3 className="font-semibold mb-4">Dados do Produto</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="nome">
-                Nome *
-              </Label>
+              <Label htmlFor="nome">Nome *</Label>
 
               <Input
                 id="nome"
                 value={formData.nome}
-                onChange={(e) =>
-                  handleInputChange(
-                    'nome',
-                    e.target.value,
-                  )
-                }
+                onChange={e => handleInputChange("nome", e.target.value)}
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="quantidade">
-                Quantidade *
-              </Label>
+              <Label htmlFor="quantidade">Quantidade *</Label>
 
               <Input
                 id="quantidade"
                 type="number"
                 step="0.01"
                 value={formData.quantidade}
-                onChange={(e) =>
-                  handleInputChange(
-                    'quantidade',
-                    Number(
-                      e.target.value,
-                    ),
-                  )
+                onChange={e =>
+                  handleInputChange("quantidade", Number(e.target.value))
                 }
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="preco">
-                Preço Unitário *
-              </Label>
+              <Label htmlFor="preco">Preço Unitário *</Label>
 
               <Input
                 id="preco"
                 type="number"
                 step="0.01"
-                value={
-                  formData.precoUnitario
-                }
-                onChange={(e) =>
-                  handleInputChange(
-                    'precoUnitario',
-                    Number(
-                      e.target.value,
-                    ),
-                  )
+                value={formData.precoUnitario}
+                onChange={e =>
+                  handleInputChange("precoUnitario", Number(e.target.value))
                 }
                 required
               />
@@ -213,49 +175,36 @@ export default function EditarProdutoForm({
             Cancelar
           </Button>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={loading}
-              >
-                Excluir Produto
-              </Button>
-            </AlertDialogTrigger>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" disabled={loading}>
+                  Excluir Produto
+                </Button>
+              </AlertDialogTrigger>
 
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Excluir produto?
-                </AlertDialogTitle>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
 
-                <AlertDialogDescription>
-                  Essa ação não poderá ser
-                  desfeita. O produto{' '}
-                  {formData.nome} será
-                  removido permanentemente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
+                  <AlertDialogDescription>
+                    Essa ação não poderá ser desfeita. O produto {formData.nome}{" "}
+                    será removido permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
 
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  Cancelar
-                </AlertDialogCancel>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
 
-                <AlertDialogAction
-                  onClick={handleDelete}
-                >
-                  Confirmar exclusão
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Confirmar exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
 
-          <Button
-            type="submit"
-            disabled={loading}
-          >
+          <Button type="submit" disabled={loading}>
             Salvar Alterações
           </Button>
         </div>

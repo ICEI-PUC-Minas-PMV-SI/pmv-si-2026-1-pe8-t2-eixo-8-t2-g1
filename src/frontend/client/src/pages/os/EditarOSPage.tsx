@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-import Breadcrumbs from '@/components/Breadcrumbs';
+import { useEffect, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import {
   itensServicoApi,
   produtosApi,
@@ -12,7 +12,7 @@ import {
   type ServicoApi,
   type ServicoPayload,
   type VeiculoApi,
-} from '@/api';
+} from "@/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,21 +23,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency, getStatusColor } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { formatCurrency, getStatusColor } from "@/lib/utils";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EditarOSProps {
   id: string;
@@ -54,11 +56,11 @@ interface FormDataState {
 }
 
 const statusOptions = [
-  'Aberta',
-  'Em Andamento',
-  'Aguardando Peças',
-  'Concluída',
-  'Cancelada',
+  "Aberta",
+  "Em Andamento",
+  "Aguardando Peças",
+  "Concluída",
+  "Cancelada",
 ];
 
 function toFormData(servico: ServicoApi): FormDataState {
@@ -66,7 +68,7 @@ function toFormData(servico: ServicoApi): FormDataState {
     descricao: servico.descricao,
     status: servico.status,
     dataInicio: servico.dataInicio,
-    dataFim: servico.dataFim || '',
+    dataFim: servico.dataFim || "",
     valorTotal: Number(servico.valorTotal || 0),
     idVeiculo: servico.idVeiculo,
   };
@@ -84,37 +86,43 @@ function getProdutoLabel(produto: ProdutoApi) {
 }
 
 function getItemSubtotal(item: ItemServicoApi) {
-  return Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0);
+  return (
+    Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0)
+  );
 }
 
 export default function EditarOS({ id, onNavigate }: EditarOSProps) {
+  const { hasPermission } = useAuth();
   const [servico, setServico] = useState<ServicoApi | null>(null);
   const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
   const [produtos, setProdutos] = useState<ProdutoApi[]>([]);
   const [formData, setFormData] = useState<FormDataState | null>(null);
-  const [selectedProduto, setSelectedProduto] = useState('');
+  const [selectedProduto, setSelectedProduto] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const canDelete = hasPermission(PERMISSIONS.OS.DELETE);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [servicoResponse, veiculosResponse, produtosResponse] = await Promise.all([
-          servicosApi.getById(id),
-          veiculosApi.getAll(),
-          produtosApi.getAll(),
-        ]);
+        const [servicoResponse, veiculosResponse, produtosResponse] =
+          await Promise.all([
+            servicosApi.getById(id),
+            veiculosApi.getAll(),
+            produtosApi.getAll(),
+          ]);
 
         setServico(servicoResponse);
         setFormData(toFormData(servicoResponse));
         setVeiculos(veiculosResponse);
         setProdutos(produtosResponse);
       } catch (error: any) {
-        const message = error.response?.data?.message || 'Erro ao carregar ordem de serviço';
+        const message =
+          error.response?.data?.message || "Erro ao carregar ordem de serviço";
         toast.error(message);
-        onNavigate('/os');
+        onNavigate("/os");
       } finally {
         setLoading(false);
       }
@@ -127,25 +135,25 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
     const servicoResponse = await servicosApi.getById(id);
 
     setServico(servicoResponse);
-    setFormData((dadosAtuais) =>
+    setFormData(dadosAtuais =>
       dadosAtuais
         ? {
             ...dadosAtuais,
             valorTotal: Number(servicoResponse.valorTotal || 0),
           }
-        : toFormData(servicoResponse),
+        : toFormData(servicoResponse)
     );
   };
 
   const handleInputChange = (field: keyof FormDataState, value: any) => {
-    setFormData((prev) => (
+    setFormData(prev =>
       prev
         ? {
             ...prev,
             [field]: value,
           }
         : prev
-    ));
+    );
   };
 
   const getPayload = (): ServicoPayload | null => {
@@ -175,10 +183,11 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
     try {
       setSaving(true);
       await servicosApi.update(id, payload);
-      toast.success('Ordem de Serviço atualizada com sucesso!');
-      onNavigate('/os');
+      toast.success("Ordem de Serviço atualizada com sucesso!");
+      onNavigate("/os");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao atualizar ordem de serviço';
+      const message =
+        error.response?.data?.message || "Erro ao atualizar ordem de serviço";
       toast.error(message);
     } finally {
       setSaving(false);
@@ -187,7 +196,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
 
   const handleAddProduto = async () => {
     if (!selectedProduto || quantidade <= 0) {
-      toast.error('Selecione um produto e informe uma quantidade válida');
+      toast.error("Selecione um produto e informe uma quantidade válida");
       return;
     }
 
@@ -199,12 +208,13 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
         quantidadeUtilizada: quantidade,
       });
 
-      setSelectedProduto('');
+      setSelectedProduto("");
       setQuantidade(1);
       await refreshServico();
-      toast.success('Produto adicionado com sucesso!');
+      toast.success("Produto adicionado com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao adicionar produto';
+      const message =
+        error.response?.data?.message || "Erro ao adicionar produto";
       toast.error(message);
     } finally {
       setSaving(false);
@@ -216,9 +226,10 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
       setSaving(true);
       await itensServicoApi.remove(itemId);
       await refreshServico();
-      toast.success('Produto removido com sucesso!');
+      toast.success("Produto removido com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao remover produto';
+      const message =
+        error.response?.data?.message || "Erro ao remover produto";
       toast.error(message);
     } finally {
       setSaving(false);
@@ -226,13 +237,18 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
   };
 
   const handleDelete = async () => {
+    if (!canDelete) {
+      return;
+    }
+
     try {
       setSaving(true);
       await servicosApi.remove(id);
-      toast.success('Ordem de Serviço deletada com sucesso!');
-      onNavigate('/os');
+      toast.success("Ordem de Serviço deletada com sucesso!");
+      onNavigate("/os");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao deletar ordem de serviço';
+      const message =
+        error.response?.data?.message || "Erro ao deletar ordem de serviço";
       toast.error(message);
     } finally {
       setSaving(false);
@@ -249,7 +265,9 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'OS' }, { label: 'Editar' }]} />
+      <Breadcrumbs
+        items={[{ label: "Dashboard" }, { label: "OS" }, { label: "Editar" }]}
+      />
 
       <div>
         <h1>Editar Ordem de Serviço</h1>
@@ -260,20 +278,24 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Informações da Ordem de Serviço</h3>
-            <Badge className={getStatusColor(formData.status)}>{formData.status}</Badge>
+            <Badge className={getStatusColor(formData.status)}>
+              {formData.status}
+            </Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <Label htmlFor="idVeiculo">Veículo</Label>
               <Select
-                value={formData.idVeiculo ? String(formData.idVeiculo) : ''}
-                onValueChange={(value) => handleInputChange('idVeiculo', Number(value))}
+                value={formData.idVeiculo ? String(formData.idVeiculo) : ""}
+                onValueChange={value =>
+                  handleInputChange("idVeiculo", Number(value))
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um veículo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {veiculos.map((veiculo) => (
+                  {veiculos.map(veiculo => (
                     <SelectItem key={veiculo.id} value={String(veiculo.id)}>
                       {getVeiculoLabel(veiculo)}
                     </SelectItem>
@@ -285,13 +307,13 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => handleInputChange('status', value)}
+                onValueChange={value => handleInputChange("status", value)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map((status) => (
+                  {statusOptions.map(status => (
                     <SelectItem key={status} value={status}>
                       {status}
                     </SelectItem>
@@ -305,7 +327,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
                 id="dataInicio"
                 type="date"
                 value={formData.dataInicio}
-                onChange={(e) => handleInputChange('dataInicio', e.target.value)}
+                onChange={e => handleInputChange("dataInicio", e.target.value)}
                 required
               />
             </div>
@@ -315,7 +337,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
                 id="dataFim"
                 type="date"
                 value={formData.dataFim}
-                onChange={(e) => handleInputChange('dataFim', e.target.value)}
+                onChange={e => handleInputChange("dataFim", e.target.value)}
               />
             </div>
             <div>
@@ -326,7 +348,9 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
                 step="0.01"
                 min="0"
                 value={formData.valorTotal}
-                onChange={(e) => handleInputChange('valorTotal', Number(e.target.value))}
+                onChange={e =>
+                  handleInputChange("valorTotal", Number(e.target.value))
+                }
               />
             </div>
           </div>
@@ -338,7 +362,7 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
           <Textarea
             id="descricao"
             value={formData.descricao}
-            onChange={(e) => handleInputChange('descricao', e.target.value)}
+            onChange={e => handleInputChange("descricao", e.target.value)}
             rows={4}
             required
           />
@@ -352,12 +376,15 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
                 <Label htmlFor="selectProduto">Produto/Serviço</Label>
-                <Select value={selectedProduto} onValueChange={setSelectedProduto}>
+                <Select
+                  value={selectedProduto}
+                  onValueChange={setSelectedProduto}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {produtos.map((produto) => (
+                    {produtos.map(produto => (
                       <SelectItem key={produto.id} value={String(produto.id)}>
                         {getProdutoLabel(produto)}
                       </SelectItem>
@@ -372,11 +399,16 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
                   type="number"
                   min="1"
                   value={quantidade}
-                  onChange={(e) => setQuantidade(Number(e.target.value))}
+                  onChange={e => setQuantidade(Number(e.target.value))}
                 />
               </div>
               <div className="flex items-end">
-                <Button type="button" onClick={handleAddProduto} className="w-full gap-2" disabled={saving}>
+                <Button
+                  type="button"
+                  onClick={handleAddProduto}
+                  className="w-full gap-2"
+                  disabled={saving}
+                >
                   <Plus className="w-4 h-4" />
                   Adicionar
                 </Button>
@@ -389,20 +421,41 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
               <table className="w-full">
                 <thead>
                   <tr className="bg-secondary">
-                    <th className="px-4 py-3 text-left font-semibold">Produto</th>
-                    <th className="px-4 py-3 text-center font-semibold">Quantidade</th>
-                    <th className="px-4 py-3 text-right font-semibold">Preço</th>
-                    <th className="px-4 py-3 text-right font-semibold">Subtotal</th>
-                    <th className="px-4 py-3 text-center font-semibold">Ação</th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Produto
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Quantidade
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold">
+                      Preço
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold">
+                      Subtotal
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Ação
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {servico.itens.map((item, index) => (
-                    <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                      <td className="px-4 py-3">{item.produto?.nome || item.idProduto}</td>
-                      <td className="px-4 py-3 text-center">{Number(item.quantidadeUtilizada)}</td>
+                    <tr
+                      key={item.id}
+                      className={
+                        index % 2 === 0 ? "bg-white" : "bg-secondary/20"
+                      }
+                    >
+                      <td className="px-4 py-3">
+                        {item.produto?.nome || item.idProduto}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {Number(item.quantidadeUtilizada)}
+                      </td>
                       <td className="px-4 py-3 text-right">
-                        {formatCurrency(Number(item.produto?.precoUnitario || 0))}
+                        {formatCurrency(
+                          Number(item.produto?.precoUnitario || 0)
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
                         {formatCurrency(getItemSubtotal(item))}
@@ -427,7 +480,9 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
               <div className="bg-secondary/50 px-4 py-3 border-t border-border flex justify-end">
                 <div className="text-right">
                   <p className="text-muted-foreground text-sm">Valor Total</p>
-                  <p className="text-2xl font-bold">{formatCurrency(Number(servico.valorTotal || 0))}</p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(Number(servico.valorTotal || 0))}
+                  </p>
                 </div>
               </div>
             </div>
@@ -439,35 +494,44 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
         </Card>
 
         <div className="flex gap-3 justify-end pt-4 border-t border-border">
-          <Button type="button" variant="outline" onClick={() => onNavigate('/os')} disabled={saving}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onNavigate("/os")}
+            disabled={saving}
+          >
             Cancelar
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive" disabled={saving}>
-                Excluir OS
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir ordem de serviço?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação não pode ser desfeita. A OS #{servico.id} será removida permanentemente
-                  do sistema.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={saving}
-                >
-                  Confirmar exclusão
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" disabled={saving}>
+                  Excluir OS
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir ordem de serviço?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. A OS #{servico.id} será
+                    removida permanentemente do sistema.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={saving}>
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={saving}
+                  >
+                    Confirmar exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button type="submit" disabled={saving}>
             Salvar Alterações
           </Button>

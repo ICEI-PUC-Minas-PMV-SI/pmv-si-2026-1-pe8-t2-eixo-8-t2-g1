@@ -7,7 +7,7 @@ import { relatoriosApi, type RelatoriosApi } from '@/api';
 import { formatCurrency } from '@/lib/utils';
 
 
-const COLORS = ['#3B82F6', '#F59E0B', '#7e7e7e', '#10B981', '#EF4444'];
+const COLORS = ['#3B82F6', '#F59E0B', '#6D28D9', '#10B981', '#EF4444'];
 
 const relatorioVazio: RelatoriosApi = {
   osStatus: [],

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,18 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import DataTable from '@/components/DataTable';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils';
-import OSForm from '@/components/forms/OSForm';
+} from "@/components/ui/dialog";
+import DataTable from "@/components/DataTable";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { formatCurrency, formatDate, getStatusColor } from "@/lib/utils";
+import OSForm from "@/components/forms/OSForm";
 import {
   servicosApi,
   veiculosApi,
   type ServicoApi,
   type ServicoPayload,
   type VeiculoApi,
-} from '@/api';
+} from "@/api";
+import { PERMISSIONS } from "@/constants/permissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OrdemServicoRow extends ServicoApi {
   clienteNome: string;
@@ -32,22 +34,25 @@ interface OrdemServicoRow extends ServicoApi {
 }
 
 function getclienteNome(servico: ServicoApi) {
-  return servico.veiculo?.cliente?.nomeCompleto || 'Cliente não informado';
+  return servico.veiculo?.cliente?.nomeCompleto || "Cliente não informado";
 }
 
 function getVeiculoDescricao(servico: ServicoApi) {
   if (!servico.veiculo) {
-    return 'Veículo não informado';
+    return "Veículo não informado";
   }
 
   return `${servico.veiculo.placa} - ${servico.veiculo.modelo}`;
 }
 
-function getItemSubtotal(item: NonNullable<ServicoApi['itens']>[number]) {
-  return Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0);
+function getItemSubtotal(item: NonNullable<ServicoApi["itens"]>[number]) {
+  return (
+    Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0)
+  );
 }
 
 export default function OS() {
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
   const [ordens, setOrdens] = useState<ServicoApi[]>([]);
   const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
@@ -55,6 +60,8 @@ export default function OS() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const canCreate = hasPermission(PERMISSIONS.OS.CREATE);
+  const canEdit = hasPermission(PERMISSIONS.OS.EDIT);
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,7 +75,8 @@ export default function OS() {
         setOrdens(servicosResponse);
         setVeiculos(veiculosResponse);
       } catch (error: any) {
-        const message = error.response?.data?.message || 'Erro ao carregar ordens de serviço';
+        const message =
+          error.response?.data?.message || "Erro ao carregar ordens de serviço";
         toast.error(message);
       } finally {
         setLoading(false);
@@ -80,60 +88,70 @@ export default function OS() {
 
   const ordensRows = useMemo<OrdemServicoRow[]>(
     () =>
-      ordens.map((ordem) => ({
+      ordens.map(ordem => ({
         ...ordem,
         clienteNome: getclienteNome(ordem),
         veiculoDescricao: getVeiculoDescricao(ordem),
         valorTotal: Number(ordem.valorTotal || 0),
       })),
-    [ordens],
+    [ordens]
   );
 
   const handleAddOS = async (novaOS: ServicoPayload) => {
+    if (!canCreate) {
+      return;
+    }
+
     try {
       const osCriada = await servicosApi.create(novaOS);
-      setOrdens((ordensAtuais) => [osCriada, ...ordensAtuais]);
+      setOrdens(ordensAtuais => [osCriada, ...ordensAtuais]);
       setIsFormOpen(false);
-      toast.success('Ordem de Serviço cadastrada com sucesso!');
+      toast.success("Ordem de Serviço cadastrada com sucesso!");
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao cadastrar ordem de serviço';
+      const message =
+        error.response?.data?.message || "Erro ao cadastrar ordem de serviço";
       toast.error(message);
     }
   };
 
   const handleEditOS = (os: ServicoApi) => {
+    if (!canEdit) {
+      return;
+    }
+
     navigate(`/os/${os.id}/editar`);
   };
 
   const columns = [
     {
-      key: 'status' as const,
-      label: 'Status',
+      key: "status" as const,
+      label: "Status",
       render: (value: string) => (
         <Badge className={getStatusColor(value)}>{value}</Badge>
       ),
     },
     {
-      key: 'clienteNome' as const,
-      label: 'Cliente',
+      key: "clienteNome" as const,
+      label: "Cliente",
     },
     {
-      key: 'veiculoDescricao' as const,
-      label: 'Veículo',
+      key: "veiculoDescricao" as const,
+      label: "Veículo",
     },
     {
-      key: 'dataInicio' as const,
-      label: 'Data de Entrada',
+      key: "dataInicio" as const,
+      label: "Data de Entrada",
       render: (value: string) => formatDate(value),
     },
     {
-      key: 'descricao' as const,
-      label: 'Solicitação',
-      render: (value: string) => value.substring(0, 30) + (value.length > 30 ? '...' : ''),
+      key: "descricao" as const,
+      label: "Solicitação",
+      render: (value: string) =>
+        value.substring(0, 30) + (value.length > 30 ? "..." : ""),
     },
     {
-      key: 'valorTotal' as const,
-      label: 'Valor Total',
+      key: "valorTotal" as const,
+      label: "Valor Total",
       render: (value: number) => formatCurrency(value),
     },
   ];
@@ -149,41 +167,48 @@ export default function OS() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Ordens de Serviço' }]} />
+      <Breadcrumbs
+        items={[{ label: "Dashboard" }, { label: "Ordens de Serviço" }]}
+      />
 
       <div className="flex items-center justify-between">
         <div>
           <h1>Ordens de Serviço</h1>
-          <p className="text-muted-foreground mt-1">Gerenciamento de ordens de serviço</p>
+          <p className="text-muted-foreground mt-1">
+            Gerenciamento de ordens de serviço
+          </p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nova OS
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Nova Ordem de Serviço</DialogTitle>
-              <DialogDescription>
-                Preencha os dados abaixo para cadastrar uma nova ordem de serviço
-              </DialogDescription>
-            </DialogHeader>
-            <OSForm
-              veiculos={veiculos}
-              onSubmit={handleAddOS}
-              onCancel={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {canCreate && (
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nova OS
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Cadastrar Nova Ordem de Serviço</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados abaixo para cadastrar uma nova ordem de
+                  serviço
+                </DialogDescription>
+              </DialogHeader>
+              <OSForm
+                veiculos={veiculos}
+                onSubmit={handleAddOS}
+                onCancel={() => setIsFormOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Card className="p-6">
         <DataTable<OrdemServicoRow>
           data={ordensRows}
           columns={columns}
-          searchFields={['id', 'clienteNome', 'veiculoDescricao', 'descricao']}
+          searchFields={["id", "clienteNome", "veiculoDescricao", "descricao"]}
           pageSize={10}
           onRowClick={handleRowClick}
         />
@@ -194,7 +219,7 @@ export default function OS() {
           <DialogHeader>
             <DialogTitle>Detalhes da Ordem de Serviço</DialogTitle>
             <DialogDescription>
-              {selectedOS ? `OS #${selectedOS.id}` : ''}
+              {selectedOS ? `OS #${selectedOS.id}` : ""}
             </DialogDescription>
           </DialogHeader>
           {selectedOS && (
@@ -222,24 +247,34 @@ export default function OS() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Data de Entrada</p>
-                    <p className="font-medium">{formatDate(selectedOS.dataInicio)}</p>
+                    <p className="font-medium">
+                      {formatDate(selectedOS.dataInicio)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Data de Conclusão</p>
                     <p className="font-medium">
-                      {selectedOS.dataFim ? formatDate(selectedOS.dataFim) : '-'}
+                      {selectedOS.dataFim
+                        ? formatDate(selectedOS.dataFim)
+                        : "-"}
                     </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Valor Total</p>
-                    <p className="font-medium">{formatCurrency(selectedOS.valorTotal)}</p>
+                    <p className="font-medium">
+                      {formatCurrency(selectedOS.valorTotal)}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-3">Solicitação e Diagnóstico</h3>
-                <p className="text-sm text-foreground">{selectedOS.descricao}</p>
+                <h3 className="font-semibold mb-3">
+                  Solicitação e Diagnóstico
+                </h3>
+                <p className="text-sm text-foreground">
+                  {selectedOS.descricao}
+                </p>
               </div>
 
               <div>
@@ -248,20 +283,39 @@ export default function OS() {
                   <table className="w-full text-sm">
                     <thead className="bg-secondary">
                       <tr>
-                        <th className="px-4 py-2 text-left font-semibold">Produto</th>
-                        <th className="px-4 py-2 text-left font-semibold">Quantidade</th>
-                        <th className="px-4 py-2 text-left font-semibold">Preço</th>
-                        <th className="px-4 py-2 text-left font-semibold">Subtotal</th>
+                        <th className="px-4 py-2 text-left font-semibold">
+                          Produto
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold">
+                          Quantidade
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold">
+                          Preço
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold">
+                          Subtotal
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedOS.itens && selectedOS.itens.length > 0 ? (
                         selectedOS.itens.map((item, index) => (
-                          <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                            <td className="px-4 py-2">{item.produto?.nome || item.idProduto}</td>
-                            <td className="px-4 py-2">{Number(item.quantidadeUtilizada)}</td>
+                          <tr
+                            key={item.id}
+                            className={
+                              index % 2 === 0 ? "bg-white" : "bg-secondary/20"
+                            }
+                          >
                             <td className="px-4 py-2">
-                              {formatCurrency(Number(item.produto?.precoUnitario || 0))}
+                              {item.produto?.nome || item.idProduto}
+                            </td>
+                            <td className="px-4 py-2">
+                              {Number(item.quantidadeUtilizada)}
+                            </td>
+                            <td className="px-4 py-2">
+                              {formatCurrency(
+                                Number(item.produto?.precoUnitario || 0)
+                              )}
                             </td>
                             <td className="px-4 py-2 font-medium">
                               {formatCurrency(getItemSubtotal(item))}
@@ -270,7 +324,10 @@ export default function OS() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                          <td
+                            colSpan={4}
+                            className="px-4 py-6 text-center text-muted-foreground"
+                          >
                             Nenhum item vinculado
                           </td>
                         </tr>
@@ -281,12 +338,17 @@ export default function OS() {
               </div>
 
               <div className="flex gap-3 justify-end pt-4 border-t border-border">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
                   Fechar
                 </Button>
-                <Button onClick={() => handleEditOS(selectedOS)}>
-                  Editar OS
-                </Button>
+                {canEdit && (
+                  <Button onClick={() => handleEditOS(selectedOS)}>
+                    Editar OS
+                  </Button>
+                )}
               </div>
             </div>
           )}
