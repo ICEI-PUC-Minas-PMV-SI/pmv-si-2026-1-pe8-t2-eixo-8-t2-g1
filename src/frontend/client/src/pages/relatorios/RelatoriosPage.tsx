@@ -163,7 +163,7 @@ export default function Relatorios() {
               yAxisId="valor"
               dataKey="valor"
               fill="#10B981"
-              name="Quantidade"
+              name="Valor (R$)"
               maxBarSize={90}
             />
 
@@ -171,7 +171,7 @@ export default function Relatorios() {
               yAxisId="quantidade"
               dataKey="quantidade"
               fill="#3B82F6"
-              name="Valor (R$)"
+              name="Quantidade"
               maxBarSize={90}
             />
           </BarChart>
