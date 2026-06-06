@@ -4,6 +4,10 @@ const { isIntegerGreaterThanZero } = require("../utils/utils");
 
 const router = express.Router();
 
+function isIntegerGreaterThanOrEqualToZero(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
 router.get("/", async (req, res) => {
   try {
     const produtos = await Produto.findAll();
@@ -63,7 +67,7 @@ router.post("/", async (req, res) => {
     const quantidadeNumero = Number(quantidade);
     const precoUnitarioNumero = Number(precoUnitario);
 
-    if (!isIntegerGreaterThanZero(quantidadeNumero)) {
+    if (!isIntegerGreaterThanOrEqualToZero(quantidadeNumero)) {
       return res.status(400).json({
         message: "quantidade deve ser um número inteiro maior ou igual a zero"
       });
@@ -144,7 +148,7 @@ router.put("/:id", async (req, res) => {
     if (quantidade !== undefined) {
       quantidadeNumero = Number(quantidade);
 
-      if (!isIntegerGreaterThanZero(quantidadeNumero)) {
+      if (!isIntegerGreaterThanOrEqualToZero(quantidadeNumero)) {
         return res.status(400).json({
           message: "quantidade deve ser um número inteiro maior ou igual a zero"
         });

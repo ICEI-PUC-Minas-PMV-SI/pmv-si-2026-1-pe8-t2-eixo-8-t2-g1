@@ -44,6 +44,11 @@ function validarUsuario({ nome, email, status, senha }, obrigatorio = true) {
   return null;
 }
 
+function lerIdUsuario(idParam) {
+  const id = Number(idParam);
+  return isIntegerGreaterThanZero(id) ? id : null;
+}
+
 async function perfilToIdPerfil({ perfil }, obrigatorio = true) {
 
   if (perfil !== undefined) {
@@ -225,7 +230,15 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const usuario = await buscarUsuarioCompleto(req.params.id);
+    const id = lerIdUsuario(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        message: "ID deve ser um nÃºmero inteiro maior que zero",
+      });
+    }
+
+    const usuario = await buscarUsuarioCompleto(id);
 
     if (!usuario) {
       return res.status(404).json({
@@ -278,7 +291,15 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const usuario = await Usuario.findByPk(req.params.id);
+    const id = lerIdUsuario(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        message: "ID deve ser um nÃºmero inteiro maior que zero",
+      });
+    }
+
+    const usuario = await Usuario.findByPk(id);
 
     if (!usuario) {
       return res.status(404).json({
@@ -287,6 +308,17 @@ router.put("/:id", async (req, res) => {
     }
 
     const { nome, email, perfil, status, senha } = req.body;
+    const erroValidacao = validarUsuario(
+      { nome, email, status, senha },
+      false,
+    );
+
+    if (erroValidacao) {
+      return res.status(400).json({
+        message: erroValidacao,
+      });
+    }
+
     let erro;
     let idPerfil;
     if (perfil) {
@@ -317,7 +349,15 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
-    const usuario = await Usuario.findByPk(req.params.id);
+    const id = lerIdUsuario(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        message: "ID deve ser um nÃºmero inteiro maior que zero",
+      });
+    }
+
+    const usuario = await Usuario.findByPk(id);
 
     if (!usuario) {
       return res.status(404).json({

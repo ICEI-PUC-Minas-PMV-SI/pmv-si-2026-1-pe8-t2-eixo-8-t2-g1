@@ -1,11 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const { DataTypes } = require("sequelize");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 require("dotenv").config();
-const { sequelize, Perfil } = require("./models");
+const { sequelize } = require("./models");
 const autenticarCookie = require("./middlewares/auth");
 
 const app = express();
@@ -93,4 +92,11 @@ async function startDB() {
   });
 }
 
-startDB();
+if (require.main === module) {
+  startDB();
+}
+
+module.exports = {
+  app,
+  startDB,
+};

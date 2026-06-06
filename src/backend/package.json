@@ -7,7 +7,8 @@
     "dev": "nodemon --legacy-watch --watch . --ext js,json index.js",
     "seed:relatorios": "node scripts/seedRelatorios.js",
     "seed:servicos": "node scripts/seedServicos.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test --test-concurrency=1 tests/api.test.js"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }
