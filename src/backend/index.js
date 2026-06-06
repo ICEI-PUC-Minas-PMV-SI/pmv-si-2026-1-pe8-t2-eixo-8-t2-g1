@@ -25,7 +25,7 @@ const tiposRoutes = require("./routes/veiculos_tipos");
 const empresaRoutes = require("./routes/empresas");
 const smtpRoutes = require("./routes/smtp");
 
-const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3001")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
