@@ -14,7 +14,8 @@ const veiculoInclude = [
 router.get("/", async (req, res) => {
   try {
     const veiculos = await Veiculo.findAll({
-      include: veiculoInclude
+      include: veiculoInclude,
+      order: [["dataCriacao", "DESC"]]
     });
 
     return res.json(veiculos);

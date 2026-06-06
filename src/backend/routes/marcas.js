@@ -118,6 +118,12 @@ router.delete("/:id", async (req, res) => {
             message: "Marca deletada com sucesso"
         });
     } catch (error) {
+        if (error.name === "SequelizeForeignKeyConstraintError") {
+            return res.status(409).json({
+                message: "Marca possui produtos vinculados"
+            });
+        }
+
         return res.status(500).json({
             message: "Erro interno ao deletar marca"
         });

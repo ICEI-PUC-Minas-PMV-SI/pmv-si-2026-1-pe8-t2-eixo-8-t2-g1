@@ -5,6 +5,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 require("dotenv").config();
 const { sequelize } = require("./models");
+const ensureProdutoFields = require("./database/migrations/ensureProdutoFields");
 const autenticarCookie = require("./middlewares/auth");
 
 const app = express();
@@ -81,6 +82,7 @@ async function startDB() {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    await ensureProdutoFields(sequelize);
     console.log("Conexao com PostgreSQL realizada com sucesso");
   } catch (err) {
     console.error("Erro ao conectar com PostgreSQL:", err);

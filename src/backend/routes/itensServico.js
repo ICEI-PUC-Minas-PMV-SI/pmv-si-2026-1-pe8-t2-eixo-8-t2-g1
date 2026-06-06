@@ -20,9 +20,9 @@ async function recalcularValorServico(idServico, transaction) {
 
   const valorTotal = itens.reduce((total, item) => {
     const quantidade = Number(item.quantidadeUtilizada);
-    const precoUnitario = Number(item.produto?.precoUnitario || 0);
+    const preco = Number(item.produto?.preco || 0);
 
-    return total + quantidade * precoUnitario;
+    return total + quantidade * preco;
   }, 0);
 
   await Servico.update(
@@ -160,7 +160,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    if (produto.quantidade < quantidadeUtilizada) {
+    if (Number(produto.estoqueAtual) < quantidadeUtilizada) {
       await transaction.rollback();
 
       return res.status(409).json({
@@ -177,7 +177,8 @@ router.post("/", async (req, res) => {
       { transaction }
     );
 
-    produto.quantidade -= quantidadeUtilizada;
+    produto.estoqueAtual =
+      Number(produto.estoqueAtual) - quantidadeUtilizada;
 
     await produto.save({ transaction });
     await recalcularValorServico(idServico, transaction);
@@ -293,7 +294,9 @@ router.put("/:id", async (req, res) => {
     });
 
     if (produtoAntigo) {
-      produtoAntigo.quantidade = Number(produtoAntigo.quantidade) + Number(itemServico.quantidadeUtilizada);
+      produtoAntigo.estoqueAtual =
+        Number(produtoAntigo.estoqueAtual) +
+        Number(itemServico.quantidadeUtilizada);
       await produtoAntigo.save({ transaction });
     }
 
@@ -309,7 +312,7 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    if (Number(produtoNovo.quantidade) < quantidadeUtilizada) {
+    if (Number(produtoNovo.estoqueAtual) < quantidadeUtilizada) {
       await transaction.rollback();
 
       return res.status(409).json({
@@ -317,7 +320,8 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    produtoNovo.quantidade = Number(produtoNovo.quantidade) - Number(quantidadeUtilizada);
+    produtoNovo.estoqueAtual =
+      Number(produtoNovo.estoqueAtual) - Number(quantidadeUtilizada);
 
     await produtoNovo.save({ transaction });
 
@@ -395,7 +399,9 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (produto) {
-      produto.quantidade = Number(produto.quantidade) + Number(itemServico.quantidadeUtilizada);
+      produto.estoqueAtual =
+        Number(produto.estoqueAtual) +
+        Number(itemServico.quantidadeUtilizada);
       await produto.save({ transaction });
     }
 

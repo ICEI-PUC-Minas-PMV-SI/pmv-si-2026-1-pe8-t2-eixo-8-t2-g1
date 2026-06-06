@@ -119,6 +119,12 @@ router.delete("/:id", async (req, res) => {
             message: "Categoria deletada com sucesso"
         });
     } catch (error) {
+        if (error.name === "SequelizeForeignKeyConstraintError") {
+            return res.status(409).json({
+                message: "Categoria possui produtos vinculados"
+            });
+        }
+
         return res.status(500).json({
             message: "Erro interno ao deletar categoria"
         });

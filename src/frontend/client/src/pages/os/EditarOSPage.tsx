@@ -82,12 +82,12 @@ function getVeiculoLabel(veiculo: VeiculoApi) {
 }
 
 function getProdutoLabel(produto: ProdutoApi) {
-  return `${produto.nome} - ${formatCurrency(Number(produto.precoUnitario || 0))}`;
+  return `${produto.titulo} - ${formatCurrency(Number(produto.preco || 0))}`;
 }
 
 function getItemSubtotal(item: ItemServicoApi) {
   return (
-    Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0)
+    Number(item.quantidadeUtilizada) * Number(item.produto?.preco || 0)
   );
 }
 
@@ -447,14 +447,14 @@ export default function EditarOS({ id, onNavigate }: EditarOSProps) {
                       }
                     >
                       <td className="px-4 py-3">
-                        {item.produto?.nome || item.idProduto}
+                        {item.produto?.titulo || item.idProduto}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {Number(item.quantidadeUtilizada)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {formatCurrency(
-                          Number(item.produto?.precoUnitario || 0)
+                          Number(item.produto?.preco || 0)
                         )}
                       </td>
                       <td className="px-4 py-3 text-right font-medium">

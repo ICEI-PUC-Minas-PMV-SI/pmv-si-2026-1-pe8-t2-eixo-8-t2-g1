@@ -53,8 +53,8 @@ module.exports = function registerItensServicoTests(context) {
     test("POST /itens-servico persiste item, baixa estoque e recalcula servico", async () => {
       const createdService = await createServico(context.models);
       const produto = await createProduto(context.models, {
-        quantidade: 10,
-        precoUnitario: 12.5,
+        estoqueAtual: 10,
+        preco: 12.5,
       });
 
       const response = await createItemThroughApi(
@@ -70,7 +70,7 @@ module.exports = function registerItensServicoTests(context) {
 
       await produto.reload();
       await createdService.servico.reload();
-      assert.equal(Number(produto.quantidade), 8);
+      assert.equal(Number(produto.estoqueAtual), 8);
       assert.equal(Number(createdService.servico.valorTotal), 25);
       assert.ok(await context.models.ItemServico.findByPk(response.body.id));
     });
@@ -136,8 +136,8 @@ module.exports = function registerItensServicoTests(context) {
     test("POST /itens-servico faz rollback quando estoque e insuficiente", async () => {
       const createdService = await createServico(context.models);
       const produto = await createProduto(context.models, {
-        quantidade: 2,
-        precoUnitario: 10,
+        estoqueAtual: 2,
+        preco: 10,
       });
 
       await apiRequest(context, "post", "/itens-servico")
@@ -150,7 +150,7 @@ module.exports = function registerItensServicoTests(context) {
 
       await produto.reload();
       await createdService.servico.reload();
-      assert.equal(Number(produto.quantidade), 2);
+      assert.equal(Number(produto.estoqueAtual), 2);
       assert.equal(Number(createdService.servico.valorTotal), 0);
       assert.equal(await context.models.ItemServico.count(), 0);
     });
@@ -158,8 +158,8 @@ module.exports = function registerItensServicoTests(context) {
     test("PUT /itens-servico/:id ajusta estoque e valor total", async () => {
       const createdService = await createServico(context.models);
       const produto = await createProduto(context.models, {
-        quantidade: 10,
-        precoUnitario: 10,
+        estoqueAtual: 10,
+        preco: 10,
       });
       const creation = await createItemThroughApi(
         context,
@@ -179,7 +179,7 @@ module.exports = function registerItensServicoTests(context) {
       assert.equal(Number(response.body.quantidadeUtilizada), 4);
       await produto.reload();
       await createdService.servico.reload();
-      assert.equal(Number(produto.quantidade), 6);
+      assert.equal(Number(produto.estoqueAtual), 6);
       assert.equal(Number(createdService.servico.valorTotal), 40);
     });
 
@@ -187,12 +187,12 @@ module.exports = function registerItensServicoTests(context) {
       const servicoAntigo = await createServico(context.models);
       const servicoNovo = await createServico(context.models);
       const produtoAntigo = await createProduto(context.models, {
-        quantidade: 10,
-        precoUnitario: 5,
+        estoqueAtual: 10,
+        preco: 5,
       });
       const produtoNovo = await createProduto(context.models, {
-        quantidade: 20,
-        precoUnitario: 15,
+        estoqueAtual: 20,
+        preco: 15,
       });
       const creation = await createItemThroughApi(
         context,
@@ -220,8 +220,8 @@ module.exports = function registerItensServicoTests(context) {
         servicoNovo.servico.reload(),
       ]);
 
-      assert.equal(Number(produtoAntigo.quantidade), 10);
-      assert.equal(Number(produtoNovo.quantidade), 17);
+      assert.equal(Number(produtoAntigo.estoqueAtual), 10);
+      assert.equal(Number(produtoNovo.estoqueAtual), 17);
       assert.equal(Number(servicoAntigo.servico.valorTotal), 0);
       assert.equal(Number(servicoNovo.servico.valorTotal), 45);
     });
@@ -271,8 +271,8 @@ module.exports = function registerItensServicoTests(context) {
     test("PUT /itens-servico/:id faz rollback se novo estoque for insuficiente", async () => {
       const createdService = await createServico(context.models);
       const produto = await createProduto(context.models, {
-        quantidade: 5,
-        precoUnitario: 10,
+        estoqueAtual: 5,
+        preco: 10,
       });
       const creation = await createItemThroughApi(
         context,
@@ -293,15 +293,15 @@ module.exports = function registerItensServicoTests(context) {
       await produto.reload();
       await createdService.servico.reload();
       assert.equal(Number(item.quantidadeUtilizada), 2);
-      assert.equal(Number(produto.quantidade), 3);
+      assert.equal(Number(produto.estoqueAtual), 3);
       assert.equal(Number(createdService.servico.valorTotal), 20);
     });
 
     test("DELETE /itens-servico/:id devolve estoque e recalcula servico", async () => {
       const createdService = await createServico(context.models);
       const produto = await createProduto(context.models, {
-        quantidade: 10,
-        precoUnitario: 10,
+        estoqueAtual: 10,
+        preco: 10,
       });
       const creation = await createItemThroughApi(
         context,
@@ -318,7 +318,7 @@ module.exports = function registerItensServicoTests(context) {
 
       await produto.reload();
       await createdService.servico.reload();
-      assert.equal(Number(produto.quantidade), 10);
+      assert.equal(Number(produto.estoqueAtual), 10);
       assert.equal(Number(createdService.servico.valorTotal), 0);
       assert.equal(
         await context.models.ItemServico.findByPk(creation.body.id),

@@ -47,7 +47,7 @@ function getVeiculoDescricao(servico: ServicoApi) {
 
 function getItemSubtotal(item: NonNullable<ServicoApi["itens"]>[number]) {
   return (
-    Number(item.quantidadeUtilizada) * Number(item.produto?.precoUnitario || 0)
+    Number(item.quantidadeUtilizada) * Number(item.produto?.preco || 0)
   );
 }
 
@@ -307,14 +307,14 @@ export default function OS() {
                             }
                           >
                             <td className="px-4 py-2">
-                              {item.produto?.nome || item.idProduto}
+                              {item.produto?.titulo || item.idProduto}
                             </td>
                             <td className="px-4 py-2">
                               {Number(item.quantidadeUtilizada)}
                             </td>
                             <td className="px-4 py-2">
                               {formatCurrency(
-                                Number(item.produto?.precoUnitario || 0)
+                                Number(item.produto?.preco || 0)
                               )}
                             </td>
                             <td className="px-4 py-2 font-medium">

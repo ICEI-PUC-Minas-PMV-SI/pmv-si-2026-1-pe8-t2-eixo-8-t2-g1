@@ -1,5 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  categoriasApi,
+  marcasApi,
+  type CategoriaApi,
+  type MarcaApi,
+} from '@/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,46 +14,97 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { mockMarcas, mockCategorias, mockTiposVeiculo } from '@/lib/mockData';
+import { mockTiposVeiculo } from '@/lib/mockData';
 import { generateId } from '@/lib/utils';
-import type { Marca, Categoria, TipoVeiculo } from '@/types';
+import type { TipoVeiculo } from '@/types';
 
 export default function Tabelas() {
-  const [marcas, setMarcas] = useState<Marca[]>(mockMarcas);
-  const [categorias, setCategorias] = useState<Categoria[]>(mockCategorias);
+  const [marcas, setMarcas] = useState<MarcaApi[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaApi[]>([]);
   const [tiposVeiculo, setTiposVeiculo] = useState<TipoVeiculo[]>(mockTiposVeiculo);
 
   const [novaMarca, setNovaMarca] = useState('');
   const [novaCategoria, setNovaCategoria] = useState('');
   const [novoTipo, setNovoTipo] = useState({ nome: '', observacao: '' });
 
-  const handleAddMarca = () => {
-    if (novaMarca.trim()) {
-      setMarcas([
-        ...marcas,
-        {
-          id: generateId(),
-          nome: novaMarca,
-          dataCriacao: new Date().toISOString().split('T')[0],
-          dataAtualizacao: new Date().toISOString().split('T')[0],
-        },
-      ]);
-      setNovaMarca('');
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [marcasResponse, categoriasResponse] = await Promise.all([
+          marcasApi.getAll(),
+          categoriasApi.getAll(),
+        ]);
+
+        setMarcas(marcasResponse);
+        setCategorias(categoriasResponse);
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message ||
+            'Erro ao carregar marcas e categorias',
+        );
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const handleAddMarca = async () => {
+    const titulo = novaMarca.trim();
+
+    if (titulo) {
+      try {
+        const marca = await marcasApi.create({ titulo });
+        setMarcas((current) => [...current, marca]);
+        setNovaMarca('');
+        toast.success('Marca cadastrada com sucesso!');
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message || 'Erro ao cadastrar marca',
+        );
+      }
     }
   };
 
-  const handleAddCategoria = () => {
-    if (novaCategoria.trim()) {
-      setCategorias([
-        ...categorias,
-        {
-          id: generateId(),
-          nome: novaCategoria,
-          dataCriacao: new Date().toISOString().split('T')[0],
-          dataAtualizacao: new Date().toISOString().split('T')[0],
-        },
-      ]);
-      setNovaCategoria('');
+  const handleAddCategoria = async () => {
+    const titulo = novaCategoria.trim();
+
+    if (titulo) {
+      try {
+        const categoria = await categoriasApi.create({ titulo });
+        setCategorias((current) => [...current, categoria]);
+        setNovaCategoria('');
+        toast.success('Categoria cadastrada com sucesso!');
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message || 'Erro ao cadastrar categoria',
+        );
+      }
+    }
+  };
+
+  const handleDeleteMarca = async (id: number) => {
+    try {
+      await marcasApi.remove(id);
+      setMarcas((current) => current.filter((marca) => marca.id !== id));
+      toast.success('Marca excluída com sucesso!');
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || 'Erro ao excluir marca',
+      );
+    }
+  };
+
+  const handleDeleteCategoria = async (id: number) => {
+    try {
+      await categoriasApi.remove(id);
+      setCategorias((current) =>
+        current.filter((categoria) => categoria.id !== id),
+      );
+      toast.success('Categoria excluída com sucesso!');
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || 'Erro ao excluir categoria',
+      );
     }
   };
 
@@ -64,14 +122,6 @@ export default function Tabelas() {
       ]);
       setNovoTipo({ nome: '', observacao: '' });
     }
-  };
-
-  const handleDeleteMarca = (id: string) => {
-    setMarcas(marcas.filter((m) => m.id !== id));
-  };
-
-  const handleDeleteCategoria = (id: string) => {
-    setCategorias(categorias.filter((c) => c.id !== id));
   };
 
   const handleDeleteTipo = (id: string) => {
@@ -106,7 +156,7 @@ export default function Tabelas() {
                 placeholder="Nome da marca"
                 value={novaMarca}
                 onChange={(e) => setNovaMarca(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddMarca()}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddMarca()}
               />
               <Button onClick={handleAddMarca} className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -128,7 +178,7 @@ export default function Tabelas() {
                 <tbody>
                   {marcas.map((marca, index) => (
                     <tr key={marca.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                      <td className="px-4 py-2">{marca.nome}</td>
+                      <td className="px-4 py-2">{marca.titulo}</td>
                       <td className="px-4 py-2">
                         <Button
                           variant="ghost"
@@ -156,7 +206,7 @@ export default function Tabelas() {
                 placeholder="Nome da categoria"
                 value={novaCategoria}
                 onChange={(e) => setNovaCategoria(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddCategoria()}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCategoria()}
               />
               <Button onClick={handleAddCategoria} className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -178,7 +228,7 @@ export default function Tabelas() {
                 <tbody>
                   {categorias.map((categoria, index) => (
                     <tr key={categoria.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
-                      <td className="px-4 py-2">{categoria.nome}</td>
+                      <td className="px-4 py-2">{categoria.titulo}</td>
                       <td className="px-4 py-2">
                         <Button
                           variant="ghost"

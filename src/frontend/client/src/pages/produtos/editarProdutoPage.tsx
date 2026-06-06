@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import {
   produtosApi,
   type ProdutoApi,
+  type ProdutoPayload,
 } from '@/api';
 
 import EditarProdutoForm from '@/components/forms/EditarProdutoForm';
@@ -62,10 +63,10 @@ export default function EditarProdutoPage({
       produto={produto}
       onNavigate={onNavigate}
       onSave={async (
-        produtoAtualizado: ProdutoApi,
+        produtoAtualizado: ProdutoPayload,
       ) => {
         await produtosApi.update(
-          produtoAtualizado.id,
+          id,
           produtoAtualizado,
         );
 

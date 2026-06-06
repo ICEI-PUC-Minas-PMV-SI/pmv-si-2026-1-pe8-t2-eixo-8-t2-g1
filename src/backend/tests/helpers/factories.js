@@ -55,9 +55,12 @@ function veiculoPayload(idCliente, overrides = {}) {
 
 function produtoPayload(overrides = {}) {
   return {
-    nome: `Produto ${nextValue("estoque")}`,
-    quantidade: 20,
-    precoUnitario: 25.5,
+    titulo: `Produto ${nextValue("estoque")}`,
+    descricao: "Produto criado pela suite de testes",
+    codigoSku: nextValue("SKU").toUpperCase(),
+    tipoItem: "Produto",
+    estoqueAtual: 20,
+    preco: 25.5,
     ...overrides,
   };
 }
@@ -146,6 +149,26 @@ async function createProduto(models, overrides = {}) {
   return models.Produto.create(produtoPayload(overrides));
 }
 
+async function createProdutoReferences(models) {
+  const [categoria, fornecedor, marca] = await Promise.all([
+    models.Categoria.create({
+      titulo: nextValue("Categoria"),
+    }),
+    createCliente(models, {
+      isFornecedor: true,
+    }),
+    models.Marca.create({
+      titulo: nextValue("Marca"),
+    }),
+  ]);
+
+  return {
+    categoria,
+    fornecedor,
+    marca,
+  };
+}
+
 async function createServico(models, overrides = {}) {
   const veiculoData =
     overrides.veiculo ||
@@ -220,6 +243,7 @@ module.exports = {
   createPerfil,
   createPermissao,
   createProduto,
+  createProdutoReferences,
   createServico,
   createUsuario,
   createVeiculo,

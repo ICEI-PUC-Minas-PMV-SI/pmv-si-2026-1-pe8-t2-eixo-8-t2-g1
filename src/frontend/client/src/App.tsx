@@ -217,38 +217,6 @@ function EditarProdutoRoute() {
   return <EditarProduto id={id} onNavigate={navigate} />;
 }
 
-function EditarMarcaRoute() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  if (!id) {
-    return <Navigate to="/marcas" replace />;
-  }
-
-  return (
-    <EditarMarcaPage
-      id={id}
-      onNavigate={navigate}
-    />
-  );
-}
-
-function EditarCategoriaRoute() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  if (!id) {
-    return <Navigate to="/categorias" replace />;
-  }
-
-  return (
-    <EditarCategoriaPage
-      id={id}
-      onNavigate={navigate}
-    />
-  );
-}
-
 function EditarVeiculoRoute() {
   const { id } = useParams();
   const navigate = useNavigate();

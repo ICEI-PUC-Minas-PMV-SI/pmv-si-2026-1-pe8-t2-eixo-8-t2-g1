@@ -75,6 +75,16 @@ Produto.belongsTo(Categoria, {
   as: "categoria",
 });
 
+Cliente.hasMany(Produto, {
+  foreignKey: "idFornecedor",
+  as: "produtosFornecidos",
+});
+
+Produto.belongsTo(Cliente, {
+  foreignKey: "idFornecedor",
+  as: "fornecedor",
+});
+
 Perfil.hasMany(Usuario, {
   foreignKey: "idPerfil",
   as: "usuarios",

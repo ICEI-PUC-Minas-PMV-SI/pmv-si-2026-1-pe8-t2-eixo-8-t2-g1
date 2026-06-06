@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { produtosApi, type ProdutoApi } from "@/api";
-
+import {
+  categoriasApi,
+  fornecedoresApi,
+  marcasApi,
+  produtosApi,
+  type CategoriaApi,
+  type FornecedorApi,
+  type MarcaApi,
+  type ProdutoApi,
+  type ProdutoPayload,
+} from "@/api";
 import Breadcrumbs from "@/components/Breadcrumbs";
-
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +24,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,8 +43,22 @@ interface EditarProdutoFormProps {
   id: string;
   produto: ProdutoApi;
   onNavigate: (path: string) => void;
-  onSave: (produto: ProdutoApi) => Promise<void>;
+  onSave: (produto: ProdutoPayload) => Promise<void>;
   onCancel: () => void;
+}
+
+function toProdutoPayload(produto: ProdutoApi): ProdutoPayload {
+  return {
+    titulo: produto.titulo,
+    descricao: produto.descricao || "",
+    codigoSku: produto.codigoSku || "",
+    idMarca: produto.idMarca || 0,
+    idCategoria: produto.idCategoria || 0,
+    idFornecedor: produto.idFornecedor || 0,
+    tipoItem: produto.tipoItem,
+    preco: Number(produto.preco),
+    estoqueAtual: Number(produto.estoqueAtual),
+  };
 }
 
 export default function EditarProdutoForm({
@@ -40,39 +69,67 @@ export default function EditarProdutoForm({
   onCancel,
 }: EditarProdutoFormProps) {
   const { hasPermission } = useAuth();
-  const [formData, setFormData] = useState<ProdutoApi>(() => produto);
-
+  const [formData, setFormData] = useState<ProdutoPayload>(() =>
+    toProdutoPayload(produto),
+  );
+  const [marcas, setMarcas] = useState<MarcaApi[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaApi[]>([]);
+  const [fornecedores, setFornecedores] = useState<FornecedorApi[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingOptions, setLoadingOptions] = useState(true);
   const canDelete = hasPermission(PERMISSIONS.PRODUTOS.DELETE);
 
-  const handleInputChange = <K extends keyof ProdutoApi>(
+  useEffect(() => {
+    setFormData(toProdutoPayload(produto));
+  }, [produto]);
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [marcasResponse, categoriasResponse, fornecedoresResponse] =
+          await Promise.all([
+            marcasApi.getAll(),
+            categoriasApi.getAll(),
+            fornecedoresApi.getAll(),
+          ]);
+
+        setMarcas(marcasResponse);
+        setCategorias(categoriasResponse);
+        setFornecedores(fornecedoresResponse);
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message ||
+            "Erro ao carregar marcas, categorias e fornecedores",
+        );
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    loadOptions();
+  }, []);
+
+  const handleInputChange = <K extends keyof ProdutoPayload>(
     field: K,
-    value: ProdutoApi[K]
+    value: ProdutoPayload[K],
   ) => {
-    setFormData(prev => ({
-      ...prev,
+    setFormData((current) => ({
+      ...current,
       [field]: value,
     }));
   };
 
-  useEffect(() => {
-    setFormData(produto);
-  }, [produto.id]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     try {
       setLoading(true);
-
       await onSave(formData);
-
       toast.success("Produto atualizado com sucesso!");
     } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Erro ao atualizar produto";
-
-      toast.error(message);
+      toast.error(
+        error.response?.data?.message || "Erro ao atualizar produto",
+      );
     } finally {
       setLoading(false);
     }
@@ -85,17 +142,13 @@ export default function EditarProdutoForm({
 
     try {
       setLoading(true);
-
       await produtosApi.remove(id);
-
       toast.success("Produto excluído com sucesso!");
-
       onNavigate("/produtos");
     } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Erro ao excluir produto";
-
-      toast.error(message);
+      toast.error(
+        error.response?.data?.message || "Erro ao excluir produto",
+      );
     } finally {
       setLoading(false);
     }
@@ -113,53 +166,169 @@ export default function EditarProdutoForm({
 
       <div>
         <h1>Editar Produto</h1>
-
-        <p className="text-muted-foreground mt-1">ID: {formData.id}</p>
+        <p className="text-muted-foreground mt-1">ID: {produto.id}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Dados do Produto</h3>
+        <Card className="p-6 space-y-4">
+          <h3 className="font-semibold">Dados do Produto</h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="nome">Nome *</Label>
-
+              <Label htmlFor="titulo">Título</Label>
               <Input
-                id="nome"
-                value={formData.nome}
-                onChange={e => handleInputChange("nome", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="quantidade">Quantidade *</Label>
-
-              <Input
-                id="quantidade"
-                type="number"
-                step="0.01"
-                value={formData.quantidade}
-                onChange={e =>
-                  handleInputChange("quantidade", Number(e.target.value))
+                id="titulo"
+                value={formData.titulo}
+                onChange={(event) =>
+                  handleInputChange("titulo", event.target.value)
                 }
-                required
               />
             </div>
 
             <div>
-              <Label htmlFor="preco">Preço Unitário *</Label>
+              <Label htmlFor="codigoSku">Código / SKU</Label>
+              <Input
+                id="codigoSku"
+                value={formData.codigoSku}
+                onChange={(event) =>
+                  handleInputChange("codigoSku", event.target.value)
+                }
+              />
+            </div>
 
+            <div className="md:col-span-2">
+              <Label htmlFor="descricao">Descrição</Label>
+              <Textarea
+                id="descricao"
+                value={formData.descricao || ""}
+                onChange={(event) =>
+                  handleInputChange("descricao", event.target.value)
+                }
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="idMarca">Marca</Label>
+              <Select
+                value={formData.idMarca ? String(formData.idMarca) : ""}
+                onValueChange={(value) =>
+                  handleInputChange("idMarca", Number(value))
+                }
+                disabled={loadingOptions}
+              >
+                <SelectTrigger id="idMarca" className="w-full">
+                  <SelectValue placeholder="Selecione uma marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {marcas.map((marca) => (
+                    <SelectItem key={marca.id} value={String(marca.id)}>
+                      {marca.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="idCategoria">Categoria</Label>
+              <Select
+                value={
+                  formData.idCategoria ? String(formData.idCategoria) : ""
+                }
+                onValueChange={(value) =>
+                  handleInputChange("idCategoria", Number(value))
+                }
+                disabled={loadingOptions}
+              >
+                <SelectTrigger id="idCategoria" className="w-full">
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((categoria) => (
+                    <SelectItem
+                      key={categoria.id}
+                      value={String(categoria.id)}
+                    >
+                      {categoria.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="idFornecedor">Fornecedor</Label>
+              <Select
+                value={
+                  formData.idFornecedor ? String(formData.idFornecedor) : ""
+                }
+                onValueChange={(value) =>
+                  handleInputChange("idFornecedor", Number(value))
+                }
+                disabled={loadingOptions}
+              >
+                <SelectTrigger id="idFornecedor" className="w-full">
+                  <SelectValue placeholder="Selecione um fornecedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fornecedores.map((fornecedor) => (
+                    <SelectItem
+                      key={fornecedor.id}
+                      value={String(fornecedor.id)}
+                    >
+                      {fornecedor.nomeCompleto}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="tipoItem">Tipo do Item</Label>
+              <Select
+                value={formData.tipoItem}
+                onValueChange={(value) =>
+                  handleInputChange("tipoItem", value)
+                }
+              >
+                <SelectTrigger id="tipoItem" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Produto">Produto</SelectItem>
+                  <SelectItem value="Serviço">Serviço</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="preco">Preço (R$)</Label>
               <Input
                 id="preco"
                 type="number"
+                min="0"
                 step="0.01"
-                value={formData.precoUnitario}
-                onChange={e =>
-                  handleInputChange("precoUnitario", Number(e.target.value))
+                value={formData.preco}
+                onChange={(event) =>
+                  handleInputChange("preco", Number(event.target.value))
                 }
-                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="estoqueAtual">Estoque Atual</Label>
+              <Input
+                id="estoqueAtual"
+                type="number"
+                min="0"
+                step="1"
+                value={formData.estoqueAtual}
+                onChange={(event) =>
+                  handleInputChange(
+                    "estoqueAtual",
+                    Number(event.target.value),
+                  )
+                }
               />
             </div>
           </div>
@@ -182,20 +351,16 @@ export default function EditarProdutoForm({
                   Excluir Produto
                 </Button>
               </AlertDialogTrigger>
-
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
-
                   <AlertDialogDescription>
-                    Essa ação não poderá ser desfeita. O produto {formData.nome}{" "}
-                    será removido permanentemente.
+                    Essa ação não poderá ser desfeita. O produto{" "}
+                    {formData.titulo} será removido permanentemente.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-
                   <AlertDialogAction onClick={handleDelete}>
                     Confirmar exclusão
                   </AlertDialogAction>
@@ -204,7 +369,10 @@ export default function EditarProdutoForm({
             </AlertDialog>
           )}
 
-          <Button type="submit" disabled={loading}>
+          <Button
+            type="submit"
+            disabled={loading}
+          >
             Salvar Alterações
           </Button>
         </div>

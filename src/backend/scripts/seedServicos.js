@@ -326,15 +326,20 @@ function getQuantidadeProduto(produtoNome, serviceIndex) {
 async function upsertProdutos(transaction) {
   const produtos = new Map();
 
-  for (const [nome, quantidade, precoUnitario] of produtosSeed) {
+  for (const [titulo, estoqueAtual, preco] of produtosSeed) {
     const [produto] = await Produto.findOrCreate({
-      where: { nome },
-      defaults: { nome, quantidade, precoUnitario },
+      where: { titulo },
+      defaults: {
+        titulo,
+        estoqueAtual,
+        preco,
+        codigoSku: `SEED-${produtos.size + 1}`,
+      },
       transaction,
     });
 
-    await produto.update({ quantidade, precoUnitario }, { transaction });
-    produtos.set(nome, produto);
+    await produto.update({ estoqueAtual, preco }, { transaction });
+    produtos.set(titulo, produto);
   }
 
   return produtos;
@@ -422,7 +427,7 @@ async function criarServico({
   const itens = template.produtos.map((produtoNome) => {
     const produto = produtoMap.get(produtoNome);
     const quantidade = getQuantidadeProduto(produtoNome, serviceIndex);
-    const subtotal = quantidade * Number(produto.precoUnitario);
+    const subtotal = quantidade * Number(produto.preco);
 
     return {
       produto,

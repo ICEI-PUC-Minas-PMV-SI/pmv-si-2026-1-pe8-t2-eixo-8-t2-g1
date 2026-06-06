@@ -726,9 +726,15 @@
                 "$ref": "#/components/schemas/ProdutoInput"
               },
               "example": {
-                "nome": "Oleo 5W30",
-                "quantidade": 12,
-                "precoUnitario": 65.5
+                "titulo": "Oleo 5W30",
+                "descricao": "Oleo sintetico para motor",
+                "codigoSku": "OLEO-5W30",
+                "idMarca": 1,
+                "idCategoria": 1,
+                "idFornecedor": 41,
+                "tipoItem": "Produto",
+                "preco": 65.5,
+                "estoqueAtual": 12
               }
             }
           }
@@ -1738,7 +1744,7 @@
                       "produto": "Oleo 5W30",
                       "estoque": 12,
                       "minimo": 40,
-                      "precoUnitario": 65.5
+                      "preco": 65.5
                     }
                   ],
                   "faturamento": [
@@ -2151,24 +2157,47 @@
       "ProdutoInput": {
         "type": "object",
         "required": [
-          "nome",
-          "quantidade",
-          "precoUnitario"
+          "titulo"
         ],
         "properties": {
-          "nome": {
+          "titulo": {
             "type": "string",
             "example": "Oleo 5W30"
           },
-          "quantidade": {
-            "type": "number",
-            "format": "float",
-            "example": 12
+          "descricao": {
+            "type": "string",
+            "nullable": true,
+            "example": "Oleo sintetico para motor"
           },
-          "precoUnitario": {
+          "codigoSku": {
+            "type": "string",
+            "example": "OLEO-5W30"
+          },
+          "idMarca": {
+            "type": "integer",
+            "example": 1
+          },
+          "idCategoria": {
+            "type": "integer",
+            "example": 1
+          },
+          "idFornecedor": {
+            "type": "integer",
+            "example": 41
+          },
+          "tipoItem": {
+            "type": "string",
+            "example": "Produto"
+          },
+          "preco": {
             "type": "number",
             "format": "float",
             "example": 65.5
+          },
+          "estoqueAtual": {
+            "type": "number",
+            "format": "float",
+            "example": 12
           }
         }
       },
@@ -2332,7 +2361,7 @@
           "produto",
           "estoque",
           "minimo",
-          "precoUnitario"
+          "preco"
         ],
         "properties": {
           "produto": {
@@ -2349,7 +2378,7 @@
             "format": "float",
             "example": 40
           },
-          "precoUnitario": {
+          "preco": {
             "type": "number",
             "format": "float",
             "example": 65.5

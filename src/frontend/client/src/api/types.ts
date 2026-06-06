@@ -70,26 +70,31 @@ export interface ServicoPayload {
 
 export interface ProdutoApi {
   id: number;
-
   titulo: string;
-  descricao?: string;
-
-  codigoSku: string;
-
-  idMarca: number;
-  idCategoria: number;
-  idFornecedor: number;
-
+  descricao?: string | null;
+  codigoSku: string | null;
+  idMarca: number | null;
+  idCategoria: number | null;
+  idFornecedor: number | null;
   tipoItem: string;
-
-  preco: number;
-  estoqueAtual: number;
+  preco: number | string;
+  estoqueAtual: number | string;
+  marca?: MarcaApi | null;
+  categoria?: CategoriaApi | null;
+  fornecedor?: FornecedorApi | null;
 }
 
-export type ProdutoPayload = Omit<
-  ProdutoApi,
-  'id'
->;
+export interface ProdutoPayload {
+  titulo: string;
+  descricao?: string | null;
+  codigoSku?: string;
+  idMarca?: number;
+  idCategoria?: number;
+  idFornecedor?: number;
+  tipoItem?: string;
+  preco?: number;
+  estoqueAtual?: number;
+}
 
 export interface RelatorioOsStatusApi {
   status: string;
@@ -106,7 +111,7 @@ export interface RelatorioProdutoEstoqueApi {
   produto: string;
   estoque: number;
   minimo: number;
-  precoUnitario: number;
+  preco: number;
 }
 
 export interface RelatorioFaturamentoApi {
@@ -197,14 +202,14 @@ export interface FornecedorPayload {
 
 export interface MarcaApi {
   id: number;
-  nome: string;
+  titulo: string;
 }
 
 export type MarcaPayload = Omit<MarcaApi, "id">;
 
 export interface CategoriaApi {
   id: number;
-  nome: string;
+  titulo: string;
 }
 
 export type CategoriaPayload = Omit<CategoriaApi, "id">;

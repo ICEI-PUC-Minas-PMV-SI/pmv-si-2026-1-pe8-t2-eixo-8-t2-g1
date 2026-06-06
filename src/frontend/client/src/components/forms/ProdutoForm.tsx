@@ -1,290 +1,276 @@
-import { useState } from 'react';
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-
-import type { ProdutoPayload } from '@/api';
+import {
+  categoriasApi,
+  fornecedoresApi,
+  marcasApi,
+  type CategoriaApi,
+  type FornecedorApi,
+  type MarcaApi,
+  type ProdutoPayload,
+} from "@/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProdutoFormProps {
   onSubmit: (produto: ProdutoPayload) => void;
   onCancel: () => void;
 }
 
-interface FormDataState {
-  id: number;
-
-  titulo: string;
-  descricao?: string;
-
-  codigoSku: string;
-
-  idMarca: number;
-  idCategoria: number;
-  idFornecedor: number;
-
-  tipoItem: string;
-
-  preco: number;
-  estoqueAtual: number;
-}
+const initialFormData: ProdutoPayload = {
+  titulo: "",
+  descricao: "",
+  codigoSku: "",
+  idMarca: 0,
+  idCategoria: 0,
+  idFornecedor: 0,
+  tipoItem: "Produto",
+  preco: 0,
+  estoqueAtual: 0,
+};
 
 export default function ProdutoForm({
   onSubmit,
   onCancel,
 }: ProdutoFormProps) {
   const [formData, setFormData] =
-    useState<FormDataState>({
-      titulo: '',
-      descricao: '',
-      codigoSku: '',
+    useState<ProdutoPayload>(initialFormData);
+  const [marcas, setMarcas] = useState<MarcaApi[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaApi[]>([]);
+  const [fornecedores, setFornecedores] = useState<FornecedorApi[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
 
-      idMarca: 0,
-      idCategoria: 0,
-      idFornecedor: 0,
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [marcasResponse, categoriasResponse, fornecedoresResponse] =
+          await Promise.all([
+            marcasApi.getAll(),
+            categoriasApi.getAll(),
+            fornecedoresApi.getAll(),
+          ]);
 
-      tipoItem: 'Produto',
+        setMarcas(marcasResponse);
+        setCategorias(categoriasResponse);
+        setFornecedores(fornecedoresResponse);
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message ||
+            "Erro ao carregar marcas, categorias e fornecedores",
+        );
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
 
-      preco: 0,
-      estoqueAtual: 0,
-    });
+    loadOptions();
+  }, []);
 
-  const handleSubmit = (
-    e: React.FormEvent,
-  ) => {
-    e.preventDefault();
-
-    onSubmit(formData);
-  };
-
-  const handleInputChange = <
-    K extends keyof FormDataState
-  >(
+  const handleInputChange = <K extends keyof ProdutoPayload>(
     field: K,
-    value: FormDataState[K],
+    value: ProdutoPayload[K],
   ) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((current) => ({
+      ...current,
       [field]: value,
     }));
   };
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    onSubmit(formData);
+  };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-    >
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h3 className="font-semibold mb-4">
-          Informações Básicas
-        </h3>
+        <h3 className="font-semibold mb-4">Informações Básicas</h3>
 
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <Label htmlFor="titulo">
-              Título *
-            </Label>
-
+            <Label htmlFor="titulo">Título *</Label>
             <Input
               id="titulo"
               value={formData.titulo}
-              onChange={(e) =>
-                handleInputChange(
-                  'titulo',
-                  e.target.value,
-                )
+              onChange={(event) =>
+                handleInputChange("titulo", event.target.value)
               }
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="descricao">
-              Descrição
-            </Label>
-
+            <Label htmlFor="descricao">Descrição</Label>
             <Textarea
               id="descricao"
-              value={formData.descricao}
-              onChange={(e) =>
-                handleInputChange(
-                  'descricao',
-                  e.target.value,
-                )
+              value={formData.descricao || ""}
+              onChange={(event) =>
+                handleInputChange("descricao", event.target.value)
               }
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="codigoSku">
-                Código / SKU *
-              </Label>
-
+              <Label htmlFor="codigoSku">Código / SKU</Label>
               <Input
                 id="codigoSku"
                 value={formData.codigoSku}
-                onChange={(e) =>
-                  handleInputChange(
-                    'codigoSku',
-                    e.target.value,
-                  )
+                onChange={(event) =>
+                  handleInputChange("codigoSku", event.target.value)
                 }
-                required
               />
             </div>
 
             <div>
-              <Label htmlFor="idMarca">
-                Marca *
-              </Label>
-
-              <Input
-                id="idMarca"
-                type="number"
-                value={formData.idMarca}
-                onChange={(e) =>
-                  handleInputChange(
-                    'idMarca',
-                    Number(
-                      e.target.value,
-                    ),
-                  )
+              <Label htmlFor="tipoItem">Tipo do Item</Label>
+              <Select
+                value={formData.tipoItem}
+                onValueChange={(value) =>
+                  handleInputChange("tipoItem", value)
                 }
-                required
-              />
+              >
+                <SelectTrigger id="tipoItem" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Produto">Produto</SelectItem>
+                  <SelectItem value="Serviço">Serviço</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <Label htmlFor="idCategoria">
-                Categoria *
-              </Label>
+              <Label htmlFor="idMarca">Marca</Label>
+              <Select
+                value={formData.idMarca ? String(formData.idMarca) : ""}
+                onValueChange={(value) =>
+                  handleInputChange("idMarca", Number(value))
+                }
+                disabled={loadingOptions}
+              >
+                <SelectTrigger id="idMarca" className="w-full">
+                  <SelectValue placeholder="Selecione uma marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {marcas.map((marca) => (
+                    <SelectItem key={marca.id} value={String(marca.id)}>
+                      {marca.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <Input
-                id="idCategoria"
-                type="number"
+            <div>
+              <Label htmlFor="idCategoria">Categoria</Label>
+              <Select
                 value={
-                  formData.idCategoria
+                  formData.idCategoria ? String(formData.idCategoria) : ""
                 }
-                onChange={(e) =>
-                  handleInputChange(
-                    'idCategoria',
-                    Number(
-                      e.target.value,
-                    ),
-                  )
+                onValueChange={(value) =>
+                  handleInputChange("idCategoria", Number(value))
                 }
-                required
-              />
+                disabled={loadingOptions}
+              >
+                <SelectTrigger id="idCategoria" className="w-full">
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((categoria) => (
+                    <SelectItem
+                      key={categoria.id}
+                      value={String(categoria.id)}
+                    >
+                      {categoria.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div>
-              <Label htmlFor="idFornecedor">
-                Fornecedor *
-              </Label>
-
-              <Input
-                id="idFornecedor"
-                type="number"
+            <div className="md:col-span-2">
+              <Label htmlFor="idFornecedor">Fornecedor</Label>
+              <Select
                 value={
-                  formData.idFornecedor
+                  formData.idFornecedor ? String(formData.idFornecedor) : ""
                 }
-                onChange={(e) =>
-                  handleInputChange(
-                    'idFornecedor',
-                    Number(
-                      e.target.value,
-                    ),
-                  )
+                onValueChange={(value) =>
+                  handleInputChange("idFornecedor", Number(value))
                 }
-                required
-              />
+                disabled={loadingOptions}
+              >
+                <SelectTrigger id="idFornecedor" className="w-full">
+                  <SelectValue placeholder="Selecione um fornecedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fornecedores.map((fornecedor) => (
+                    <SelectItem
+                      key={fornecedor.id}
+                      value={String(fornecedor.id)}
+                    >
+                      {fornecedor.nomeCompleto}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="tipoItem">
-              Tipo do Item *
-            </Label>
-
-            <Input
-              id="tipoItem"
-              value={formData.tipoItem}
-              onChange={(e) =>
-                handleInputChange(
-                  'tipoItem',
-                  e.target.value,
-                )
-              }
-              required
-            />
           </div>
         </div>
       </div>
 
       <div>
-        <h3 className="font-semibold mb-4">
-          Preço e Estoque
-        </h3>
+        <h3 className="font-semibold mb-4">Preço e Estoque</h3>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="preco">
-              Preço (R$) *
-            </Label>
-
+            <Label htmlFor="preco">Preço (R$)</Label>
             <Input
               id="preco"
               type="number"
+              min="0"
               step="0.01"
               value={formData.preco}
-              onChange={(e) =>
-                handleInputChange(
-                  'preco',
-                  Number(
-                    e.target.value,
-                  ),
-                )
+              onChange={(event) =>
+                handleInputChange("preco", Number(event.target.value))
               }
-              required
             />
           </div>
 
           <div>
-            <Label htmlFor="estoqueAtual">
-              Estoque Atual *
-            </Label>
-
+            <Label htmlFor="estoqueAtual">Estoque Atual</Label>
             <Input
               id="estoqueAtual"
               type="number"
-              value={
-                formData.estoqueAtual
-              }
-              onChange={(e) =>
+              min="0"
+              step="1"
+              value={formData.estoqueAtual}
+              onChange={(event) =>
                 handleInputChange(
-                  'estoqueAtual',
-                  Number(
-                    e.target.value,
-                  ),
+                  "estoqueAtual",
+                  Number(event.target.value),
                 )
               }
-              required
             />
           </div>
         </div>
       </div>
 
       <div className="flex gap-3 justify-end pt-4 border-t border-border">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-
         <Button type="submit">
           Salvar Produto
         </Button>

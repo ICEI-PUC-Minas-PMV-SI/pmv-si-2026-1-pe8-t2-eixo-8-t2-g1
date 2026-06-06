@@ -103,14 +103,14 @@ module.exports = function registerConsultasTests(context) {
         valorTotal: 20,
       });
       const produto = await createProduto(context.models, {
-        nome: "Oleo de motor",
-        quantidade: 7,
-        precoUnitario: 10,
+        titulo: "Oleo de motor",
+        estoqueAtual: 7,
+        preco: 10,
       });
       await createProduto(context.models, {
-        nome: "Bateria",
-        quantidade: 3,
-        precoUnitario: 300,
+        titulo: "Bateria",
+        estoqueAtual: 3,
+        preco: 300,
       });
       await createItemServico(context.models, {
         idServico: concluido.servico.id,

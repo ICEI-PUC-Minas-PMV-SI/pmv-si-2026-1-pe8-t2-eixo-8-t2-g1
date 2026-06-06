@@ -168,8 +168,8 @@ router.get("/", async (req, res) => {
       }),
       Produto.findAll({
         order: [
-          ["quantidade", "ASC"],
-          ["nome", "ASC"],
+          ["estoqueAtual", "ASC"],
+          ["titulo", "ASC"],
         ],
       }),
       Veiculo.findAll({
@@ -184,7 +184,7 @@ router.get("/", async (req, res) => {
           {
             model: Produto,
             as: "produto",
-            attributes: ["id", "nome", "precoUnitario"],
+            attributes: ["id", "titulo", "preco"],
           },
         ],
         group: [
@@ -276,17 +276,17 @@ router.get("/", async (req, res) => {
           totalGasto: toMoney(item.totalGasto),
         })),
       produtosEstoque: produtos.slice(0, 12).map((produto) => ({
-        produto: produto.nome,
-        estoque: toNumber(produto.quantidade),
-        minimo: getEstoqueMinimo(produto.nome),
-        precoUnitario: toNumber(produto.precoUnitario),
+        produto: produto.titulo,
+        estoque: toNumber(produto.estoqueAtual),
+        minimo: getEstoqueMinimo(produto.titulo),
+        preco: toNumber(produto.preco),
       })),
       faturamento: faturamentoMensal.map(({ key, ...item }) => ({
         ...item,
         valor: toMoney(item.valor),
       })),
       top5Produtos: itemServico.map((item) => ({
-        produto: item.produto.nome,
+        produto: item.produto.titulo,
         quantidadeUtilizada: toNumber(item.get("totalQuantidadeUtilizada")),
       })),
       resumo: {
