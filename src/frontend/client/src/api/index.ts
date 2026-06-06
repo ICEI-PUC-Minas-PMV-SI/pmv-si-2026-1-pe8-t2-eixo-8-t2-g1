@@ -10,6 +10,11 @@ export { veiculosApi } from "./veiculos";
 export { fornecedoresApi } from "./fornecedores";
 export { marcasApi } from "./marcas";
 export { categoriasApi } from "./categorias";
+export { tiposVeiculoApi } from "./veiculoTipos";
+export { empresaApi } from "./empresa";
+export { smtpApi } from "./smtp";
+
+
 
 export type {
   ClienteApi,
@@ -40,4 +45,5 @@ export type {
   MarcaPayload,
   CategoriaApi,
   CategoriaPayload,
+  tiposVeiculoApi,
 } from "./types";

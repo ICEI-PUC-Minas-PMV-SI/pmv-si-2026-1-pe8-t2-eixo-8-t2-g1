@@ -200,6 +200,8 @@ export interface FornecedorPayload {
   observacao?: string | null;
 }
 
+// ============= Tabelas Auxiliares =============
+
 export interface MarcaApi {
   id: number;
   titulo: string;
@@ -213,6 +215,55 @@ export interface CategoriaApi {
 }
 
 export type CategoriaPayload = Omit<CategoriaApi, "id">;
+
+export interface TipoVeiculoApi {
+  id: number;
+  titulo: string;
+  observacao: string;
+}
+
+export type TipoVeiculoPayload = Omit<TipoVeiculoApi, "id">;
+
+// ============= Configurações =============
+
+export interface EmpresaApi {
+  id: number;
+  nome: string;
+  apelido: string;
+  cnpj: string;
+  logotipo: string;
+  email: string;
+  telefone: string;
+  logradouro: string;
+  numero: number;
+  complemente: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  pais: string;
+  dataCriacao?: string;
+  dataAtualizacao?: string;
+}
+
+export type EmpresaPayload = Omit<
+  EmpresaApi,
+  "id" | "dataCriacao" | "dataAtualizacao"
+>;
+
+export interface SmtpApi {
+  id: number;
+  host: string;
+  email: string;
+  senha: string;
+  porta: number;
+  seguranca: string;
+}
+
+export type SmtpPayload = Omit<SmtpApi, "id">;
+
+// ============= Autenticação =============
+
 export interface LoginPayload {
   email: string;
   senha: string;
