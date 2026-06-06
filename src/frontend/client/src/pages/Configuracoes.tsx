@@ -39,19 +39,30 @@ export default function Configuracoes() {
       setLoadingSmtp(true);
       setLoadingEmpresa(true);
 
-      const [smtpResponse, empresaResponse] = await Promise.all([
-        smtpApi.getAll().catch(() => null),
-        empresaApi.getAll().catch(() => null),
-      ]);
-
-      if (smtpResponse && smtpResponse.length > 0) {
-        setSmtp(smtpResponse[0]);
-        setSmtpEditando({ ...smtpResponse[0] });
+      // Carregar SMTP
+      try {
+        const smtpResponse = await smtpApi.getAll();
+        // A API retorna um objeto único ou um array com um objeto
+        const smtpData = Array.isArray(smtpResponse) ? smtpResponse[0] : smtpResponse;
+        if (smtpData) {
+          setSmtp(smtpData);
+          setSmtpEditando({ ...smtpData });
+        }
+      } catch (error) {
+        console.log('SMTP não configurado ainda');
       }
 
-      if (empresaResponse && empresaResponse.length > 0) {
-        setEmpresa(empresaResponse[0]);
-        setEmpresaEditando({ ...empresaResponse[0] });
+      // Carregar Empresa
+      try {
+        const empresaResponse = await empresaApi.getAll();
+        // A API retorna um objeto único ou um array com um objeto
+        const empresaData = Array.isArray(empresaResponse) ? empresaResponse[0] : empresaResponse;
+        if (empresaData) {
+          setEmpresa(empresaData);
+          setEmpresaEditando({ ...empresaData });
+        }
+      } catch (error) {
+        console.log('Empresa não configurada ainda');
       }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Erro ao carregar configurações';

@@ -82,7 +82,7 @@ router.post("/", async (req, res) => {
 });
 
 // PUT - Atualizar configurações SMTP (upsert)
-router.put("/", async (req, res) => {
+router.put("/:id", async (req, res) => {
     try {
         const { host, email, senha, porta, seguranca } = req.body;
 
