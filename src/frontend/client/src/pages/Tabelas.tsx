@@ -18,7 +18,11 @@ import {
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
 import { marcasApi, categoriasApi, tiposVeiculoApi } from '@/api';
-import type { Marca, Categoria, TipoVeiculo } from '@/api/types';
+import type {
+  MarcaApi as Marca,
+  CategoriaApi as Categoria,
+  TipoVeiculoApi as TipoVeiculo,
+} from '@/api/types';
 
 export default function Tabelas() {
   // State para Marcas

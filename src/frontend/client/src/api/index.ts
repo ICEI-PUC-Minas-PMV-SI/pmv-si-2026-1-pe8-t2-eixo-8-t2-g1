@@ -45,5 +45,6 @@ export type {
   MarcaPayload,
   CategoriaApi,
   CategoriaPayload,
-  tiposVeiculoApi,
+  TipoVeiculoApi,
+  TipoVeiculoPayload,
 } from "./types";
