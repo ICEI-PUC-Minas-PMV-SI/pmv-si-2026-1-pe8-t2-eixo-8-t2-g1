@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Bell, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import type { User as UserType } from '@/types';
 
 interface NavbarProps {
@@ -16,15 +18,28 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user, config, onLogout }: NavbarProps) {
-  const notificationCount = 3;
+/*   const notificationCount = 3; */
+  const [perfilAberto, setPerfilAberto] = useState<boolean>(false);
+
+  const userColorClass = (user: UserType) => {
+    switch (user.role) {
+      case "Administrador":
+        return "text-sidebar-primary";
+      case "Supervisor":
+        return "text-sidebar-secondary";
+      case "Padrão":
+        return "text-sidebar-tertiary";
+    }
+  };
+
 
   return (
-    <nav className="h-16 bg-white border-b border-border flex items-center justify-between px-6 shadow-sm">
+    <nav className={`h-16 bg-white border-b border-border flex items-center justify-between px-6 shadow-sm`}>
       <div className="flex-1" />
       
       <div className="flex items-center gap-4">
         {/* Notificações */}
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5 text-foreground" />
@@ -55,7 +70,7 @@ export default function Navbar({ user, config, onLogout }: NavbarProps) {
               Revisão de veículo agendada
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
 
         {/* Menu do Usuário */}
         <DropdownMenu>
@@ -66,10 +81,7 @@ export default function Navbar({ user, config, onLogout }: NavbarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-              {user.email}
-            </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPerfilAberto(true)}>
               Perfil
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => config('/configuracoes')}>
@@ -81,6 +93,32 @@ export default function Navbar({ user, config, onLogout }: NavbarProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {perfilAberto && (
+          <Card className="absolute right-6 top-14 z-50 w-72 gap-4 border-border p-5 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <User className="size-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="truncate font-semibold">{user.nome}</h3>
+                <p className="truncate text-sm text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+            <Badge variant="secondary" className={`w-fit ${userColorClass(user)}`}>
+              {user.role}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => setPerfilAberto(false)}
+            >
+              Fechar
+            </Button>
+          </Card>
+        )}
       </div>
     </nav>
   );
