@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, FilePlus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   type ServicoPayload,
   type VeiculoApi,
 } from "@/api";
+import { DialogPdf } from "@/components/files/MontarPdfDialog";
 import { PERMISSIONS } from "@/constants/permissions";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -31,6 +32,7 @@ interface OrdemServicoRow extends ServicoApi {
   clienteNome: string;
   veiculoDescricao: string;
   valorTotal: number;
+  actionsPdf?: undefined;
 }
 
 function getclienteNome(servico: ServicoApi) {
@@ -57,8 +59,9 @@ export default function OS() {
   const [ordens, setOrdens] = useState<ServicoApi[]>([]);
   const [veiculos, setVeiculos] = useState<VeiculoApi[]>([]);
   const [selectedOS, setSelectedOS] = useState<OrdemServicoRow | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isDialogPdfOpen, setIsDialogPdfOpen] = useState<boolean>(false);
+  const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const canCreate = hasPermission(PERMISSIONS.OS.CREATE);
   const canEdit = hasPermission(PERMISSIONS.OS.EDIT);
@@ -154,7 +157,34 @@ export default function OS() {
       label: "Valor Total",
       render: (value: number) => formatCurrency(value),
     },
+    {
+      key: "actionsPdf" as const,
+      label: "Gerar PDF",
+      render: (_value: unknown, row: OrdemServicoRow) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-full mx-auto flex"
+          onClick={event => handleClickArquivo(event, row)}
+        >
+          <FilePlus className="size-6" />
+        </Button>
+      ),
+    },
   ];
+
+  const handleAbrirDialog = (row: OrdemServicoRow) => {
+    setSelectedOS(row);
+    setIsDialogPdfOpen(true);
+  };
+
+  const handleClickArquivo = (
+    event: MouseEvent<HTMLButtonElement>,
+    row: OrdemServicoRow
+  ) => {
+    event.stopPropagation();
+    handleAbrirDialog(row);
+  };
 
   const handleRowClick = (row: OrdemServicoRow) => {
     setSelectedOS(row);
@@ -354,6 +384,11 @@ export default function OS() {
           )}
         </DialogContent>
       </Dialog>
+      <DialogPdf
+        open={isDialogPdfOpen}
+        ordem={selectedOS}
+        onOpenChange={setIsDialogPdfOpen}
+      />
     </div>
   );
 }

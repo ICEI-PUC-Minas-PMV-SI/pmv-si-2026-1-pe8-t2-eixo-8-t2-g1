@@ -20,6 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { setupInterceptors } from "./api/interceptor";
 import { PERMISSIONS } from "@/constants/permissions";
 import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -36,7 +37,6 @@ import EditarOS from "@/pages/os/EditarOSPage";
 import EditarPessoaPage from "@/pages/pessoas/EditarPessoaPage";
 import EditarProduto from "@/pages/produtos/editarProdutoPage";
 import EditarVeiculoPage from "@/pages/veiculos/EditarVeiculoPage";
-
 const Dashboard = lazy(() => import("@/pages/dashboard/DashboardPage"));
 const Relatorios = lazy(() => import("@/pages/relatorios/RelatoriosPage"));
 const TEMPO_INATIVIDADE = 10 * 60 * 1000;
@@ -83,6 +83,12 @@ function useAutoLogout(onLogout: () => void, isActive: boolean) {
   }, [isActive, onLogout]);
 }
 
+function useInterceptionLogout(handleLogout: () => void) {
+  useEffect(() => {
+    return setupInterceptors(handleLogout);
+  }, [handleLogout]);
+}
+
 function getDefaultPath(hasPermission: (permission: string) => boolean) {
   if (hasPermission(PERMISSIONS.RELATORIOS.VIEW)) {
     return "/";
@@ -117,6 +123,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   const navigate = useNavigate();
 
   useAutoLogout(onLogout, !!user);
+  useInterceptionLogout(onLogout);
 
   if (!user) {
     return null;

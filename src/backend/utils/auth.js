@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-const JWT_EXPIRES_IN_SECONDS = Number(process.env.JWT_EXPIRES_IN_SECONDS || 86400);
+const JWT_EXPIRES_IN_SECONDS = Number(process.env.JWT_EXPIRES_IN_SECONDS || 14400);
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "auth_token";
 
 function base64UrlEncode(value) {
