@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
-import { empresaApi, smtpApi } from '@/api';
+import { empresaApi, uploadLogotipo, smtpApi } from '@/api';
 import type { EmpresaApi, SmtpApi } from '@/api/types';
 
 export default function Configuracoes() {
@@ -29,6 +31,11 @@ export default function Configuracoes() {
   const [smtpEditando, setSmtpEditando] = useState<SmtpApi | null>(null);
   const [empresaEditando, setEmpresaEditando] = useState<EmpresaApi | null>(null);
 
+  // State para upload de logotipo
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoArquivo, setLogoArquivo] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
   // Carregar dados ao montar o componente
   useEffect(() => {
     loadAllData();
@@ -42,7 +49,6 @@ export default function Configuracoes() {
       // Carregar SMTP
       try {
         const smtpResponse = await smtpApi.getAll();
-        // A API retorna um objeto único ou um array com um objeto
         const smtpData = Array.isArray(smtpResponse) ? smtpResponse[0] : smtpResponse;
         if (smtpData) {
           setSmtp(smtpData);
@@ -55,11 +61,15 @@ export default function Configuracoes() {
       // Carregar Empresa
       try {
         const empresaResponse = await empresaApi.getAll();
-        // A API retorna um objeto único ou um array com um objeto
         const empresaData = Array.isArray(empresaResponse) ? empresaResponse[0] : empresaResponse;
         if (empresaData) {
           setEmpresa(empresaData);
           setEmpresaEditando({ ...empresaData });
+          // Carregar preview do logotipo se existir
+          if (empresaData.logotipo) {
+            // Usar a URL do logotipo armazenada no banco
+            setLogoPreview(empresaData.logotipo);
+          }
         }
       } catch (error) {
         console.log('Empresa não configurada ainda');
@@ -70,6 +80,65 @@ export default function Configuracoes() {
     } finally {
       setLoadingSmtp(false);
       setLoadingEmpresa(false);
+    }
+  };
+
+  // Handler para seleção de arquivo de logotipo
+  const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem');
+      return;
+    }
+
+    // Validar tamanho (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem não pode ser maior que 5MB');
+      return;
+    }
+
+    // Armazenar arquivo e mostrar preview
+    setLogoArquivo(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setLogoPreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload do logotipo (chamado antes de salvar empresa)
+  const handleUploadLogotipo = async (): Promise<string | null> => {
+    if (!logoArquivo) {
+      // Se não há arquivo novo, retorna o logotipo atual
+      return empresaEditando?.logotipo || null;
+    }
+
+    try {
+      setUploadingLogo(true);
+      const logoPath = await uploadLogotipo(logoArquivo);
+      toast.success('Logotipo enviado com sucesso!');
+      return logoPath;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Erro ao fazer upload do logotipo';
+      toast.error(message);
+      return null;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  // Remover logotipo
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setLogoArquivo(null);
+    if (empresaEditando) {
+      setEmpresaEditando({
+        ...empresaEditando,
+        logotipo: '',
+      });
     }
   };
 
@@ -108,10 +177,10 @@ export default function Configuracoes() {
       }
 
       setSmtp(smtpSalvo);
-      setSmtpEditando(smtpSalvo);
+      setSmtpEditando({ ...smtpSalvo });
       toast.success('Configurações SMTP salvas com sucesso!');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao salvar configurações SMTP';
+      const message = error.response?.data?.message || 'Erro ao salvar SMTP';
       toast.error(message);
     } finally {
       setLoadingSmtp(false);
@@ -126,33 +195,14 @@ export default function Configuracoes() {
     }
   };
 
-  const handleSmtpChange = (field: keyof SmtpApi, value: any) => {
-    if (smtpEditando) {
-      setSmtpEditando((prev) => ({
-        ...prev!,
-        [field]: value,
-      }));
-    }
-  };
-
   // Handlers para Empresa
   const handleSaveEmpresa = async () => {
     if (!empresaEditando) return;
 
-    if (
-      !empresaEditando.nome ||
-      !empresaEditando.apelido ||
-      !empresaEditando.cnpj ||
-      !empresaEditando.email ||
-      !empresaEditando.telefone ||
-      !empresaEditando.logradouro ||
-      !empresaEditando.numero ||
-      !empresaEditando.bairro ||
-      !empresaEditando.cidade ||
-      !empresaEditando.uf ||
-      !empresaEditando.cep ||
-      !empresaEditando.pais
-    ) {
+    if (!empresaEditando.nome || !empresaEditando.apelido || !empresaEditando.cnpj || 
+        !empresaEditando.email || !empresaEditando.telefone || !empresaEditando.logradouro || 
+        !empresaEditando.numero || !empresaEditando.bairro || !empresaEditando.cidade || 
+        !empresaEditando.uf || !empresaEditando.cep || !empresaEditando.pais) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -160,6 +210,19 @@ export default function Configuracoes() {
     try {
       setLoadingEmpresa(true);
 
+      // 1. Fazer upload do logotipo se houver arquivo novo
+      let logoPath = empresaEditando.logotipo || '';
+      if (logoArquivo) {
+        const uploadedPath = await handleUploadLogotipo();
+        if (uploadedPath) {
+          logoPath = uploadedPath;
+        } else {
+          // Se falhar no upload, não continua
+          return;
+        }
+      }
+
+      // 2. Salvar empresa com o caminho do logotipo
       let empresaSalva: EmpresaApi;
 
       if (empresa) {
@@ -168,12 +231,12 @@ export default function Configuracoes() {
           nome: empresaEditando.nome,
           apelido: empresaEditando.apelido,
           cnpj: empresaEditando.cnpj,
-          logotipo: empresaEditando.logotipo,
+          logotipo: logoPath,
           email: empresaEditando.email,
           telefone: empresaEditando.telefone,
           logradouro: empresaEditando.logradouro,
           numero: empresaEditando.numero,
-          complemente: empresaEditando.complemente,
+          complemente: empresaEditando.complemente || '',
           bairro: empresaEditando.bairro,
           cidade: empresaEditando.cidade,
           uf: empresaEditando.uf,
@@ -186,12 +249,12 @@ export default function Configuracoes() {
           nome: empresaEditando.nome,
           apelido: empresaEditando.apelido,
           cnpj: empresaEditando.cnpj,
-          logotipo: empresaEditando.logotipo,
+          logotipo: logoPath,
           email: empresaEditando.email,
           telefone: empresaEditando.telefone,
           logradouro: empresaEditando.logradouro,
           numero: empresaEditando.numero,
-          complemente: empresaEditando.complemente,
+          complemente: empresaEditando.complemente || '',
           bairro: empresaEditando.bairro,
           cidade: empresaEditando.cidade,
           uf: empresaEditando.uf,
@@ -201,10 +264,14 @@ export default function Configuracoes() {
       }
 
       setEmpresa(empresaSalva);
-      setEmpresaEditando(empresaSalva);
+      setEmpresaEditando({ ...empresaSalva });
+      setLogoArquivo(null); // Limpar arquivo após salvar
+      if (empresaSalva.logotipo) {
+        setLogoPreview(empresaSalva.logotipo);
+      }
       toast.success('Dados da empresa salvos com sucesso!');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao salvar dados da empresa';
+      const message = error.response?.data?.message || 'Erro ao salvar empresa';
       toast.error(message);
     } finally {
       setLoadingEmpresa(false);
@@ -214,289 +281,417 @@ export default function Configuracoes() {
   const handleCancelEmpresa = () => {
     if (empresa) {
       setEmpresaEditando({ ...empresa });
+      if (empresa.logotipo) {
+        setLogoPreview(empresa.logotipo);
+      }
     } else {
       setEmpresaEditando(null);
+      setLogoPreview(null);
     }
-  };
-
-  const handleEmpresaChange = (field: keyof EmpresaApi, value: any) => {
-    if (empresaEditando) {
-      setEmpresaEditando((prev) => ({
-        ...prev!,
-        [field]: value,
-      }));
-    }
-  };
-
-  const handleEnderecoChange = (field: string, value: string) => {
-    if (empresaEditando) {
-      setEmpresaEditando((prev) => ({
-        ...prev!,
-        [field]: value,
-      }));
-    }
+    setLogoArquivo(null);
   };
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs items={[{ label: 'Dashboard' }, { label: 'Configurações' }]} />
+      <Breadcrumbs items={[{ label: 'Configurações' }]} />
 
-      {/* Header */}
-      <div>
-        <h1>Configurações</h1>
-        <p className="text-muted-foreground mt-1">Gerenciamento de configurações do sistema</p>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Configurações</h1>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="smtp" className="w-full">
+      <Tabs defaultValue="empresa" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="smtp">SMTP</TabsTrigger>
-          <TabsTrigger value="empresa">Empresa</TabsTrigger>
+          <TabsTrigger value="empresa">Dados da Empresa</TabsTrigger>
+          <TabsTrigger value="smtp">Configurações SMTP</TabsTrigger>
         </TabsList>
 
-        {/* SMTP Tab */}
-        <TabsContent value="smtp" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="font-semibold mb-6">Configuração de SMTP</h3>
-            {loadingSmtp ? (
-              <div className="text-center py-8 text-muted-foreground">Carregando...</div>
-            ) : smtpEditando ? (
+        {/* Aba: Dados da Empresa */}
+        <TabsContent value="empresa" className="space-y-6">
+          {empresaEditando ? (
+            <Card className="p-6 space-y-6">
+              {/* Upload de Logotipo */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="host">Host *</Label>
+                  <Label className="text-base font-semibold mb-2 block">Logotipo da Empresa</Label>
+                  <div className="flex gap-4 items-start">
+                    <div className="flex-1">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoSelect}
+                        disabled={loadingEmpresa || uploadingLogo}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-sm text-gray-500 mt-2">
+                        {uploadingLogo ? 'Enviando...' : 'Formatos aceitos: JPG, PNG, GIF, WebP (máximo 5MB)'}
+                      </p>
+                    </div>
+                    {logoPreview && (
+                      <div className="flex flex-col items-center gap-2">
+                        <img 
+                          src={logoPreview} 
+                          alt="Preview do logotipo" 
+                          className="w-24 h-24 object-contain border rounded"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemoveLogo}
+                          disabled={loadingEmpresa || uploadingLogo}
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados Básicos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">Nome da Empresa *</Label>
                   <Input
-                    id="host"
-                    value={smtpEditando.host}
-                    onChange={(e) => handleSmtpChange('host', e.target.value)}
-                    placeholder="smtp.gmail.com"
-                    disabled={loadingSmtp}
+                    value={empresaEditando.nome || ''}
+                    onChange={(e) =>
+                      setEmpresaEditando({
+                        ...empresaEditando,
+                        nome: e.target.value,
+                      })
+                    }
+                    disabled={loadingEmpresa}
+                    placeholder="Nome completo da empresa"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="email">E-mail *</Label>
+                  <Label className="text-base font-semibold mb-2 block">Apelido *</Label>
                   <Input
-                    id="email"
+                    value={empresaEditando.apelido || ''}
+                    onChange={(e) =>
+                      setEmpresaEditando({
+                        ...empresaEditando,
+                        apelido: e.target.value,
+                      })
+                    }
+                    disabled={loadingEmpresa}
+                    placeholder="Apelido da empresa"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">CNPJ *</Label>
+                  <Input
+                    value={empresaEditando.cnpj || ''}
+                    onChange={(e) =>
+                      setEmpresaEditando({
+                        ...empresaEditando,
+                        cnpj: e.target.value,
+                      })
+                    }
+                    disabled={loadingEmpresa}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">Email *</Label>
+                  <Input
                     type="email"
-                    value={smtpEditando.email}
-                    onChange={(e) => handleSmtpChange('email', e.target.value)}
-                    disabled={loadingSmtp}
+                    value={empresaEditando.email || ''}
+                    onChange={(e) =>
+                      setEmpresaEditando({
+                        ...empresaEditando,
+                        email: e.target.value,
+                      })
+                    }
+                    disabled={loadingEmpresa}
+                    placeholder="contato@empresa.com"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="password">Senha *</Label>
+                  <Label className="text-base font-semibold mb-2 block">Telefone *</Label>
                   <Input
-                    id="password"
-                    type="password"
-                    value={smtpEditando.senha}
-                    onChange={(e) => handleSmtpChange('senha', e.target.value)}
-                    disabled={loadingSmtp}
+                    value={empresaEditando.telefone || ''}
+                    onChange={(e) =>
+                      setEmpresaEditando({
+                        ...empresaEditando,
+                        telefone: e.target.value,
+                      })
+                    }
+                    disabled={loadingEmpresa}
+                    placeholder="(11) 0000-0000"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="porta">Porta *</Label>
+              </div>
+
+              {/* Endereço */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Endereço</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <Label className="text-base font-semibold mb-2 block">Logradouro *</Label>
                     <Input
-                      id="porta"
-                      type="number"
-                      value={smtpEditando.porta}
-                      onChange={(e) => handleSmtpChange('porta', parseInt(e.target.value))}
-                      disabled={loadingSmtp}
+                      value={empresaEditando.logradouro || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          logradouro: e.target.value,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="Rua, Avenida, etc."
                     />
                   </div>
+
                   <div>
-                    <Label htmlFor="seguranca">Segurança *</Label>
-                    <Select
-                      value={smtpEditando.seguranca}
-                      onValueChange={(value) => handleSmtpChange('seguranca', value)}
-                      disabled={loadingSmtp}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SSL">SSL</SelectItem>
-                        <SelectItem value="TLS">TLS</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-base font-semibold mb-2 block">Número *</Label>
+                    <Input
+                      value={empresaEditando.numero || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          numero: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="123"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold mb-2 block">Complemento</Label>
+                    <Input
+                      value={empresaEditando.complemente || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          complemente: e.target.value,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="Apto, Sala, etc."
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold mb-2 block">Bairro *</Label>
+                    <Input
+                      value={empresaEditando.bairro || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          bairro: e.target.value,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="Centro"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold mb-2 block">Cidade *</Label>
+                    <Input
+                      value={empresaEditando.cidade || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          cidade: e.target.value,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="São Paulo"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold mb-2 block">UF *</Label>
+                    <Input
+                      value={empresaEditando.uf || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          uf: e.target.value.toUpperCase(),
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="SP"
+                      maxLength={2}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold mb-2 block">CEP *</Label>
+                    <Input
+                      value={empresaEditando.cep || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          cep: e.target.value,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="01310-100"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-base font-semibold mb-2 block">País *</Label>
+                    <Input
+                      value={empresaEditando.pais || ''}
+                      onChange={(e) =>
+                        setEmpresaEditando({
+                          ...empresaEditando,
+                          pais: e.target.value,
+                        })
+                      }
+                      disabled={loadingEmpresa}
+                      placeholder="Brasil"
+                    />
                   </div>
                 </div>
-                <div className="flex gap-3 justify-end pt-4 border-t border-border">
-                  <Button variant="outline" onClick={handleCancelSmtp} disabled={loadingSmtp}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleSaveSmtp} disabled={loadingSmtp}>
-                    Salvar Configurações
-                  </Button>
-                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">Nenhuma configuração SMTP encontrada</div>
-            )}
-          </Card>
+
+              {/* Botões */}
+              <div className="flex gap-4 pt-6 border-t">
+                <Button
+                  onClick={handleSaveEmpresa}
+                  disabled={loadingEmpresa || uploadingLogo}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loadingEmpresa ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelEmpresa}
+                  disabled={loadingEmpresa || uploadingLogo}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <Card className="p-6">
+              <p className="text-gray-500">Nenhuma configuração de empresa encontrada</p>
+            </Card>
+          )}
         </TabsContent>
 
-        {/* Empresa Tab */}
-        <TabsContent value="empresa" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="font-semibold mb-6">Dados da Empresa</h3>
-            {loadingEmpresa ? (
-              <div className="text-center py-8 text-muted-foreground">Carregando...</div>
-            ) : empresaEditando ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nomeEmpresa">Nome da Empresa *</Label>
+        {/* Aba: SMTP */}
+        <TabsContent value="smtp" className="space-y-6">
+          {smtpEditando ? (
+            <Card className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <Label className="text-base font-semibold mb-2 block">Host SMTP *</Label>
                   <Input
-                    id="nomeEmpresa"
-                    value={empresaEditando.nome}
-                    onChange={(e) => handleEmpresaChange('nome', e.target.value)}
-                    disabled={loadingEmpresa}
+                    value={smtpEditando.host || ''}
+                    onChange={(e) =>
+                      setSmtpEditando({
+                        ...smtpEditando,
+                        host: e.target.value,
+                      })
+                    }
+                    disabled={loadingSmtp}
+                    placeholder="smtp.gmail.com"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="apelidoEmpresa">Apelido *</Label>
+                  <Label className="text-base font-semibold mb-2 block">Email *</Label>
                   <Input
-                    id="apelidoEmpresa"
-                    value={empresaEditando.apelido}
-                    onChange={(e) => handleEmpresaChange('apelido', e.target.value)}
-                    disabled={loadingEmpresa}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cnpj">CNPJ *</Label>
-                  <Input
-                    id="cnpj"
-                    value={empresaEditando.cnpj}
-                    onChange={(e) => handleEmpresaChange('cnpj', e.target.value)}
-                    placeholder="12.345.678/0001-90"
-                    disabled={loadingEmpresa}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="logotipo">Logotipo</Label>
-                  <Input
-                    id="logotipo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleEmpresaChange('logotipo', e.target.value)}
-                    disabled={loadingEmpresa}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="emailEmpresa">E-mail *</Label>
-                  <Input
-                    id="emailEmpresa"
                     type="email"
-                    value={empresaEditando.email}
-                    onChange={(e) => handleEmpresaChange('email', e.target.value)}
-                    disabled={loadingEmpresa}
+                    value={smtpEditando.email || ''}
+                    onChange={(e) =>
+                      setSmtpEditando({
+                        ...smtpEditando,
+                        email: e.target.value,
+                      })
+                    }
+                    disabled={loadingSmtp}
+                    placeholder="noreply@empresa.com"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="telefoneEmpresa">Telefone *</Label>
+                  <Label className="text-base font-semibold mb-2 block">Senha *</Label>
                   <Input
-                    id="telefoneEmpresa"
-                    value={empresaEditando.telefone}
-                    onChange={(e) => handleEmpresaChange('telefone', e.target.value)}
-                    placeholder="(11) 3000-0000"
-                    disabled={loadingEmpresa}
+                    type="password"
+                    value={smtpEditando.senha || ''}
+                    onChange={(e) =>
+                      setSmtpEditando({
+                        ...smtpEditando,
+                        senha: e.target.value,
+                      })
+                    }
+                    disabled={loadingSmtp}
+                    placeholder="••••••••"
                   />
                 </div>
 
-                {/* Endereço */}
-                <div className="pt-4 border-t border-border">
-                  <h4 className="font-semibold mb-4">Endereço</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <Label htmlFor="logradouro">Logradouro *</Label>
-                      <Input
-                        id="logradouro"
-                        value={empresaEditando.logradouro}
-                        onChange={(e) => handleEnderecoChange('logradouro', e.target.value)}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="numero">Número *</Label>
-                      <Input
-                        id="numero"
-                        value={empresaEditando.numero}
-                        onChange={(e) => handleEnderecoChange('numero', e.target.value)}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="complemento">Complemento</Label>
-                      <Input
-                        id="complemento"
-                        value={empresaEditando.complemente}
-                        onChange={(e) => handleEnderecoChange('complemente', e.target.value)}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="bairro">Bairro *</Label>
-                      <Input
-                        id="bairro"
-                        value={empresaEditando.bairro}
-                        onChange={(e) => handleEnderecoChange('bairro', e.target.value)}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cidade">Cidade *</Label>
-                      <Input
-                        id="cidade"
-                        value={empresaEditando.cidade}
-                        onChange={(e) => handleEnderecoChange('cidade', e.target.value)}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="uf">UF *</Label>
-                      <Input
-                        id="uf"
-                        maxLength={2}
-                        value={empresaEditando.uf}
-                        onChange={(e) => handleEnderecoChange('uf', e.target.value.toUpperCase())}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cep">CEP *</Label>
-                      <Input
-                        id="cep"
-                        value={empresaEditando.cep}
-                        onChange={(e) => handleEnderecoChange('cep', e.target.value)}
-                        placeholder="01310-100"
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="pais">País *</Label>
-                      <Input
-                        id="pais"
-                        value={empresaEditando.pais}
-                        onChange={(e) => handleEnderecoChange('pais', e.target.value)}
-                        disabled={loadingEmpresa}
-                      />
-                    </div>
-                  </div>
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">Porta *</Label>
+                  <Input
+                    type="number"
+                    value={smtpEditando.porta || ''}
+                    onChange={(e) =>
+                      setSmtpEditando({
+                        ...smtpEditando,
+                        porta: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    disabled={loadingSmtp}
+                    placeholder="587"
+                  />
                 </div>
 
-                <div className="flex gap-3 justify-end pt-4 border-t border-border">
-                  <Button variant="outline" onClick={handleCancelEmpresa} disabled={loadingEmpresa}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleSaveEmpresa} disabled={loadingEmpresa}>
-                    Salvar Dados
-                  </Button>
+                <div className="md:col-span-2">
+                  <Label className="text-base font-semibold mb-2 block">Segurança *</Label>
+                  <Select
+                    value={smtpEditando.seguranca || ''}
+                    onValueChange={(value) =>
+                      setSmtpEditando({
+                        ...smtpEditando,
+                        seguranca: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger disabled={loadingSmtp}>
+                      <SelectValue placeholder="Selecione a segurança" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SSL">SSL</SelectItem>
+                      <SelectItem value="TLS">TLS</SelectItem>
+                      <SelectItem value="Nenhuma">Nenhuma</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">Nenhuma configuração de empresa encontrada</div>
-            )}
-          </Card>
+
+              {/* Botões */}
+              <div className="flex gap-4 pt-6 border-t">
+                <Button
+                  onClick={handleSaveSmtp}
+                  disabled={loadingSmtp}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loadingSmtp ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelSmtp}
+                  disabled={loadingSmtp}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <Card className="p-6">
+              <p className="text-gray-500">Nenhuma configuração SMTP encontrada</p>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

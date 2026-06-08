@@ -1,5 +1,8 @@
 const express = require("express");
-const { Empresa, } = require("../models");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const { Empresa } = require("../models");
 const { isIntegerGreaterThanZero } = require("../utils/utils");
 const autenticarCookie = require("../middlewares/auth");
 const {
@@ -13,6 +16,46 @@ const {
 } = require("../utils/auth");
 
 const router = express.Router();
+
+// Configurar multer para upload de arquivos
+const uploadsDir = path.join(__dirname, "../uploads");
+
+// Criar diretório se não existir
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        // Gerar nome único para o arquivo
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        const name = path.basename(file.originalname, ext);
+        cb(null, `logo-${uniqueSuffix}${ext}`);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    // Aceitar apenas imagens
+    const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+    if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error("Apenas arquivos de imagem são permitidos (JPEG, PNG, GIF, WebP)"));
+    }
+};
+
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB
+    }
+});
 
 // GET - Obter dados da empresa (sempre retorna o primeiro registro)
 router.get("/", async (req, res) => {
@@ -29,6 +72,38 @@ router.get("/", async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             message: "Erro interno ao buscar dados da empresa"
+        });
+    }
+});
+
+// POST - Upload de logotipo
+router.post("/upload-logo", upload.single("logo"), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Nenhum arquivo foi enviado"
+            });
+        }
+
+        // Retornar caminho relativo do arquivo
+        const logoPath = `/uploads/${req.file.filename}`;
+
+        return res.json({
+            message: "Logotipo enviado com sucesso",
+            logoPath,
+            filename: req.file.filename
+        });
+    } catch (error) {
+        if (error instanceof multer.MulterError) {
+            if (error.code === "LIMIT_FILE_SIZE") {
+                return res.status(400).json({
+                    message: "Arquivo muito grande. Máximo 5MB"
+                });
+            }
+        }
+
+        return res.status(500).json({
+            message: "Erro ao fazer upload do logotipo"
         });
     }
 });
@@ -53,11 +128,11 @@ router.post("/", async (req, res) => {
             pais
         } = req.body;
 
-        // Validar campos obrigatórios
-        if (!nome || !apelido || !cnpj || !logotipo || !email || !telefone ||
-            !logradouro || !numero || !complemente || !bairro || !cidade || !uf || !cep || !pais) {
+        // Validar campos obrigatórios (logotipo agora é opcional)
+        if (!nome || !apelido || !cnpj || !email || !telefone ||
+            !logradouro || !numero || !bairro || !cidade || !uf || !cep || !pais) {
             return res.status(400).json({
-                message: "Todos os campos são obrigatórios"
+                message: "Todos os campos obrigatórios devem ser preenchidos"
             });
         }
 
@@ -75,12 +150,12 @@ router.post("/", async (req, res) => {
             nome,
             apelido,
             cnpj,
-            logotipo,
+            logotipo: logotipo || "",
             email,
             telefone,
             logradouro,
             numero,
-            complemente,
+            complemente: complemente || "",
             bairro,
             cidade,
             uf,
