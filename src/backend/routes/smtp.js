@@ -17,7 +17,9 @@ const router = express.Router();
 // GET - Obter configurações SMTP (sempre retorna o primeiro registro)
 router.get("/", async (req, res) => {
     try {
-        const smtp = await Smtp.findByPk(1);
+        const smtp = await Smtp.findByPk(1, {
+            attributes: { exclude: ['senha'] }
+        });
 
         if (!smtp) {
             return res.status(404).json({

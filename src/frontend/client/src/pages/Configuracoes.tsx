@@ -151,7 +151,7 @@ export default function Configuracoes() {
   const handleSaveSmtp = async () => {
     if (!smtpEditando) return;
 
-    if (!smtpEditando.host || !smtpEditando.email || !smtpEditando.senha || !smtpEditando.porta || !smtpEditando.seguranca) {
+    if (!smtpEditando.host || !smtpEditando.email || !smtpEditando.porta || !smtpEditando.seguranca) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -634,7 +634,7 @@ export default function Configuracoes() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold mb-2 block">Senha *</Label>
+                  <Label className="text-base font-semibold mb-2 block">Senha</Label>
                   <Input
                     type="password"
                     value={smtpEditando.senha || ''}
@@ -645,7 +645,7 @@ export default function Configuracoes() {
                       })
                     }
                     disabled={loadingSmtp}
-                    placeholder="••••••••"
+                    placeholder=""
                   />
                 </div>
 
