@@ -21,6 +21,7 @@ const relatorioVazio: RelatoriosApi = {
   osStatus: [],
   topClientes: [],
   produtosEstoque: [],
+  saidaMediaDiaria: [],
   faturamento: [],
   top5Produtos: [],
   resumo: {
@@ -42,6 +43,13 @@ function formatQuantidade(value: number) {
     maximumFractionDigits: 2,
   }).format(value);
 }
+
+const estoqueStatusColors = {
+  Crítico: 'bg-red-100 text-red-800',
+  Atenção: 'bg-yellow-100 text-yellow-800',
+  Ok: 'bg-green-100 text-green-800',
+  'Sem mínimo definido': 'bg-gray-100 text-gray-700',
+} as const;
 
 export default function Relatorios() {
   const [relatorioData, setRelatorioData] = useState<RelatoriosApi>(relatorioVazio);
@@ -95,6 +103,8 @@ export default function Relatorios() {
       </div>
     );
   }
+
+  console.log(relatorioData["saidaMediaDiaria"])
 
   return (
     <div className="space-y-6">
@@ -232,24 +242,72 @@ export default function Relatorios() {
               </tr>
             </thead>
             <tbody>
-              {relatorioData.produtosEstoque.map((produto, index) => {
-                const status = produto.estoque < produto.minimo ? 'Baixo' : 'Normal';
-                const statusColor =
-                  status === 'Baixo' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-
-                return (
+              {relatorioData.produtosEstoque.map((produto, index) => (
                   <tr key={produto.produto} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}>
                     <td className="px-4 py-2">{produto.produto}</td>
                     <td className="px-4 py-2">{formatQuantidade(produto.estoque)}</td>
-                    <td className="px-4 py-2">{formatQuantidade(produto.minimo)}</td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
-                        {status}
+                      {produto.minimo === null
+                        ? 'Não definido'
+                        : formatQuantidade(produto.minimo)}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${estoqueStatusColors[produto.status]}`}>
+                        {produto.status}
                       </span>
                     </td>
                   </tr>
-                );
-              })}
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    
+      <Card className="p-6">
+        <h3>Saída Média Diária</h3>
+        <p className="text-sm text-muted-foreground mt-1 mb-4">
+          Produtos com maior saída média nos últimos 30 dias corridos
+        </p>
+
+        <div className="border border-border rounded-lg overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-secondary">
+              <tr>
+                <th className="px-4 py-2 text-left font-semibold">Produto</th>
+                <th className="px-4 py-2 text-left font-semibold">Média Diária</th>
+                <th className="px-4 py-2 text-left font-semibold">Saída no Período</th>
+                <th className="px-4 py-2 text-left font-semibold">Estoque Atual</th>
+                <th className="px-4 py-2 text-left font-semibold">Dias de Estoque</th>
+                <th className="px-4 py-2 text-left font-semibold">Estoque Mínimo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {relatorioData.saidaMediaDiaria.sort((a: any, b: any) => a.diasDeEstoque - b.diasDeEstoque).map((produto, index) => (
+                <tr
+                  key={produto.idProduto}
+                  className={index % 2 === 0 ? 'bg-white' : 'bg-secondary/20'}
+                >
+                  <td className="px-4 py-2">{produto.produto}</td>
+                  <td className="px-4 py-2 font-medium">
+                    {formatQuantidade(produto.mediaDiaria)} un/dia
+                  </td>
+                  <td className="px-4 py-2">
+                    {formatQuantidade(produto.quantidadeTotal)} unidades em{' '}
+                    {produto.periodo.dias} dias
+                  </td>
+                  <td className="px-4 py-2">
+                    {formatQuantidade(produto.estoqueAtual)}
+                  </td>
+                  <td className="px-4 py-2">
+                    {formatQuantidade(produto.diasDeEstoque)}
+                  </td>
+                  <td className="px-4 py-2">
+                    {produto.estoqueMinimo === null
+                      ? 'Não definido'
+                      : formatQuantidade(produto.estoqueMinimo)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

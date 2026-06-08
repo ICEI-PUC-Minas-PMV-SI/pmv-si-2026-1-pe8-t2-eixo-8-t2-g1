@@ -108,6 +108,11 @@ export default function Produtos() {
       key: "estoqueAtual" as const,
       label: "Estoque",
     },
+    {
+      key: "estoqueMinimo" as const,
+      label: "Estoque Mínimo",
+      render: (value: number | null) => value ?? "Não definido",
+    },
   ];
 
   return (

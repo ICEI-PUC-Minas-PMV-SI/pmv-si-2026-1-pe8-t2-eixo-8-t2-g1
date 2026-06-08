@@ -36,6 +36,10 @@ function toProdutoResponse(produto) {
     ...produtoJson,
     preco: Number(produtoJson.preco),
     estoqueAtual: Number(produtoJson.estoqueAtual),
+    estoqueMinimo:
+      produtoJson.estoqueMinimo === null
+        ? null
+        : Number(produtoJson.estoqueMinimo),
   };
 }
 
@@ -47,6 +51,18 @@ function isValidMoney(value) {
 function isValidStock(value) {
   const number = Number(value);
   return Number.isInteger(number) && number >= 0 && number < 100000000;
+}
+
+function normalizeOptionalStock(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === "") {
+    return null;
+  }
+
+  return isValidStock(value) ? Number(value) : Number.NaN;
 }
 
 function isNonEmptyString(value) {
@@ -148,6 +164,7 @@ router.post("/", async (req, res) => {
       codigoSku,
       descricao,
       estoqueAtual,
+      estoqueMinimo,
       idCategoria,
       idFornecedor,
       idMarca,
@@ -194,6 +211,14 @@ router.post("/", async (req, res) => {
       });
     }
 
+    const estoqueMinimoNormalizado = normalizeOptionalStock(estoqueMinimo);
+
+    if (Number.isNaN(estoqueMinimoNormalizado)) {
+      return res.status(400).json({
+        message: "estoqueMinimo deve conter um valor inteiro valido",
+      });
+    }
+
     const referenceError = await validateReferences(references);
 
     if (referenceError) {
@@ -224,6 +249,7 @@ router.post("/", async (req, res) => {
       tipoItem: tipoItemNormalizado,
       preco: Number(preco),
       estoqueAtual: estoqueAtual === undefined ? 0 : Number(estoqueAtual),
+      estoqueMinimo: estoqueMinimoNormalizado ?? null,
     });
     const produtoCriado = await findProdutoById(produto.id);
 
@@ -250,7 +276,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+async function updateProduto(req, res) {
   try {
     const id = Number(req.params.id);
 
@@ -353,6 +379,18 @@ router.put("/:id", async (req, res) => {
       values.estoqueAtual = Number(req.body.estoqueAtual);
     }
 
+    if (req.body.estoqueMinimo !== undefined) {
+      const estoqueMinimo = normalizeOptionalStock(req.body.estoqueMinimo);
+
+      if (Number.isNaN(estoqueMinimo)) {
+        return res.status(400).json({
+          message: "estoqueMinimo deve conter um valor inteiro valido",
+        });
+      }
+
+      values.estoqueMinimo = estoqueMinimo;
+    }
+
     if (req.body.descricao !== undefined) {
       values.descricao = isNonEmptyString(req.body.descricao)
         ? req.body.descricao.trim()
@@ -383,7 +421,10 @@ router.put("/:id", async (req, res) => {
       message: "Erro interno ao atualizar produto",
     });
   }
-});
+}
+
+router.put("/:id", updateProduto);
+router.patch("/:id", updateProduto);
 
 router.delete("/:id", async (req, res) => {
   try {

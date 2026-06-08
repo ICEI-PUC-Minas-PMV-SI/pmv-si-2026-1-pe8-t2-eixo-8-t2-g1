@@ -84,6 +84,13 @@ const Produto = sequelize.define(
       defaultValue: 0,
       field: "quantidade",
     },
+
+    estoqueMinimo: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+      field: "estoque_minimo",
+    },
   },
   {
     tableName: "produtos",

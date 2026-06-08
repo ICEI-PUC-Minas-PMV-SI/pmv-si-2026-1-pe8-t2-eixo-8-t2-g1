@@ -58,6 +58,7 @@ function toProdutoPayload(produto: ProdutoApi): ProdutoPayload {
     tipoItem: produto.tipoItem,
     preco: Number(produto.preco),
     estoqueAtual: Number(produto.estoqueAtual),
+    estoqueMinimo: produto.estoqueMinimo,
   };
 }
 
@@ -329,6 +330,26 @@ export default function EditarProdutoForm({
                     Number(event.target.value),
                   )
                 }
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="estoqueMinimo">Estoque Mínimo</Label>
+              <Input
+                id="estoqueMinimo"
+                type="number"
+                min="0"
+                step="1"
+                value={formData.estoqueMinimo ?? ""}
+                onChange={(event) =>
+                  handleInputChange(
+                    "estoqueMinimo",
+                    event.target.value === ""
+                      ? null
+                      : Number(event.target.value),
+                  )
+                }
+                placeholder="Não definido"
               />
             </div>
           </div>

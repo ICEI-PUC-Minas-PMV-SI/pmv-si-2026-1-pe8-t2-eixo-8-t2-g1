@@ -734,7 +734,8 @@
                 "idFornecedor": 41,
                 "tipoItem": "Produto",
                 "preco": 65.5,
-                "estoqueAtual": 12
+                "estoqueAtual": 12,
+                "estoqueMinimo": 8
               }
             }
           }
@@ -785,6 +786,42 @@
       },
       "put": {
         "summary": "Atualiza um produto",
+        "tags": [
+          "Produtos"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProdutoInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Produto"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualiza parcialmente um produto",
         "tags": [
           "Produtos"
         ],
@@ -1743,8 +1780,24 @@
                     {
                       "produto": "Oleo 5W30",
                       "estoque": 12,
-                      "minimo": 40,
-                      "preco": 65.5
+                      "minimo": 8,
+                      "preco": 65.5,
+                      "status": "Ok"
+                    }
+                  ],
+                  "saidaMediaDiaria": [
+                    {
+                      "idProduto": 1,
+                      "produto": "Oleo 5W30",
+                      "quantidadeTotal": 72,
+                      "mediaDiaria": 2.4,
+                      "periodo": {
+                        "inicio": "2026-05-10",
+                        "fim": "2026-06-08",
+                        "dias": 30
+                      },
+                      "estoqueAtual": 12,
+                      "estoqueMinimo": 8
                     }
                   ],
                   "faturamento": [
@@ -2198,6 +2251,12 @@
             "type": "number",
             "format": "float",
             "example": 12
+          },
+          "estoqueMinimo": {
+            "type": "integer",
+            "nullable": true,
+            "default": null,
+            "example": 8
           }
         }
       },
@@ -2280,6 +2339,7 @@
           "osStatus",
           "topClientes",
           "produtosEstoque",
+          "saidaMediaDiaria",
           "faturamento",
           "resumo"
         ],
@@ -2300,6 +2360,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RelatorioProdutoEstoque"
+            }
+          },
+          "saidaMediaDiaria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioSaidaMediaDiaria"
             }
           },
           "faturamento": {
@@ -2374,14 +2440,90 @@
             "example": 12
           },
           "minimo": {
-            "type": "number",
-            "format": "float",
-            "example": 40
+            "type": "integer",
+            "nullable": true,
+            "example": 8
           },
           "preco": {
             "type": "number",
             "format": "float",
             "example": 65.5
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Crítico",
+              "Atenção",
+              "Ok",
+              "Sem mínimo definido"
+            ],
+            "example": "Ok"
+          }
+        }
+      },
+      "RelatorioSaidaMediaDiaria": {
+        "type": "object",
+        "required": [
+          "idProduto",
+          "produto",
+          "quantidadeTotal",
+          "mediaDiaria",
+          "periodo",
+          "estoqueAtual",
+          "estoqueMinimo"
+        ],
+        "properties": {
+          "idProduto": {
+            "type": "integer",
+            "example": 1
+          },
+          "produto": {
+            "type": "string",
+            "example": "Oleo 5W30"
+          },
+          "quantidadeTotal": {
+            "type": "number",
+            "format": "float",
+            "example": 72
+          },
+          "mediaDiaria": {
+            "type": "number",
+            "format": "float",
+            "example": 2.4
+          },
+          "periodo": {
+            "type": "object",
+            "required": [
+              "inicio",
+              "fim",
+              "dias"
+            ],
+            "properties": {
+              "inicio": {
+                "type": "string",
+                "format": "date",
+                "example": "2026-05-10"
+              },
+              "fim": {
+                "type": "string",
+                "format": "date",
+                "example": "2026-06-08"
+              },
+              "dias": {
+                "type": "integer",
+                "example": 30
+              }
+            }
+          },
+          "estoqueAtual": {
+            "type": "number",
+            "format": "float",
+            "example": 12
+          },
+          "estoqueMinimo": {
+            "type": "integer",
+            "nullable": true,
+            "example": 8
           }
         }
       },

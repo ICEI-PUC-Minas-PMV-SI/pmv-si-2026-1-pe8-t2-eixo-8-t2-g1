@@ -79,6 +79,7 @@ export interface ProdutoApi {
   tipoItem: string;
   preco: number | string;
   estoqueAtual: number | string;
+  estoqueMinimo: number | null;
   marca?: MarcaApi | null;
   categoria?: CategoriaApi | null;
   fornecedor?: FornecedorApi | null;
@@ -94,6 +95,7 @@ export interface ProdutoPayload {
   tipoItem: string;
   preco: number;
   estoqueAtual?: number;
+  estoqueMinimo?: number | null;
 }
 
 export interface RelatorioOsStatusApi {
@@ -110,8 +112,23 @@ export interface RelatorioTopClienteApi {
 export interface RelatorioProdutoEstoqueApi {
   produto: string;
   estoque: number;
-  minimo: number;
+  minimo: number | null;
   preco: number;
+  status: "Crítico" | "Atenção" | "Ok" | "Sem mínimo definido";
+}
+
+export interface RelatorioSaidaMediaDiariaApi {
+  idProduto: number;
+  produto: string;
+  quantidadeTotal: number;
+  mediaDiaria: number;
+  periodo: {
+    inicio: string;
+    fim: string;
+    dias: number;
+  };
+  estoqueAtual: number;
+  estoqueMinimo: number | null;
 }
 
 export interface RelatorioFaturamentoApi {
@@ -136,6 +153,7 @@ export interface RelatoriosApi {
   osStatus: RelatorioOsStatusApi[];
   topClientes: RelatorioTopClienteApi[];
   produtosEstoque: RelatorioProdutoEstoqueApi[];
+  saidaMediaDiaria: RelatorioSaidaMediaDiariaApi[];
   faturamento: RelatorioFaturamentoApi[];
   top5Produtos: RelatorioTop5ProdutosApi[];
   resumo: RelatorioResumoApi;

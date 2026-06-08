@@ -29,6 +29,7 @@ export type {
   RelatorioFaturamentoApi,
   RelatorioOsStatusApi,
   RelatorioProdutoEstoqueApi,
+  RelatorioSaidaMediaDiariaApi,
   RelatorioResumoApi,
   RelatorioTopClienteApi,
   RelatoriosApi,

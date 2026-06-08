@@ -37,6 +37,7 @@ const initialFormData: ProdutoPayload = {
   tipoItem: "Produto",
   preco: 0,
   estoqueAtual: 0,
+  estoqueMinimo: null,
 };
 
 export default function ProdutoForm({
@@ -235,7 +236,7 @@ export default function ProdutoForm({
       <div>
         <h3 className="font-semibold mb-4">Preço e Estoque</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="preco">Preço (R$) *</Label>
             <Input
@@ -265,6 +266,26 @@ export default function ProdutoForm({
                   Number(event.target.value),
                 )
               }
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="estoqueMinimo">Estoque Mínimo</Label>
+            <Input
+              id="estoqueMinimo"
+              type="number"
+              min="0"
+              step="1"
+              value={formData.estoqueMinimo ?? ""}
+              onChange={(event) =>
+                handleInputChange(
+                  "estoqueMinimo",
+                  event.target.value === ""
+                    ? null
+                    : Number(event.target.value),
+                )
+              }
+              placeholder="Não definido"
             />
           </div>
         </div>

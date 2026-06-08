@@ -7,6 +7,7 @@ const {
   Servico,
   ItemServico,
 } = require("../models");
+const ensureProdutoFields = require("../database/migrations/ensureProdutoFields");
 
 const clientesSeed = [
   "Mariana Costa",
@@ -323,22 +324,44 @@ function getQuantidadeProduto(produtoNome, serviceIndex) {
   return 1;
 }
 
+function getEstoqueMinimoSeed(index, estoqueAtual) {
+  if (index % 7 === 0) {
+    return null;
+  }
+
+  if (index % 5 === 0) {
+    return estoqueAtual + 5;
+  }
+
+  if (index % 5 === 1) {
+    return Math.max(1, Math.ceil(estoqueAtual / 1.1));
+  }
+
+  const percentual = 0.35 + (index % 4) * 0.1;
+  return Math.max(2, Math.round(estoqueAtual * percentual));
+}
+
 async function upsertProdutos(transaction) {
   const produtos = new Map();
 
-  for (const [titulo, estoqueAtual, preco] of produtosSeed) {
+  for (const [index, [titulo, estoqueAtual, preco]] of produtosSeed.entries()) {
+    const estoqueMinimo = getEstoqueMinimoSeed(index, estoqueAtual);
     const [produto] = await Produto.findOrCreate({
       where: { titulo },
       defaults: {
         titulo,
         estoqueAtual,
+        estoqueMinimo,
         preco,
         codigoSku: `SEED-${produtos.size + 1}`,
       },
       transaction,
     });
 
-    await produto.update({ estoqueAtual, preco }, { transaction });
+    await produto.update(
+      { estoqueAtual, estoqueMinimo, preco },
+      { transaction },
+    );
     produtos.set(titulo, produto);
   }
 
@@ -494,6 +517,7 @@ async function criarServicos(veiculos, produtoMap, transaction) {
 async function main() {
   await sequelize.authenticate();
   await sequelize.sync();
+  await ensureProdutoFields(sequelize);
 
   let resumo;
 

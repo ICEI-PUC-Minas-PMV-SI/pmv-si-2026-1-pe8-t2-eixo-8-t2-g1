@@ -1,8 +1,8 @@
 const express = require("express");
 const { Cliente, Produto, Servico, Veiculo, ItemServico } = require("../models");
-const { fn, col, literal } = require("sequelize");
 
 const router = express.Router();
+const DAILY_OUTPUT_PERIOD_DAYS = 30;
 
 const STATUS_ORDER = [
   "Aberta",
@@ -23,6 +23,10 @@ function toNumber(value) {
 }
 
 function toMoney(value) {
+  return Number(toNumber(value).toFixed(2));
+}
+
+function toQuantity(value) {
   return Number(toNumber(value).toFixed(2));
 }
 
@@ -118,35 +122,50 @@ function buildMonthBuckets(totalMonths = 6) {
   });
 }
 
-function getEstoqueMinimo(produtoNome) {
-  const nome = normalizeText(produtoNome);
+function formatDateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
 
-  if (nome.includes("oleo") || nome.includes("filtro")) {
-    return 40;
+function buildDailyOutputPeriod(totalDays = DAILY_OUTPUT_PERIOD_DAYS) {
+  const end = new Date();
+  end.setUTCHours(0, 0, 0, 0);
+
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - totalDays + 1);
+
+  return {
+    dias: totalDays,
+    fim: formatDateOnly(end),
+    inicio: formatDateOnly(start),
+    start,
+    end,
+  };
+}
+
+function isWithinPeriod(value, period) {
+  const date = parseDateOnly(value);
+  return Boolean(date && date >= period.start && date <= period.end);
+}
+
+function getStockStatus(estoqueAtual, estoqueMinimo) {
+  if (estoqueMinimo === null) {
+    return "Sem mínimo definido";
   }
 
-  if (nome.includes("pastilha") || nome.includes("vela")) {
-    return 30;
+  if (estoqueAtual <= estoqueMinimo) {
+    return "Crítico";
   }
 
-  if (nome.includes("pneu")) {
-    return 16;
+  if (estoqueAtual <= Math.ceil(estoqueMinimo * 1.2)) {
+    return "Atenção";
   }
 
-  if (nome.includes("bateria")) {
-    return 8;
-  }
-
-  if (nome.includes("correia") || nome.includes("amortecedor")) {
-    return 12;
-  }
-
-  return 20;
+  return "Ok";
 }
 
 router.get("/", async (req, res) => {
   try {
-    const [clientes, servicos, produtos, veiculos, itemServico] = await Promise.all([
+    const [clientes, servicos, produtos, veiculos, itensServico] = await Promise.all([
       Cliente.findAll({
         attributes: ["id", "nomeCompleto", "dataCriacao"],
       }),
@@ -167,34 +186,20 @@ router.get("/", async (req, res) => {
         ],
       }),
       Produto.findAll({
-        order: [
-          ["estoqueAtual", "ASC"],
-          ["titulo", "ASC"],
-        ],
+        order: [["titulo", "ASC"]],
       }),
       Veiculo.findAll({
         attributes: ["id", "idCliente"],
       }),
       ItemServico.findAll({
-        attributes: [
-          "idProduto",
-          [fn("SUM", col("ItemServico.quantidade_utilizada")), "totalQuantidadeUtilizada"],
-        ],
+        attributes: ["idProduto", "quantidadeUtilizada"],
         include: [
           {
-            model: Produto,
-            as: "produto",
-            attributes: ["id", "titulo", "preco"],
+            model: Servico,
+            as: "servico",
+            attributes: ["status", "dataInicio", "dataFim"],
           },
         ],
-        group: [
-          "ItemServico.id_produto",
-          "produto.id",
-          "produto.nome",
-          "produto.preco_unitario",
-        ],
-        order: [[literal('"totalQuantidadeUtilizada"'), "DESC"]],
-        limit: 5,
       })
     ]);
 
@@ -214,6 +219,35 @@ router.get("/", async (req, res) => {
     const faturamentoPorMes = new Map(
       faturamentoMensal.map((item) => [item.key, item]),
     );
+    const produtosPorId = new Map(
+      produtos.map((produto) => [produto.id, produto]),
+    );
+    const saidaTotalPorProduto = new Map();
+    const saidaPeriodoPorProduto = new Map();
+    const periodoSaida = buildDailyOutputPeriod();
+
+    for (const item of itensServico) {
+      const quantidade = toNumber(item.quantidadeUtilizada);
+
+      saidaTotalPorProduto.set(
+        item.idProduto,
+        toNumber(saidaTotalPorProduto.get(item.idProduto)) + quantidade,
+      );
+
+      const servico = item.servico;
+      const dataMovimentacao = servico?.dataFim || servico?.dataInicio;
+
+      if (
+        servico &&
+        !isCancelada(servico.status) &&
+        isWithinPeriod(dataMovimentacao, periodoSaida)
+      ) {
+        saidaPeriodoPorProduto.set(
+          item.idProduto,
+          toNumber(saidaPeriodoPorProduto.get(item.idProduto)) + quantidade,
+        );
+      }
+    }
 
     let osConcluidas = 0;
     let valorConcluidas = 0;
@@ -262,6 +296,74 @@ router.get("/", async (req, res) => {
       (cliente) => getMonthKey(cliente.dataCriacao) === currentMonthKey,
     ).length;
     const mesAtual = faturamentoPorMes.get(currentMonthKey) || faturamentoMensal.at(-1);
+    const prioridadeEstoque = {
+      "Crítico": 0,
+      "Atenção": 1,
+      "Sem mínimo definido": 2,
+      Ok: 3,
+    };
+    const produtosEstoque = produtos
+      .map((produto) => {
+        const estoque = toNumber(produto.estoqueAtual);
+        const minimo =
+          produto.estoqueMinimo === null
+            ? null
+            : toNumber(produto.estoqueMinimo);
+
+        return {
+          produto: produto.titulo,
+          estoque,
+          minimo,
+          preco: toNumber(produto.preco),
+          status: getStockStatus(estoque, minimo),
+        };
+      })
+      .sort(
+        (a, b) =>
+          prioridadeEstoque[a.status] - prioridadeEstoque[b.status] ||
+          a.estoque - b.estoque ||
+          a.produto.localeCompare(b.produto, "pt-BR"),
+      )
+      .slice(0, 12);
+    const top5Produtos = Array.from(saidaTotalPorProduto.entries())
+      .map(([idProduto, quantidadeUtilizada]) => ({
+        produto: produtosPorId.get(idProduto)?.titulo || "Produto não informado",
+        quantidadeUtilizada: toQuantity(quantidadeUtilizada),
+      }))
+      .sort((a, b) => b.quantidadeUtilizada - a.quantidadeUtilizada)
+      .slice(0, 5);
+    const saidaMediaDiaria = produtos
+      .map((produto) => {
+        const quantidadeTotal = toQuantity(
+          saidaPeriodoPorProduto.get(produto.id),
+        );
+
+        return {
+          idProduto: produto.id,
+          produto: produto.titulo,
+          quantidadeTotal,
+          mediaDiaria: toQuantity(
+            quantidadeTotal / DAILY_OUTPUT_PERIOD_DAYS,
+          ),
+          periodo: {
+            inicio: periodoSaida.inicio,
+            fim: periodoSaida.fim,
+            dias: periodoSaida.dias,
+          },
+          estoqueAtual: toNumber(produto.estoqueAtual),
+          diasDeEstoque: parseInt(toNumber(produto.estoqueAtual) / (toQuantity(quantidadeTotal / DAILY_OUTPUT_PERIOD_DAYS))),
+          estoqueMinimo:
+            produto.estoqueMinimo === null
+              ? null
+              : toNumber(produto.estoqueMinimo),
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.quantidadeTotal - a.quantidadeTotal ||
+          a.produto.localeCompare(b.produto, "pt-BR"),
+      )
+      .slice(0, 12);
 
     return res.json({
       osStatus: Array.from(osStatus.values()).map((item) => ({
@@ -275,20 +377,13 @@ router.get("/", async (req, res) => {
           ...item,
           totalGasto: toMoney(item.totalGasto),
         })),
-      produtosEstoque: produtos.slice(0, 12).map((produto) => ({
-        produto: produto.titulo,
-        estoque: toNumber(produto.estoqueAtual),
-        minimo: getEstoqueMinimo(produto.titulo),
-        preco: toNumber(produto.preco),
-      })),
+      produtosEstoque,
+      saidaMediaDiaria,
       faturamento: faturamentoMensal.map(({ key, ...item }) => ({
         ...item,
         valor: toMoney(item.valor),
       })),
-      top5Produtos: itemServico.map((item) => ({
-        produto: item.produto.titulo,
-        quantidadeUtilizada: toNumber(item.get("totalQuantidadeUtilizada")),
-      })),
+      top5Produtos,
       resumo: {
         totalClientes: clientes.length,
         totalVeiculos: veiculos.length,

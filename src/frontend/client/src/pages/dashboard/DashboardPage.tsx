@@ -13,6 +13,7 @@ const relatorioVazio: RelatoriosApi = {
   osStatus: [],
   topClientes: [],
   produtosEstoque: [],
+  saidaMediaDiaria: [],
   faturamento: [],
   top5Produtos: [],
   resumo: {

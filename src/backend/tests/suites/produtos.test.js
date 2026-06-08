@@ -32,6 +32,7 @@ module.exports = function registerProdutosTests(context) {
       assert.ok(Array.isArray(response.body));
       assert.equal(response.body[0].id, produto.id);
       assert.equal(typeof response.body[0].estoqueAtual, "number");
+      assert.equal(response.body[0].estoqueMinimo, null);
       assert.equal(typeof response.body[0].preco, "number");
       assert.equal(response.body[0].categoria.id, references.categoria.id);
       assert.equal(response.body[0].marca.id, references.marca.id);
@@ -64,6 +65,7 @@ module.exports = function registerProdutosTests(context) {
         produtoPayload({
           titulo: "Produto sem estoque",
           estoqueAtual: 0,
+          estoqueMinimo: 5,
           preco: 12.5,
         }),
         references,
@@ -75,13 +77,30 @@ module.exports = function registerProdutosTests(context) {
 
       assert.equal(response.body.titulo, payload.titulo);
       assert.equal(response.body.estoqueAtual, 0);
+      assert.equal(response.body.estoqueMinimo, 5);
       assert.equal(response.body.preco, payload.preco);
       assert.equal(response.body.marca.id, references.marca.id);
       assert.equal(response.body.categoria.id, references.categoria.id);
 
       const persisted = await context.models.Produto.findByPk(response.body.id);
       assert.equal(Number(persisted.preco), payload.preco);
+      assert.equal(persisted.estoqueMinimo, 5);
       assert.equal(persisted.idFornecedor, references.fornecedor.id);
+    });
+
+    test("POST /produtos aceita estoqueMinimo nulo ou ausente", async () => {
+      const produtoNulo = await apiRequest(context, "post", "/produtos")
+        .send(produtoPayload({ estoqueMinimo: null }))
+        .expect(201);
+      const payloadSemMinimo = produtoPayload();
+      delete payloadSemMinimo.estoqueMinimo;
+
+      const produtoSemCampo = await apiRequest(context, "post", "/produtos")
+        .send(payloadSemMinimo)
+        .expect(201);
+
+      assert.equal(produtoNulo.body.estoqueMinimo, null);
+      assert.equal(produtoSemCampo.body.estoqueMinimo, null);
     });
 
     test("POST /produtos exige titulo, codigoSku, preco e tipoItem", async () => {
@@ -105,6 +124,8 @@ module.exports = function registerProdutosTests(context) {
       const invalidPayloads = [
         produtoPayload({ estoqueAtual: -1 }),
         produtoPayload({ estoqueAtual: 1.5 }),
+        produtoPayload({ estoqueMinimo: -1 }),
+        produtoPayload({ estoqueMinimo: 1.5 }),
         produtoPayload({ preco: -0.01 }),
         produtoPayload({ preco: "invalido" }),
         produtoPayload({ estoqueAtual: 100000000 }),
@@ -158,6 +179,7 @@ module.exports = function registerProdutosTests(context) {
               codigoSku: "SKU-ATUALIZADO",
               tipoItem: "Produto",
               estoqueAtual: 0,
+              estoqueMinimo: 15,
               preco: 99.9,
             },
             references,
@@ -167,13 +189,51 @@ module.exports = function registerProdutosTests(context) {
 
       assert.equal(response.body.titulo, "Produto Atualizado");
       assert.equal(response.body.estoqueAtual, 0);
+      assert.equal(response.body.estoqueMinimo, 15);
       assert.equal(response.body.preco, 99.9);
       assert.equal(response.body.categoria.id, references.categoria.id);
       assert.equal(response.body.marca.id, references.marca.id);
 
       await produto.reload();
       assert.equal(Number(produto.estoqueAtual), 0);
+      assert.equal(produto.estoqueMinimo, 15);
       assert.equal(produto.idFornecedor, references.fornecedor.id);
+    });
+
+    test("PUT e PATCH preservam, preenchem e limpam estoqueMinimo", async () => {
+      const produto = await createProduto(context.models, {
+        estoqueMinimo: 8,
+      });
+
+      const preservado = await apiRequest(
+        context,
+        "put",
+        `/produtos/${produto.id}`,
+      )
+        .send({ titulo: "Produto com minimo preservado" })
+        .expect(200);
+
+      assert.equal(preservado.body.estoqueMinimo, 8);
+
+      const preenchido = await apiRequest(
+        context,
+        "patch",
+        `/produtos/${produto.id}`,
+      )
+        .send({ estoqueMinimo: 12 })
+        .expect(200);
+
+      assert.equal(preenchido.body.estoqueMinimo, 12);
+
+      const removido = await apiRequest(
+        context,
+        "patch",
+        `/produtos/${produto.id}`,
+      )
+        .send({ estoqueMinimo: null })
+        .expect(200);
+
+      assert.equal(removido.body.estoqueMinimo, null);
     });
 
     test("PUT /produtos/:id aceita corpo vazio sem alterar o produto", async () => {
@@ -192,6 +252,7 @@ module.exports = function registerProdutosTests(context) {
       assert.equal(response.body.codigoSku, before.codigoSku);
       assert.equal(response.body.preco, Number(before.preco));
       assert.equal(response.body.estoqueAtual, Number(before.estoqueAtual));
+      assert.equal(response.body.estoqueMinimo, before.estoqueMinimo);
 
       await produto.reload();
       assert.equal(produto.titulo, before.titulo);
@@ -215,6 +276,8 @@ module.exports = function registerProdutosTests(context) {
       const invalidPayloads = [
         { estoqueAtual: -1 },
         { estoqueAtual: 1.5 },
+        { estoqueMinimo: -1 },
+        { estoqueMinimo: 1.5 },
         { preco: -1 },
         { preco: "invalido" },
         { estoqueAtual: 100000000 },

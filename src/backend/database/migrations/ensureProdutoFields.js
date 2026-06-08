@@ -61,6 +61,12 @@ async function ensureProdutoFields(sequelize) {
     defaultValue: "Produto",
   });
 
+  await addColumn("estoque_minimo", {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+  });
+
   if (skuColumnWasMissing) {
     await sequelize.query(`
       UPDATE produtos
