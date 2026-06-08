@@ -108,6 +108,29 @@ router.post("/upload-logo", upload.single("logo"), async (req, res) => {
     }
 });
 
+router.get("/logotipo", async (req, res) => {
+    try {
+        const empresa = await Empresa.findByPk(1);
+
+        if (!empresa || !empresa.logotipo) {
+            return res.status(404).json({
+                message: "Logotipo não encontrado"
+            });
+        }
+
+        // Construir caminho absoluto
+        const filePath = path.join(__dirname, '..', empresa.logotipo);
+
+        // Enviar arquivo
+        return res.sendFile(filePath);
+    } catch (error) {
+        return res.status(500).json({
+            message: "Erro interno ao buscar logotipo"
+        });
+    }
+});
+
+
 // POST - Criar dados da empresa (se não existir)
 router.post("/", async (req, res) => {
     try {

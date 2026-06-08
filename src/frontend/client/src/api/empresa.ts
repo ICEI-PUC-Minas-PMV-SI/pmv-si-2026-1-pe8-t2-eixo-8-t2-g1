@@ -21,3 +21,15 @@ export async function uploadLogotipo(file: File): Promise<string> {
 
   return data.logoPath;
 }
+
+// Função para buscar logotipo
+export async function getLogotipo(): Promise<Blob> {
+  const { data } = await api.get<Blob>(
+    "/config/empresa/logotipo",
+    {
+      responseType: "blob",
+    }
+  );
+
+  return data;
+}

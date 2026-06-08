@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
-import { empresaApi, uploadLogotipo, smtpApi } from '@/api';
+import { empresaApi, uploadLogotipo, getLogotipo, smtpApi } from '@/api';
 import type { EmpresaApi, SmtpApi } from '@/api/types';
 
 export default function Configuracoes() {
@@ -67,8 +67,13 @@ export default function Configuracoes() {
           setEmpresaEditando({ ...empresaData });
           // Carregar preview do logotipo se existir
           if (empresaData.logotipo) {
-            // Usar a URL do logotipo armazenada no banco
-            setLogoPreview(empresaData.logotipo);
+            try {
+              const logoBlob = await getLogotipo();
+              const logoUrl = URL.createObjectURL(logoBlob);
+              setLogoPreview(logoUrl);
+            } catch (error) {
+              console.log('Erro ao carregar logotipo');
+            }
           }
         }
       } catch (error) {
@@ -266,8 +271,15 @@ export default function Configuracoes() {
       setEmpresa(empresaSalva);
       setEmpresaEditando({ ...empresaSalva });
       setLogoArquivo(null); // Limpar arquivo após salvar
+      // Atualizar preview para usar a função getLogotipo
       if (empresaSalva.logotipo) {
-        setLogoPreview(empresaSalva.logotipo);
+        try {
+          const logoBlob = await getLogotipo();
+          const logoUrl = URL.createObjectURL(logoBlob);
+          setLogoPreview(logoUrl);
+        } catch (error) {
+          console.log('Erro ao carregar logotipo atualizado');
+        }
       }
       toast.success('Dados da empresa salvos com sucesso!');
     } catch (error: any) {
@@ -282,7 +294,14 @@ export default function Configuracoes() {
     if (empresa) {
       setEmpresaEditando({ ...empresa });
       if (empresa.logotipo) {
-        setLogoPreview(empresa.logotipo);
+        try {
+          getLogotipo().then((logoBlob) => {
+            const logoUrl = URL.createObjectURL(logoBlob);
+            setLogoPreview(logoUrl);
+          });
+        } catch (error) {
+          console.log('Erro ao carregar logotipo');
+        }
       }
     } else {
       setEmpresaEditando(null);

@@ -11,7 +11,7 @@ export { fornecedoresApi } from "./fornecedores";
 export { marcasApi } from "./marcas";
 export { categoriasApi } from "./categorias";
 export { tiposVeiculoApi } from "./veiculoTipos";
-export { empresaApi, uploadLogotipo } from "./empresa";
+export { empresaApi, uploadLogotipo, getLogotipo} from "./empresa";
 export { smtpApi } from "./smtp";
 
 
