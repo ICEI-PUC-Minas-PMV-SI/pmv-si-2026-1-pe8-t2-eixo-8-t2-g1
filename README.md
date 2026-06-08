@@ -48,6 +48,11 @@ pcc/
 |   |   |-- Servico.js
 |   |   |-- Usuario.js
 |   |   |-- Veiculo.js
+|   |   |-- Categoria.js
+|   |   |-- Marca.js
+|   |   |-- TipoVeiculo.js
+|   |   |-- Empresa.js
+|   |   |-- Smtp.js
 |   |   `-- index.js
 |   |-- routes/
 |   |   |-- clientes.js
@@ -55,7 +60,12 @@ pcc/
 |   |   |-- produtos.js
 |   |   |-- servicos.js
 |   |   |-- usuarios.js
-|   |   `-- veiculos.js
+|   |   |-- veiculos.js
+|   |   |-- categorias.js
+|   |   |-- marcas.js
+|   |   |-- veiculo_tipos.js
+|   |   |-- esmpresas.js
+|   |   `-- smtp.js
 |   |-- utils/
 |   |-- index.js
 |   `-- swagger.json
@@ -297,6 +307,30 @@ POST   /usuarios
 GET    /usuarios/:id
 PUT    /usuarios/:id
 DELETE /usuarios/:id
+
+GET    /categorias
+POST   /categorias
+GET    /categorias/:id
+DELETE /categorias/:id
+
+GET    /marcas
+POST   /marcas
+GET    /marcas/:id
+DELETE /marcas/:id
+
+GET    /tipos/veiculos
+POST   /tipos/veiculos
+GET    /tipos/veiculos/:id
+DELETE /tipos/veiculos/:id
+
+GET    /config/empresa
+POST   /config/empresa
+PUT    /config/empresa/:id
+
+GET    /config/smtp
+POST   /config/smtp
+PUT    /config/smtp/:id
+
 ```
 
 ## Login
