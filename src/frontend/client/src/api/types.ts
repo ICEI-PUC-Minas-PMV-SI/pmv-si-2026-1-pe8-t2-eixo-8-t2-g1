@@ -87,12 +87,12 @@ export interface ProdutoApi {
 export interface ProdutoPayload {
   titulo: string;
   descricao?: string | null;
-  codigoSku?: string;
+  codigoSku: string;
   idMarca?: number;
   idCategoria?: number;
   idFornecedor?: number;
-  tipoItem?: string;
-  preco?: number;
+  tipoItem: string;
+  preco: number;
   estoqueAtual?: number;
 }
 

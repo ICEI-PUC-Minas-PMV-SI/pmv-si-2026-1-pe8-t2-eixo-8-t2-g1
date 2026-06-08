@@ -123,23 +123,25 @@ export default function ProdutoForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="codigoSku">Código / SKU</Label>
+              <Label htmlFor="codigoSku">Código / SKU *</Label>
               <Input
                 id="codigoSku"
                 value={formData.codigoSku}
                 onChange={(event) =>
                   handleInputChange("codigoSku", event.target.value)
                 }
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="tipoItem">Tipo do Item</Label>
+              <Label htmlFor="tipoItem">Tipo do Item *</Label>
               <Select
                 value={formData.tipoItem}
                 onValueChange={(value) =>
                   handleInputChange("tipoItem", value)
                 }
+                required
               >
                 <SelectTrigger id="tipoItem" className="w-full">
                   <SelectValue />
@@ -235,7 +237,7 @@ export default function ProdutoForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="preco">Preço (R$)</Label>
+            <Label htmlFor="preco">Preço (R$) *</Label>
             <Input
               id="preco"
               type="number"
@@ -245,6 +247,7 @@ export default function ProdutoForm({
               onChange={(event) =>
                 handleInputChange("preco", Number(event.target.value))
               }
+              required
             />
           </div>
 

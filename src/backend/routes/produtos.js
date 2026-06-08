@@ -156,9 +156,17 @@ router.post("/", async (req, res) => {
       titulo,
     } = req.body;
 
-    if (!isNonEmptyString(titulo)) {
+    if (
+      !isNonEmptyString(titulo) ||
+      !isNonEmptyString(codigoSku) ||
+      preco === undefined ||
+      preco === null ||
+      preco === "" ||
+      preco <= 0 ||
+      !isNonEmptyString(tipoItem)
+    ) {
       return res.status(400).json({
-        message: "O titulo e obrigatorio",
+        message: "O Título, Código SKU, Tipo e Preço são obrigatórios",
       });
     }
 
@@ -174,7 +182,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    if (preco !== undefined && !isValidMoney(preco)) {
+    if (!isValidMoney(preco)) {
       return res.status(400).json({
         message: "preco deve conter um valor valido",
       });
@@ -194,16 +202,13 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const codigoSkuNormalizado = isNonEmptyString(codigoSku)
-      ? codigoSku.trim()
-      : null;
-    const skuExistente = codigoSkuNormalizado
-      ? await Produto.findOne({
+    const codigoSkuNormalizado = codigoSku.trim();
+    const tipoItemNormalizado = tipoItem.trim();
+    const skuExistente = await Produto.findOne({
           where: {
             codigoSku: codigoSkuNormalizado,
           },
-        })
-      : null;
+        });
 
     if (skuExistente) {
       return res.status(409).json({
@@ -212,14 +217,12 @@ router.post("/", async (req, res) => {
     }
 
     const produto = await Produto.create({
+      ...references,
       titulo: titulo.trim(),
       descricao: isNonEmptyString(descricao) ? descricao.trim() : null,
       codigoSku: codigoSkuNormalizado,
-      ...references,
-      ...(isNonEmptyString(tipoItem)
-        ? { tipoItem: tipoItem.trim() }
-        : {}),
-      preco: preco === undefined ? 0 : Number(preco),
+      tipoItem: tipoItemNormalizado,
+      preco: Number(preco),
       estoqueAtual: estoqueAtual === undefined ? 0 : Number(estoqueAtual),
     });
     const produtoCriado = await findProdutoById(produto.id);

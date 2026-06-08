@@ -84,21 +84,17 @@ module.exports = function registerProdutosTests(context) {
       assert.equal(persisted.idFornecedor, references.fornecedor.id);
     });
 
-    test("POST /produtos exige somente titulo", async () => {
-      const response = await apiRequest(context, "post", "/produtos")
-        .send({
-          titulo: "Produto basico",
-        })
-        .expect(201);
+    test("POST /produtos exige titulo, codigoSku, preco e tipoItem", async () => {
+      const requiredFields = ["titulo", "codigoSku", "preco", "tipoItem"];
 
-      assert.equal(response.body.titulo, "Produto basico");
-      assert.equal(response.body.codigoSku, null);
-      assert.equal(response.body.idMarca, null);
-      assert.equal(response.body.idCategoria, null);
-      assert.equal(response.body.idFornecedor, null);
-      assert.equal(response.body.preco, 0);
-      assert.equal(response.body.estoqueAtual, 0);
-      assert.equal(response.body.tipoItem, "Produto");
+      for (const field of requiredFields) {
+        const payload = produtoPayload();
+        delete payload[field];
+
+        await apiRequest(context, "post", "/produtos")
+          .send(payload)
+          .expect(400);
+      }
     });
 
     test("POST /produtos valida obrigatorios, numeros e limites", async () => {
