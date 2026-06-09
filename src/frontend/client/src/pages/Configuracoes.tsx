@@ -18,6 +18,30 @@ import { toast } from 'sonner';
 import { empresaApi, uploadLogotipo, getLogotipo, smtpApi } from '@/api';
 import type { EmpresaApi, SmtpApi } from '@/api/types';
 
+// Função para formatar CNPJ com máscara: XX.XXX.XXX/XXXX-XX
+const formatCNPJ = (value: string): string => {
+  // Remove tudo que não é número
+  const cleaned = value.replace(/\D/g, '');
+  
+  // Aplica a máscara
+  if (cleaned.length <= 2) {
+    return cleaned;
+  } else if (cleaned.length <= 5) {
+    return cleaned.replace(/(\d{2})(\d+)/, '$1.$2');
+  } else if (cleaned.length <= 8) {
+    return cleaned.replace(/(\d{2})(\d{3})(\d+)/, '$1.$2.$3');
+  } else if (cleaned.length <= 12) {
+    return cleaned.replace(/(\d{2})(\d{3})(\d{3})(\d+)/, '$1.$2.$3/$4');
+  } else {
+    return cleaned.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d+)/, '$1.$2.$3/$4-$5');
+  }
+};
+
+// Função para remover máscara do CNPJ (apenas números)
+const unformatCNPJ = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
 export default function Configuracoes() {
   // State para SMTP
   const [smtp, setSmtp] = useState<SmtpApi | null>(null);
@@ -63,8 +87,13 @@ export default function Configuracoes() {
         const empresaResponse = await empresaApi.getAll();
         const empresaData = Array.isArray(empresaResponse) ? empresaResponse[0] : empresaResponse;
         if (empresaData) {
+          // Formatar CNPJ ao carregar
+          const empresaFormatada = {
+            ...empresaData,
+            cnpj: formatCNPJ(empresaData.cnpj || ''),
+          };
           setEmpresa(empresaData);
-          setEmpresaEditando({ ...empresaData });
+          setEmpresaEditando(empresaFormatada);
           // Carregar preview do logotipo se existir
           if (empresaData.logotipo) {
             try {
@@ -228,6 +257,7 @@ export default function Configuracoes() {
       }
 
       // 2. Salvar empresa com o caminho do logotipo
+      // IMPORTANTE: Remover máscara do CNPJ antes de enviar para o backend
       let empresaSalva: EmpresaApi;
 
       if (empresa) {
@@ -235,7 +265,7 @@ export default function Configuracoes() {
         empresaSalva = await empresaApi.update(empresa.id, {
           nome: empresaEditando.nome,
           apelido: empresaEditando.apelido,
-          cnpj: empresaEditando.cnpj,
+          cnpj: unformatCNPJ(empresaEditando.cnpj), // Remove máscara, envia apenas números
           logotipo: logoPath,
           email: empresaEditando.email,
           telefone: empresaEditando.telefone,
@@ -253,7 +283,7 @@ export default function Configuracoes() {
         empresaSalva = await empresaApi.create({
           nome: empresaEditando.nome,
           apelido: empresaEditando.apelido,
-          cnpj: empresaEditando.cnpj,
+          cnpj: unformatCNPJ(empresaEditando.cnpj), // Remove máscara, envia apenas números
           logotipo: logoPath,
           email: empresaEditando.email,
           telefone: empresaEditando.telefone,
@@ -268,8 +298,14 @@ export default function Configuracoes() {
         });
       }
 
+      // Formatar CNPJ na resposta para exibição
+      const empresaSalvaFormatada = {
+        ...empresaSalva,
+        cnpj: formatCNPJ(empresaSalva.cnpj || ''),
+      };
+
       setEmpresa(empresaSalva);
-      setEmpresaEditando({ ...empresaSalva });
+      setEmpresaEditando(empresaSalvaFormatada);
       setLogoArquivo(null); // Limpar arquivo após salvar
       // Atualizar preview para usar a função getLogotipo
       if (empresaSalva.logotipo) {
@@ -292,7 +328,12 @@ export default function Configuracoes() {
 
   const handleCancelEmpresa = () => {
     if (empresa) {
-      setEmpresaEditando({ ...empresa });
+      // Formatar CNPJ ao cancelar
+      const empresaFormatada = {
+        ...empresa,
+        cnpj: formatCNPJ(empresa.cnpj || ''),
+      };
+      setEmpresaEditando(empresaFormatada);
       if (empresa.logotipo) {
         try {
           getLogotipo().then((logoBlob) => {
@@ -405,11 +446,12 @@ export default function Configuracoes() {
                     onChange={(e) =>
                       setEmpresaEditando({
                         ...empresaEditando,
-                        cnpj: e.target.value,
+                        cnpj: formatCNPJ(e.target.value), // Aplica máscara em tempo real
                       })
                     }
                     disabled={loadingEmpresa}
                     placeholder="00.000.000/0000-00"
+                    maxLength={18} // Máximo de caracteres com máscara
                   />
                 </div>
 
@@ -440,16 +482,31 @@ export default function Configuracoes() {
                       })
                     }
                     disabled={loadingEmpresa}
-                    placeholder="(11) 0000-0000"
+                    placeholder="(11) 98765-4321"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold mb-2 block">CEP *</Label>
+                  <Input
+                    value={empresaEditando.cep || ''}
+                    onChange={(e) =>
+                      setEmpresaEditando({
+                        ...empresaEditando,
+                        cep: e.target.value,
+                      })
+                    }
+                    disabled={loadingEmpresa}
+                    placeholder="00000-000"
                   />
                 </div>
               </div>
 
               {/* Endereço */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Endereço</h3>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Endereço</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
+                  <div>
                     <Label className="text-base font-semibold mb-2 block">Logradouro *</Label>
                     <Input
                       value={empresaEditando.logradouro || ''}
@@ -471,7 +528,7 @@ export default function Configuracoes() {
                       onChange={(e) =>
                         setEmpresaEditando({
                           ...empresaEditando,
-                          numero: parseInt(e.target.value) || 0,
+                          numero: e.target.value,
                         })
                       }
                       disabled={loadingEmpresa}
@@ -505,7 +562,7 @@ export default function Configuracoes() {
                         })
                       }
                       disabled={loadingEmpresa}
-                      placeholder="Centro"
+                      placeholder="Nome do bairro"
                     />
                   </div>
 
@@ -520,7 +577,7 @@ export default function Configuracoes() {
                         })
                       }
                       disabled={loadingEmpresa}
-                      placeholder="São Paulo"
+                      placeholder="Nome da cidade"
                     />
                   </div>
 
@@ -541,21 +598,6 @@ export default function Configuracoes() {
                   </div>
 
                   <div>
-                    <Label className="text-base font-semibold mb-2 block">CEP *</Label>
-                    <Input
-                      value={empresaEditando.cep || ''}
-                      onChange={(e) =>
-                        setEmpresaEditando({
-                          ...empresaEditando,
-                          cep: e.target.value,
-                        })
-                      }
-                      disabled={loadingEmpresa}
-                      placeholder="01310-100"
-                    />
-                  </div>
-
-                  <div>
                     <Label className="text-base font-semibold mb-2 block">País *</Label>
                     <Input
                       value={empresaEditando.pais || ''}
@@ -572,19 +614,20 @@ export default function Configuracoes() {
                 </div>
               </div>
 
-              {/* Botões */}
-              <div className="flex gap-4 pt-6 border-t">
+              {/* Botões de Ação */}
+              <div className="flex gap-4 pt-6">
                 <Button
                   onClick={handleSaveEmpresa}
                   disabled={loadingEmpresa || uploadingLogo}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="flex-1"
                 >
-                  {loadingEmpresa ? 'Salvando...' : 'Salvar Alterações'}
+                  {loadingEmpresa ? 'Salvando...' : 'Salvar'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleCancelEmpresa}
                   disabled={loadingEmpresa || uploadingLogo}
+                  className="flex-1"
                 >
                   Cancelar
                 </Button>
@@ -592,17 +635,43 @@ export default function Configuracoes() {
             </Card>
           ) : (
             <Card className="p-6">
-              <p className="text-gray-500">Nenhuma configuração de empresa encontrada</p>
+              <p className="text-gray-500">Nenhuma empresa configurada. Crie uma nova empresa para começar.</p>
+              <Button
+                onClick={() =>
+                  setEmpresaEditando({
+                    id: 0,
+                    nome: '',
+                    apelido: '',
+                    cnpj: '',
+                    logotipo: '',
+                    email: '',
+                    telefone: '',
+                    logradouro: '',
+                    numero: '',
+                    complemente: '',
+                    bairro: '',
+                    cidade: '',
+                    uf: '',
+                    cep: '',
+                    pais: '',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  })
+                }
+                className="mt-4"
+              >
+                Criar Empresa
+              </Button>
             </Card>
           )}
         </TabsContent>
 
-        {/* Aba: SMTP */}
+        {/* Aba: Configurações SMTP */}
         <TabsContent value="smtp" className="space-y-6">
           {smtpEditando ? (
             <Card className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
+                <div>
                   <Label className="text-base font-semibold mb-2 block">Host SMTP *</Label>
                   <Input
                     value={smtpEditando.host || ''}
@@ -618,6 +687,22 @@ export default function Configuracoes() {
                 </div>
 
                 <div>
+                  <Label className="text-base font-semibold mb-2 block">Porta *</Label>
+                  <Input
+                    type="number"
+                    value={smtpEditando.porta || ''}
+                    onChange={(e) =>
+                      setSmtpEditando({
+                        ...smtpEditando,
+                        porta: parseInt(e.target.value),
+                      })
+                    }
+                    disabled={loadingSmtp}
+                    placeholder="587"
+                  />
+                </div>
+
+                <div>
                   <Label className="text-base font-semibold mb-2 block">Email *</Label>
                   <Input
                     type="email"
@@ -629,7 +714,7 @@ export default function Configuracoes() {
                       })
                     }
                     disabled={loadingSmtp}
-                    placeholder="noreply@empresa.com"
+                    placeholder="seu-email@gmail.com"
                   />
                 </div>
 
@@ -650,22 +735,6 @@ export default function Configuracoes() {
                 </div>
 
                 <div>
-                  <Label className="text-base font-semibold mb-2 block">Porta *</Label>
-                  <Input
-                    type="number"
-                    value={smtpEditando.porta || ''}
-                    onChange={(e) =>
-                      setSmtpEditando({
-                        ...smtpEditando,
-                        porta: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    disabled={loadingSmtp}
-                    placeholder="587"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
                   <Label className="text-base font-semibold mb-2 block">Segurança *</Label>
                   <Select
                     value={smtpEditando.seguranca || ''}
@@ -677,30 +746,31 @@ export default function Configuracoes() {
                     }
                   >
                     <SelectTrigger disabled={loadingSmtp}>
-                      <SelectValue placeholder="Selecione a segurança" />
+                      <SelectValue placeholder="Selecione o tipo de segurança" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SSL">SSL</SelectItem>
                       <SelectItem value="TLS">TLS</SelectItem>
+                      <SelectItem value="SSL">SSL</SelectItem>
                       <SelectItem value="Nenhuma">Nenhuma</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Botões */}
-              <div className="flex gap-4 pt-6 border-t">
+              {/* Botões de Ação */}
+              <div className="flex gap-4 pt-6">
                 <Button
                   onClick={handleSaveSmtp}
                   disabled={loadingSmtp}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="flex-1"
                 >
-                  {loadingSmtp ? 'Salvando...' : 'Salvar Alterações'}
+                  {loadingSmtp ? 'Salvando...' : 'Salvar'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleCancelSmtp}
                   disabled={loadingSmtp}
+                  className="flex-1"
                 >
                   Cancelar
                 </Button>
@@ -708,7 +778,24 @@ export default function Configuracoes() {
             </Card>
           ) : (
             <Card className="p-6">
-              <p className="text-gray-500">Nenhuma configuração SMTP encontrada</p>
+              <p className="text-gray-500">Nenhuma configuração SMTP. Crie uma nova para começar.</p>
+              <Button
+                onClick={() =>
+                  setSmtpEditando({
+                    id: 0,
+                    host: '',
+                    email: '',
+                    senha: '',
+                    porta: 587,
+                    seguranca: 'TLS',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  })
+                }
+                className="mt-4"
+              >
+                Criar Configuração SMTP
+              </Button>
             </Card>
           )}
         </TabsContent>

@@ -42,7 +42,7 @@ const Empresa = sequelize.define(
             allowNull: false,
         },
         complemente: {
-            type: DataTypes.STRING(30),
+            type: DataTypes.STRING(100),
             allowNull: false,
         },
         bairro: {
