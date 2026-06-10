@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { tiposVeiculoApi } from '@/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { VeiculoApi, ClienteApi } from '@/api/types';
+import type { VeiculoApi, ClienteApi, TipoVeiculoApi } from '@/api/types';
 
 interface VeiculoFormProps {
   onSubmit: (veiculo: VeiculoApi) => void;
@@ -78,6 +80,22 @@ export default function VeiculoForm({
   };
 
   const [formData, setFormData] = useState<FormDataState>(getInitialData());
+  const [tiposVeiculo, setTiposVeiculo] = useState<TipoVeiculoApi[]>([]);
+
+  useEffect(() => {
+    const loadTiposVeiculo = async () => {
+      try {
+        setTiposVeiculo(await tiposVeiculoApi.getAll());
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message ||
+            'Erro ao carregar tipos de veículo',
+        );
+      }
+    };
+
+    loadTiposVeiculo();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +167,7 @@ export default function VeiculoForm({
               required
             />
           </div>
-          <div>
+          <div className="w-full">
             <Label htmlFor="quilometragem">Quilometragem *</Label>
             <Input
               id="quilometragem"
@@ -159,26 +177,21 @@ export default function VeiculoForm({
               required
             />
           </div>
-          <div className="md:col-span-2">
+          <div className="w-full">
             <Label htmlFor="tipoVeiculo">Tipo de Veículo</Label>
             <Select
               value={formData.tipoVeiculo}
               onValueChange={(value) => handleInputChange('tipoVeiculo', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione o tipo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Sedan">Sedan</SelectItem>
-                <SelectItem value="SUV">SUV</SelectItem>
-                <SelectItem value="Hatchback">Hatchback</SelectItem>
-                <SelectItem value="Picape">Picape</SelectItem>
-                <SelectItem value="Minivan">Minivan</SelectItem>
-                <SelectItem value="Utilitário">Utilitário</SelectItem>
-                <SelectItem value="Caminhão">Caminhão</SelectItem>
-                <SelectItem value="Ônibus">Ônibus</SelectItem>
-                <SelectItem value="Moto">Moto</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
+                {tiposVeiculo.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.titulo}>
+                    {tipo.titulo}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -198,13 +211,13 @@ export default function VeiculoForm({
               placeholder="2.0"
             />
           </div>
-          <div>
+          <div className="w-full">
             <Label htmlFor="tipoCombustivel">Tipo de Combustível</Label>
             <Select
               value={formData.tipoCombustivel}
               onValueChange={(value) => handleInputChange('tipoCombustivel', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

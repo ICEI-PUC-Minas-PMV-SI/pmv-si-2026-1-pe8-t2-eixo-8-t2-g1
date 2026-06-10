@@ -30,7 +30,9 @@ VALUES
   (18, 'USUARIOS_CRIAR', 'Criar usuários'),
   (19, 'USUARIOS_EDITAR', 'Editar usuários'),
   (20, 'USUARIOS_EXCLUIR', 'Excluir usuários'),
-  (21, 'RELATORIOS_VISUALIZAR', 'Visualizar relatórios')
+  (21, 'RELATORIOS_VISUALIZAR', 'Visualizar relatórios'),
+  (22, 'CONFIG_VISUALIZAR', 'Visualizar configurações'),
+  (23, 'CONFIG_EDITAR', 'Editar configurações')
 ON CONFLICT (id) DO UPDATE SET
   chave = EXCLUDED.chave,
   descricao = EXCLUDED.descricao;
@@ -58,6 +60,8 @@ VALUES
   (1, 19),
   (1, 20),
   (1, 21),
+  (1, 22),
+  (1, 23),
 
   (3, 1),
   (3, 5),

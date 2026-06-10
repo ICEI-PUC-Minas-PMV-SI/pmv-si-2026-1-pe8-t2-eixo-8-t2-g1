@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Document,
+  Image as PdfImage,
   Page,
   PDFDownloadLink,
   StyleSheet,
@@ -9,7 +10,12 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 import { Download, FileText, Printer } from "lucide-react";
-import type { ItemServicoApi, ProdutoApi, ServicoApi } from "@/api";
+import {
+  getLogotipo,
+  type ItemServicoApi,
+  type ProdutoApi,
+  type ServicoApi,
+} from "@/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,8 +37,21 @@ const pdfStyles = StyleSheet.create({
   header: {
     borderBottomWidth: 2,
     borderBottomColor: "#111827",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
     paddingBottom: 10,
+  },
+  headerText: {
+    flexGrow: 1,
+    paddingRight: 16,
+  },
+  logo: {
+    height: 48,
+    objectFit: "contain",
+    width: 96,
   },
   title: {
     fontSize: 18,
@@ -110,6 +129,25 @@ function displayValue(value: unknown) {
 
 function displayDate(value?: string | null) {
   return value ? formatDate(value) : "-";
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Nao foi possivel ler o logotipo"));
+    };
+    reader.onerror = () => {
+      reject(reader.error ?? new Error("Nao foi possivel ler o logotipo"));
+    };
+    reader.readAsDataURL(blob);
+  });
 }
 
 function getOsFields(ordem: ServicoApi): Field[] {
@@ -304,15 +342,26 @@ function PdfSection({
   );
 }
 
-function OrdemServicoPdf({ ordem }: { ordem: ServicoApi }) {
+function OrdemServicoPdf({
+  ordem,
+  logoDataUrl,
+}: {
+  ordem: ServicoApi;
+  logoDataUrl: string | null;
+}) {
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.header}>
-          <Text style={pdfStyles.title}>Ordem de Servico #{ordem.id}</Text>
-          <Text style={pdfStyles.subtitle}>
-            Relatorio completo da ordem de servico
-          </Text>
+          <View style={pdfStyles.headerText}>
+            <Text style={pdfStyles.title}>Ordem de Servico #{ordem.id}</Text>
+            <Text style={pdfStyles.subtitle}>
+              Relatorio completo da ordem de servico
+            </Text>
+          </View>
+          {logoDataUrl ? (
+            <PdfImage style={pdfStyles.logo} src={logoDataUrl} />
+          ) : null}
         </View>
 
         <PdfSection title="Dados da OS" fields={getOsFields(ordem)} />
@@ -371,10 +420,12 @@ function PreviewSection({
 function PdfDialogContent({
   ordem,
   isGenerated,
+  isLogoLoading,
   onGenerate,
 }: {
   ordem: ServicoApi | null;
   isGenerated: boolean;
+  isLogoLoading: boolean;
   onGenerate: () => void;
 }) {
   if (!ordem) {
@@ -387,10 +438,11 @@ function PdfDialogContent({
         <Button
           type="button"
           className="h-32 w-full max-w-xl gap-4 text-xl font-semibold"
+          disabled={isLogoLoading}
           onClick={onGenerate}
         >
           <FileText className="size-8" />
-          GERAR PDF
+          {isLogoLoading ? "CARREGANDO LOGO..." : "GERAR PDF"}
         </Button>
       </div>
     );
@@ -442,11 +494,13 @@ function PdfDialogActions({
   ordem,
   isGenerated,
   isPrinting,
+  logoDataUrl,
   onPrint,
 }: {
   ordem: ServicoApi | null;
   isGenerated: boolean;
   isPrinting: boolean;
+  logoDataUrl: string | null;
   onPrint: () => void;
 }) {
   if (!ordem || !isGenerated) {
@@ -468,7 +522,9 @@ function PdfDialogActions({
 
       <Button asChild className="gap-2">
         <PDFDownloadLink
-          document={<OrdemServicoPdf ordem={ordem} />}
+          document={
+            <OrdemServicoPdf ordem={ordem} logoDataUrl={logoDataUrl} />
+          }
           fileName={`ordem-servico-${ordem.id}.pdf`}
         >
           <Download className="size-4" />
@@ -485,12 +541,51 @@ export function DialogPdf({
   onOpenChange,
 }: DialogPdfProps) {
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isLogoLoading, setIsLogoLoading] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [generatedOrderId, setGeneratedOrderId] = useState<number | null>(null);
   const isGenerated = generatedOrderId === ordem?.id;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let isActive = true;
+
+    const loadLogo = async () => {
+      setIsLogoLoading(true);
+      setLogoDataUrl(null);
+
+      try {
+        const logoBlob = await getLogotipo();
+        const nextLogoDataUrl = await blobToDataUrl(logoBlob);
+
+        if (isActive) {
+          setLogoDataUrl(nextLogoDataUrl);
+        }
+      } catch {
+        if (isActive) {
+          setLogoDataUrl(null);
+        }
+      } finally {
+        if (isActive) {
+          setIsLogoLoading(false);
+        }
+      }
+    };
+
+    void loadLogo();
+
+    return () => {
+      isActive = false;
+    };
+  }, [open]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setGeneratedOrderId(null);
+      setLogoDataUrl(null);
     }
 
     onOpenChange(nextOpen);
@@ -504,7 +599,9 @@ export function DialogPdf({
     setIsPrinting(true);
 
     try {
-      const blob = await pdf(<OrdemServicoPdf ordem={ordem} />).toBlob();
+      const blob = await pdf(
+        <OrdemServicoPdf ordem={ordem} logoDataUrl={logoDataUrl} />
+      ).toBlob();
       const url = URL.createObjectURL(blob);
       const iframe = document.createElement("iframe");
 
@@ -546,6 +643,7 @@ export function DialogPdf({
         <PdfDialogContent
           ordem={ordem}
           isGenerated={isGenerated}
+          isLogoLoading={isLogoLoading}
           onGenerate={() => ordem && setGeneratedOrderId(ordem.id)}
         />
 
@@ -553,6 +651,7 @@ export function DialogPdf({
           ordem={ordem}
           isGenerated={isGenerated}
           isPrinting={isPrinting}
+          logoDataUrl={logoDataUrl}
           onPrint={handlePrint}
         />
       </DialogContent>

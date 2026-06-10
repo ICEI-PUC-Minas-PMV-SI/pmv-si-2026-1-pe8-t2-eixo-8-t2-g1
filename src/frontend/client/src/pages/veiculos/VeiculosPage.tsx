@@ -70,7 +70,7 @@ export default function Veiculos() {
         dataUltimaRevisao: novoVeiculo.dataUltimaRevisao,
       });
 
-      setVeiculos(prevVeiculos => [...prevVeiculos, veiculoCriado]);
+      setVeiculos((veiculosAtuais) => [veiculoCriado, ...veiculosAtuais]);
 
       setIsDialogOpen(false);
       toast.success("Veículo cadastrado com sucesso");

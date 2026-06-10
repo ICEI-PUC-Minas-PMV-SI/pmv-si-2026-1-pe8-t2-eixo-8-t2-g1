@@ -17,6 +17,8 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
 import { empresaApi, uploadLogotipo, getLogotipo, smtpApi } from '@/api';
 import type { EmpresaApi, SmtpApi } from '@/api/types';
+import { PERMISSIONS } from '@/constants/permissions';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Função para formatar CNPJ com máscara: XX.XXX.XXX/XXXX-XX
 const formatCNPJ = (value: string): string => {
@@ -43,6 +45,9 @@ const unformatCNPJ = (value: string): string => {
 };
 
 export default function Configuracoes() {
+  const { hasPermission } = useAuth();
+  const canEdit = hasPermission(PERMISSIONS.CONFIG.EDIT);
+
   // State para SMTP
   const [smtp, setSmtp] = useState<SmtpApi | null>(null);
   const [loadingSmtp, setLoadingSmtp] = useState(false);
@@ -119,6 +124,8 @@ export default function Configuracoes() {
 
   // Handler para seleção de arquivo de logotipo
   const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canEdit) return;
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -145,6 +152,8 @@ export default function Configuracoes() {
 
   // Upload do logotipo (chamado antes de salvar empresa)
   const handleUploadLogotipo = async (): Promise<string | null> => {
+    if (!canEdit) return null;
+
     if (!logoArquivo) {
       // Se não há arquivo novo, retorna o logotipo atual
       return empresaEditando?.logotipo || null;
@@ -166,6 +175,8 @@ export default function Configuracoes() {
 
   // Remover logotipo
   const handleRemoveLogo = () => {
+    if (!canEdit) return;
+
     setLogoPreview(null);
     setLogoArquivo(null);
     if (empresaEditando) {
@@ -178,6 +189,8 @@ export default function Configuracoes() {
 
   // Handlers para SMTP
   const handleSaveSmtp = async () => {
+    if (!canEdit) return;
+
     if (!smtpEditando) return;
 
     if (!smtpEditando.host || !smtpEditando.email || !smtpEditando.porta || !smtpEditando.seguranca) {
@@ -231,6 +244,8 @@ export default function Configuracoes() {
 
   // Handlers para Empresa
   const handleSaveEmpresa = async () => {
+    if (!canEdit) return;
+
     if (!empresaEditando) return;
 
     if (!empresaEditando.nome || !empresaEditando.apelido || !empresaEditando.cnpj || 
@@ -368,7 +383,8 @@ export default function Configuracoes() {
         {/* Aba: Dados da Empresa */}
         <TabsContent value="empresa" className="space-y-6">
           {empresaEditando ? (
-            <Card className="p-6 space-y-6">
+            <fieldset disabled={!canEdit}>
+              <Card className="p-6 space-y-6">
               {/* Upload de Logotipo */}
               <div className="space-y-4">
                 <div>
@@ -528,7 +544,7 @@ export default function Configuracoes() {
                       onChange={(e) =>
                         setEmpresaEditando({
                           ...empresaEditando,
-                          numero: e.target.value,
+                          numero: Number(e.target.value),
                         })
                       }
                       disabled={loadingEmpresa}
@@ -632,36 +648,37 @@ export default function Configuracoes() {
                   Cancelar
                 </Button>
               </div>
-            </Card>
+              </Card>
+            </fieldset>
           ) : (
             <Card className="p-6">
               <p className="text-gray-500">Nenhuma empresa configurada. Crie uma nova empresa para começar.</p>
-              <Button
-                onClick={() =>
-                  setEmpresaEditando({
-                    id: 0,
-                    nome: '',
-                    apelido: '',
-                    cnpj: '',
-                    logotipo: '',
-                    email: '',
-                    telefone: '',
-                    logradouro: '',
-                    numero: '',
-                    complemente: '',
-                    bairro: '',
-                    cidade: '',
-                    uf: '',
-                    cep: '',
-                    pais: '',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  })
-                }
-                className="mt-4"
-              >
-                Criar Empresa
-              </Button>
+              {canEdit && (
+                <Button
+                  onClick={() =>
+                    setEmpresaEditando({
+                      id: 0,
+                      nome: '',
+                      apelido: '',
+                      cnpj: '',
+                      logotipo: '',
+                      email: '',
+                      telefone: '',
+                      logradouro: '',
+                      numero: 0,
+                      complemente: '',
+                      bairro: '',
+                      cidade: '',
+                      uf: '',
+                      cep: '',
+                      pais: '',
+                    })
+                  }
+                  className="mt-4"
+                >
+                  Criar Empresa
+                </Button>
+              )}
             </Card>
           )}
         </TabsContent>
@@ -669,7 +686,8 @@ export default function Configuracoes() {
         {/* Aba: Configurações SMTP */}
         <TabsContent value="smtp" className="space-y-6">
           {smtpEditando ? (
-            <Card className="p-6 space-y-6">
+            <fieldset disabled={!canEdit}>
+              <Card className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-base font-semibold mb-2 block">Host SMTP *</Label>
@@ -775,27 +793,28 @@ export default function Configuracoes() {
                   Cancelar
                 </Button>
               </div>
-            </Card>
+              </Card>
+            </fieldset>
           ) : (
             <Card className="p-6">
               <p className="text-gray-500">Nenhuma configuração SMTP. Crie uma nova para começar.</p>
-              <Button
-                onClick={() =>
-                  setSmtpEditando({
-                    id: 0,
-                    host: '',
-                    email: '',
-                    senha: '',
-                    porta: 587,
-                    seguranca: 'TLS',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  })
-                }
-                className="mt-4"
-              >
-                Criar Configuração SMTP
-              </Button>
+              {canEdit && (
+                <Button
+                  onClick={() =>
+                    setSmtpEditando({
+                      id: 0,
+                      host: '',
+                      email: '',
+                      senha: '',
+                      porta: 587,
+                      seguranca: 'TLS',
+                    })
+                  }
+                  className="mt-4"
+                >
+                  Criar Configuração SMTP
+                </Button>
+              )}
             </Card>
           )}
         </TabsContent>

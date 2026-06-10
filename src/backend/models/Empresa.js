@@ -71,6 +71,7 @@ const Empresa = sequelize.define(
         timestamps: true,
         createdAt: "dataCriacao",
         updatedAt: "dataAtualizacao",
+        underscored: true
     },
 );
 

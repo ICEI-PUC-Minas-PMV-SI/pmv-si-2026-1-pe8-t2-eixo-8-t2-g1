@@ -114,6 +114,10 @@ function getDefaultPath(hasPermission: (permission: string) => boolean) {
     return "/usuarios";
   }
 
+  if (hasPermission(PERMISSIONS.CONFIG.VIEW)) {
+    return "/configuracoes";
+  }
+
   return "/tabelas";
 }
 
@@ -324,7 +328,14 @@ function AppRoutes() {
             </RequirePermission>
           }
         />
-        <Route path="/configuracoes" element={<Configuracoes />} />
+        <Route
+          path="/configuracoes"
+          element={
+            <RequirePermission permission={PERMISSIONS.CONFIG.VIEW}>
+              <Configuracoes />
+            </RequirePermission>
+          }
+        />
         <Route
           path="/relatorios"
           element={

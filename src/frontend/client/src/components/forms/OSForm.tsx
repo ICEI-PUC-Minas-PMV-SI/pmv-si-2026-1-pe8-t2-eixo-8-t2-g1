@@ -111,13 +111,13 @@ export default function OSForm({ onSubmit, onCancel, initialData, veiculos }: OS
               </SelectContent>
             </Select>
           </div>
-          <div>
+          <div className="w-full">
             <Label htmlFor="status">Status *</Label>
             <Select
               value={formData.status}
               onValueChange={(value) => handleInputChange('status', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

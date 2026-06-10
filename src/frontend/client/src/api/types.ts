@@ -129,6 +129,7 @@ export interface RelatorioSaidaMediaDiariaApi {
   };
   estoqueAtual: number;
   estoqueMinimo: number | null;
+  diasDeEstoque: number;
 }
 
 export interface RelatorioFaturamentoApi {

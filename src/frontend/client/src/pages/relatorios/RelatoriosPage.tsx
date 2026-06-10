@@ -264,7 +264,7 @@ export default function Relatorios() {
       </Card>
     
       <Card className="p-6">
-        <h3>Saída Média Diária</h3>
+        <h3>Saída Média Diária de Produtos</h3>
         <p className="text-sm text-muted-foreground mt-1 mb-4">
           Produtos com maior saída média nos últimos 30 dias corridos
         </p>

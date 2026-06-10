@@ -32,4 +32,8 @@ export const PERMISSIONS = {
   RELATORIOS: {
     VIEW: "RELATORIOS_VISUALIZAR",
   },
+  CONFIG: {
+    VIEW: "CONFIG_VISUALIZAR",
+    EDIT: "CONFIG_EDITAR",
+  },
 } as const;

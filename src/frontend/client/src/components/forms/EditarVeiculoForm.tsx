@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { VeiculoApi, veiculosApi, ClienteApi } from "@/api";
+import {
+  VeiculoApi,
+  veiculosApi,
+  ClienteApi,
+  tiposVeiculoApi,
+  TipoVeiculoApi,
+} from "@/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +52,7 @@ export default function EditarVeiculoForm({
 }: EditarVeiculoProps) {
   const { hasPermission } = useAuth();
   const [formData, setFormData] = useState<VeiculoApi>(() => veiculo);
+  const [tiposVeiculo, setTiposVeiculo] = useState<TipoVeiculoApi[]>([]);
   const [loading, setLoading] = useState(false);
   const canDelete = hasPermission(PERMISSIONS.VEICULOS.DELETE);
 
@@ -59,6 +66,21 @@ export default function EditarVeiculoForm({
   useEffect(() => {
     setFormData(veiculo);
   }, [veiculo.id]);
+
+  useEffect(() => {
+    const loadTiposVeiculo = async () => {
+      try {
+        setTiposVeiculo(await tiposVeiculoApi.getAll());
+      } catch (error: any) {
+        toast.error(
+          error.response?.data?.message ||
+            "Erro ao carregar tipos de veículo",
+        );
+      }
+    };
+
+    loadTiposVeiculo();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,16 +217,11 @@ export default function EditarVeiculoForm({
                   <SelectValue placeholder="Selecione o tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Sedan">Sedan</SelectItem>
-                  <SelectItem value="SUV">SUV</SelectItem>
-                  <SelectItem value="Hatchback">Hatchback</SelectItem>
-                  <SelectItem value="Picape">Picape</SelectItem>
-                  <SelectItem value="Minivan">Minivan</SelectItem>
-                  <SelectItem value="Utilitário">Utilitário</SelectItem>
-                  <SelectItem value="Caminhão">Caminhão</SelectItem>
-                  <SelectItem value="Ônibus">Ônibus</SelectItem>
-                  <SelectItem value="Moto">Moto</SelectItem>
-                  <SelectItem value="Outro">Outro</SelectItem>
+                  {tiposVeiculo.map(tipo => (
+                    <SelectItem key={tipo.id} value={tipo.titulo}>
+                      {tipo.titulo}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
